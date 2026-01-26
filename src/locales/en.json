@@ -127,7 +127,11 @@
     "tip1": "Use the search bar to find educational content across multiple sources",
     "tip2": "Content marked with 🔴 needs accessibility remediation before viewing",
     "tip3": "Adjust your visual profile in Settings at any time",
-    "tip4": "Press ? for keyboard shortcuts"
+    "tip4": "Press ? for keyboard shortcuts",
+    "readingGuideEnabled": "Reading guide enabled - line follows your cursor",
+    "readingGuideDisabled": "Reading guide disabled",
+    "toggleReadingGuide": "Toggle reading guide",
+    "readingGuideTooltip": "Reading Guide - shows a line that follows your cursor to help track text"
   },
   "search": {
     "title": "EduAccess Search",

@@ -127,7 +127,11 @@
     "tip1": "Usa la barra de búsqueda para encontrar contenido educativo de múltiples fuentes",
     "tip2": "El contenido marcado con 🔴 necesita remediación de accesibilidad antes de verlo",
     "tip3": "Ajusta tu perfil visual en Configuración en cualquier momento",
-    "tip4": "Presiona ? para atajos de teclado"
+    "tip4": "Presiona ? para atajos de teclado",
+    "readingGuideEnabled": "Guía de lectura activada - la línea sigue tu cursor",
+    "readingGuideDisabled": "Guía de lectura desactivada",
+    "toggleReadingGuide": "Alternar guía de lectura",
+    "readingGuideTooltip": "Guía de Lectura - muestra una línea que sigue tu cursor para ayudar a seguir el texto"
   },
   "search": {
     "title": "Búsqueda EduAccess",
