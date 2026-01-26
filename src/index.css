@@ -271,38 +271,92 @@
                 color var(--animation-duration) var(--animation-timing);
   }
 
-  /* ===== USER VISUAL PROFILE - APPLIED GLOBALLY ===== */
-  /* Content text uses user preferences */
-  main p, 
-  main li, 
-  main span:not([class*="icon"]), 
-  main label,
-  .content-adaptive p,
-  .content-adaptive li,
-  .content-adaptive span,
-  .onboarding-content p,
-  .onboarding-content label,
-  .dashboard-content p,
-  .search-results p,
-  .content-viewer p {
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  /* CRITICAL: USER FONT SIZE - HIGHEST PRIORITY */
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  
+  /* Main content MUST respect user font size */
+  html[data-user-profile] main,
+  html[data-user-profile] article,
+  html[data-user-profile] section,
+  html[data-user-profile] .content,
+  html[data-user-profile] p,
+  html[data-user-profile] li,
+  html[data-user-profile] td,
+  html[data-user-profile] th,
+  html[data-user-profile] label,
+  html[data-user-profile] span:not([class*="icon"]):not(.sr-only),
+  html[data-user-profile] .text-content,
+  html[data-user-profile] .dashboard-content,
+  html[data-user-profile] .search-results,
+  html[data-user-profile] .content-viewer,
+  html[data-user-profile] .card-content,
+  html[data-user-profile] .onboarding-content,
+  html[data-user-profile] .settings-content,
+  html[data-user-profile] [class*="CardContent"],
+  html[data-user-profile] [class*="CardDescription"],
+  html[data-user-profile] [class*="TabsContent"] {
     font-size: var(--profile-font-size) !important;
     line-height: var(--profile-line-height) !important;
   }
 
-  /* Headings scale proportionally to base font size */
-  main h1, .onboarding-content h1, .dashboard-content h1 {
-    font-size: calc(var(--profile-font-size) * 1.75) !important;
+  /* Headings scale proportionally */
+  html[data-user-profile] h1 { 
+    font-size: calc(var(--profile-font-size) * 2) !important;
     line-height: calc(var(--profile-line-height) * 0.9) !important;
   }
 
-  main h2, .onboarding-content h2, .dashboard-content h2 {
+  html[data-user-profile] h2 { 
     font-size: calc(var(--profile-font-size) * 1.5) !important;
     line-height: calc(var(--profile-line-height) * 0.95) !important;
   }
 
-  main h3, .onboarding-content h3, .dashboard-content h3 {
+  html[data-user-profile] h3 { 
     font-size: calc(var(--profile-font-size) * 1.25) !important;
     line-height: var(--profile-line-height) !important;
+  }
+
+  /* Navigation scales proportionally but stays readable */
+  html[data-user-profile] nav,
+  html[data-user-profile] nav a,
+  html[data-user-profile] nav span,
+  html[data-user-profile] [role="navigation"],
+  html[data-user-profile] .navigation-menu,
+  html[data-user-profile] .sidebar-menu,
+  html[data-user-profile] aside a,
+  html[data-user-profile] aside span {
+    font-size: calc(var(--profile-font-size) * 0.9) !important;
+    line-height: var(--profile-line-height) !important;
+  }
+
+  /* Buttons and form elements scale */
+  html[data-user-profile] button,
+  html[data-user-profile] .btn,
+  html[data-user-profile] [role="button"] {
+    font-size: calc(var(--profile-font-size) * 0.9) !important;
+  }
+
+  html[data-user-profile] input,
+  html[data-user-profile] select,
+  html[data-user-profile] textarea {
+    font-size: var(--profile-font-size) !important;
+  }
+
+  /* Tabs scale with user preference */
+  html[data-user-profile] [role="tablist"],
+  html[data-user-profile] [role="tab"] {
+    font-size: calc(var(--profile-font-size) * 0.9) !important;
+  }
+
+  /* Card titles scale */
+  html[data-user-profile] [class*="CardTitle"],
+  html[data-user-profile] [class*="CardHeader"] h3 {
+    font-size: calc(var(--profile-font-size) * 1.1) !important;
+  }
+
+  /* Badge text stays readable but scales slightly */
+  html[data-user-profile] [class*="Badge"] {
+    font-size: calc(var(--profile-font-size) * 0.75) !important;
   }
 
   /* Respect reduced motion preferences */
