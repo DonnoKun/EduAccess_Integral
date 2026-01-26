@@ -23,6 +23,9 @@ import {
   Sun,
   Moon,
   Contrast,
+  User,
+  ChevronDown,
+  LogOut,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +33,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -67,7 +71,7 @@ export default function Dashboard() {
     currentTheme,
     setTheme,
   } = useStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, logout, currentUser } = useAuthStore();
   const [readingGuideEnabled, setReadingGuideEnabled] = useState(false);
   const [guidePosition, setGuidePosition] = useState(0);
 
@@ -87,6 +91,29 @@ export default function Dashboard() {
     const newState = !readingGuideEnabled;
     setReadingGuideEnabled(newState);
     toast.success(newState ? t('dashboard.readingGuideEnabled') : t('dashboard.readingGuideDisabled'));
+  };
+
+  const handleLogout = () => {
+    console.log('🚪 Logging out user...');
+    
+    // Clear visual profile styles
+    const root = document.documentElement;
+    root.removeAttribute('data-user-profile');
+    root.removeAttribute('data-theme');
+    root.style.removeProperty('--profile-font-size');
+    root.style.removeProperty('--profile-line-height');
+    root.classList.remove('dark', 'high-contrast', 'inverted');
+    
+    // Clear auth state
+    logout();
+    
+    // Show success message
+    toast.success(t('auth.logoutSuccess'));
+    
+    // Navigate to login
+    navigate('/login');
+    
+    console.log('✅ Logout complete');
   };
 
   useEffect(() => {
@@ -228,6 +255,33 @@ export default function Dashboard() {
                 <p>{t('dashboard.readingGuideTooltip')}</p>
               </TooltipContent>
             </Tooltip>
+
+            {/* User Menu with Logout */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2 px-3">
+                  <User className="h-4 w-4" />
+                  <span className="hidden md:inline max-w-[120px] truncate">
+                    {visualProfile?.userName || currentUser?.name || t('navigation.user')}
+                  </span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-background border">
+                <DropdownMenuItem onClick={() => navigate('/settings')} className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  {t('navigation.settings')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
+                >
+                  <LogOut className="h-4 w-4" />
+                  {t('common.logout')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
