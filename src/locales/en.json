@@ -21,7 +21,7 @@
     "email": "Email",
     "phone": "Phone",
     "emailPlaceholder": "you@email.com",
-    "phonePlaceholder": "+1 555 000 0000",
+    "phonePlaceholder": "555 123 4567",
     "sendCode": "Send Verification Code",
     "newUserNote": "New user? Your profile will be created automatically on first login.",
     "verificationTitle": "Verification Code Sent",
@@ -37,7 +37,16 @@
     "invalidEmail": "Please enter a valid email address",
     "invalidPhone": "Please enter a valid phone number",
     "loginSuccess": "Login successful!",
-    "logoutSuccess": "You have been logged out"
+    "logoutSuccess": "You have been logged out",
+    "phoneTooShort": "Phone number is too short (min {{min}} digits)",
+    "phoneTooLong": "Phone number is too long (max {{max}} digits)"
+  },
+  "login": {
+    "countryCode": "Country code",
+    "phoneNumber": "Phone number",
+    "selectCountry": "Select your country",
+    "searchCountry": "Search country...",
+    "noCountriesFound": "No countries found"
   },
   "onboarding": {
     "title": "Configure Your Visual Profile",

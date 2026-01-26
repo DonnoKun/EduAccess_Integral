@@ -21,6 +21,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useStore } from '@/store/useStore';
 import LanguageSelector from '@/components/LanguageSelector';
+import CountryCodeSelector from '@/components/CountryCodeSelector';
+import { getCountryByCode, validatePhoneNumber, getFullPhoneNumber } from '@/data/countries';
 
 type AuthMethod = 'email' | 'phone';
 type Step = 'identifier' | 'otp';
@@ -35,6 +37,8 @@ export default function Login() {
   const [step, setStep] = useState<Step>('identifier');
   const [authMethod, setAuthMethod] = useState<AuthMethod>('email');
   const [identifier, setIdentifier] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [countryCode, setCountryCode] = useState('MX');
   const [otpValue, setOtpValue] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
 
@@ -76,22 +80,48 @@ export default function Login() {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return emailRegex.test(identifier);
     } else {
-      // Basic phone validation
-      const phoneRegex = /^[+]?[\d\s-]{8,}$/;
-      return phoneRegex.test(identifier);
+      return validatePhoneNumber(countryCode, phoneNumber);
     }
+  };
+
+  const getPhoneValidationError = (): string | null => {
+    const country = getCountryByCode(countryCode);
+    if (!country) return null;
+    
+    const cleanNumber = phoneNumber.replace(/[\s\-\(\)]/g, '');
+    
+    if (cleanNumber.length < country.minLength) {
+      return t('auth.phoneTooShort', { min: country.minLength });
+    }
+    if (cleanNumber.length > country.maxLength) {
+      return t('auth.phoneTooLong', { max: country.maxLength });
+    }
+    return null;
+  };
+
+  // Get the full identifier (email or full phone with country code)
+  const getFullIdentifier = (): string => {
+    if (authMethod === 'email') {
+      return identifier;
+    }
+    return getFullPhoneNumber(countryCode, phoneNumber);
   };
 
   const handleSendOTP = async () => {
     if (!validateIdentifier()) {
+      const errorMessage = authMethod === 'email' 
+        ? t('auth.invalidEmail')
+        : getPhoneValidationError() || t('auth.invalidPhone');
+      
       toast({
         variant: 'destructive',
-        description: t(authMethod === 'email' ? 'auth.invalidEmail' : 'auth.invalidPhone'),
+        description: errorMessage,
       });
       return;
     }
 
-    const success = await sendOTP(identifier, authMethod);
+    const fullIdentifier = getFullIdentifier();
+    const success = await sendOTP(fullIdentifier, authMethod);
     if (success) {
       setStep('otp');
       setResendTimer(30);
@@ -126,7 +156,8 @@ export default function Login() {
   const handleResendOTP = async () => {
     if (resendTimer > 0) return;
     
-    const success = await sendOTP(identifier, authMethod);
+    const fullIdentifier = getFullIdentifier();
+    const success = await sendOTP(fullIdentifier, authMethod);
     if (success) {
       setResendTimer(30);
       setOtpValue('');
@@ -201,23 +232,47 @@ export default function Login() {
 
                   {/* Input */}
                   <div className="space-y-2">
-                    <Label htmlFor="identifier">{t(`auth.${authMethod}`)}</Label>
-                    <Input
-                      ref={firstInputRef}
-                      id="identifier"
-                      type={authMethod === 'email' ? 'email' : 'tel'}
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      placeholder={t(`auth.${authMethod}Placeholder`)}
-                      className="text-lg h-12"
-                      onKeyDown={(e) => e.key === 'Enter' && handleSendOTP()}
-                    />
+                    <Label htmlFor="identifier">
+                      {authMethod === 'email' ? t('auth.email') : t('login.phoneNumber')}
+                    </Label>
+                    
+                    {authMethod === 'email' ? (
+                      <Input
+                        ref={firstInputRef}
+                        id="identifier"
+                        type="email"
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value)}
+                        placeholder={t('auth.emailPlaceholder')}
+                        className="text-lg h-12"
+                        onKeyDown={(e) => e.key === 'Enter' && handleSendOTP()}
+                      />
+                    ) : (
+                      <div className="flex gap-2">
+                        <CountryCodeSelector
+                          value={countryCode}
+                          onChange={setCountryCode}
+                          compact
+                        />
+                        <Input
+                          ref={firstInputRef}
+                          id="phone-number"
+                          type="tel"
+                          value={phoneNumber}
+                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          placeholder={getCountryByCode(countryCode)?.placeholder || t('auth.phonePlaceholder')}
+                          className="text-lg h-12 flex-1"
+                          onKeyDown={(e) => e.key === 'Enter' && handleSendOTP()}
+                          aria-label={t('login.phoneNumber')}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Submit Button */}
                   <Button
                     onClick={handleSendOTP}
-                    disabled={isLoading || !identifier}
+                    disabled={isLoading || (authMethod === 'email' ? !identifier : !phoneNumber)}
                     className="w-full h-12 text-lg"
                   >
                     {isLoading ? (
@@ -247,7 +302,7 @@ export default function Login() {
                   <div className="text-center">
                     <h1 className="text-2xl font-bold mb-2">{t('auth.verificationTitle')}</h1>
                     <p className="text-muted-foreground">{t('auth.verificationSubtitle')}</p>
-                    <p className="font-medium text-primary mt-1">{identifier}</p>
+                    <p className="font-medium text-primary mt-1">{getFullIdentifier()}</p>
                   </div>
 
                   {/* OTP Input */}
