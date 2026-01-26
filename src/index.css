@@ -2,95 +2,255 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* 
+ * EduAccess Design System
+ * Doctoral Thesis Implementation - Accessible Educational Content Ecosystem
+ * WCAG 2.1 AA Compliant with 4 Theme Modes
+ */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* ===== LIGHT THEME (Default) ===== */
+    --background: 0 0% 98%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 158 64% 52%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 217 91% 60%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Semantic Colors */
+    --success: 158 64% 52%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Glassmorphism */
+    --glass-bg: 0 0% 100% / 0.7;
+    --glass-border: 0 0% 100% / 0.3;
+    --glass-blur: 16px;
+    --glass-shadow: 0 8px 32px hsl(220 14% 10% / 0.08);
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* Adaptive Typography (base values - modified by profile) */
+    --profile-font-size: 16px;
+    --profile-line-height: 1.5;
+    --content-max-width: 70ch;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    /* Spacing Scale (8px base) */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-12: 3rem;
+    --space-16: 4rem;
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    /* Animation */
+    --animation-duration: 300ms;
+    --animation-timing: cubic-bezier(0.4, 0, 0.2, 1);
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
+    /* Sidebar */
+    --sidebar-background: 220 14% 96%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 92%;
+    --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 217 91% 60%;
   }
 
+  /* ===== DARK THEME ===== */
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 222 47% 6%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 222 47% 9%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 222 47% 9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 213 94% 68%;
+    --primary-foreground: 222 47% 6%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 161 78% 58%;
+    --accent-foreground: 222 47% 6%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 213 94% 68%;
+
+    /* Semantic Colors */
+    --success: 161 78% 58%;
+    --success-foreground: 222 47% 6%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    --info: 213 94% 68%;
+    --info-foreground: 222 47% 6%;
+
+    /* Glassmorphism */
+    --glass-bg: 222 47% 9% / 0.8;
+    --glass-border: 0 0% 100% / 0.1;
+    --glass-blur: 20px;
+    --glass-shadow: 0 8px 32px hsl(0 0% 0% / 0.3);
+
+    /* Sidebar */
+    --sidebar-background: 222 47% 8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 213 94% 68%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 217 33% 14%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 213 94% 68%;
+  }
+
+  /* ===== HIGH CONTRAST THEME ===== */
+  .high-contrast {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 60 100% 50%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 180 100% 50%;
+    --secondary-foreground: 0 0% 0%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 85%;
+
+    --accent: 120 100% 50%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 100%;
+    --input: 0 0% 20%;
+    --ring: 60 100% 50%;
+
+    /* Semantic Colors */
+    --success: 120 100% 50%;
+    --success-foreground: 0 0% 0%;
+    --warning: 45 100% 50%;
+    --warning-foreground: 0 0% 0%;
+    --info: 180 100% 50%;
+    --info-foreground: 0 0% 0%;
+
+    /* Glassmorphism disabled for high contrast */
+    --glass-bg: 0 0% 0%;
+    --glass-border: 0 0% 100%;
+    --glass-blur: 0px;
+    --glass-shadow: none;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 60 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 100%;
+    --sidebar-ring: 60 100% 50%;
+
+    /* Force high contrast styles */
+    --animation-duration: 0ms;
+  }
+
+  /* ===== INVERTED THEME (For Photophobia) ===== */
+  .inverted {
+    --background: 60 56% 91%;
+    --foreground: 240 100% 25%;
+
+    --card: 60 33% 94%;
+    --card-foreground: 240 100% 25%;
+
+    --popover: 60 33% 94%;
+    --popover-foreground: 240 100% 25%;
+
+    --primary: 0 100% 27%;
+    --primary-foreground: 60 56% 91%;
+
+    --secondary: 180 25% 25%;
+    --secondary-foreground: 60 56% 91%;
+
+    --muted: 60 20% 85%;
+    --muted-foreground: 180 25% 25%;
+
+    --accent: 120 100% 20%;
+    --accent-foreground: 60 56% 91%;
+
+    --destructive: 0 100% 35%;
+    --destructive-foreground: 60 56% 91%;
+
+    --border: 0 0% 43%;
+    --input: 60 20% 85%;
+    --ring: 0 100% 27%;
+
+    /* Semantic Colors */
+    --success: 120 100% 20%;
+    --success-foreground: 60 56% 91%;
+    --warning: 45 100% 35%;
+    --warning-foreground: 0 0% 0%;
+    --info: 240 100% 35%;
+    --info-foreground: 60 56% 91%;
+
+    /* Glassmorphism */
+    --glass-bg: 60 33% 94% / 0.85;
+    --glass-border: 0 0% 43% / 0.5;
+    --glass-blur: 12px;
+    --glass-shadow: 0 4px 16px hsl(240 100% 25% / 0.1);
+
+    /* Sidebar */
+    --sidebar-background: 60 33% 94%;
+    --sidebar-foreground: 240 100% 25%;
+    --sidebar-primary: 0 100% 27%;
+    --sidebar-primary-foreground: 60 56% 91%;
+    --sidebar-accent: 60 20% 85%;
+    --sidebar-accent-foreground: 240 100% 25%;
+    --sidebar-border: 0 0% 43%;
+    --sidebar-ring: 0 100% 27%;
   }
 }
 
@@ -99,7 +259,163 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-size: var(--profile-font-size);
+    line-height: var(--profile-line-height);
+    transition: background-color var(--animation-duration) var(--animation-timing),
+                color var(--animation-duration) var(--animation-timing);
+  }
+
+  /* Respect reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Focus visible for accessibility */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Skip link for keyboard navigation */
+  .skip-link {
+    @apply absolute -translate-y-full bg-primary text-primary-foreground px-4 py-2 z-50;
+    transition: transform var(--animation-duration) var(--animation-timing);
+  }
+
+  .skip-link:focus {
+    @apply translate-y-0;
+  }
+}
+
+@layer components {
+  /* Glassmorphism Card */
+  .glass-card {
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid hsl(var(--glass-border));
+    box-shadow: var(--glass-shadow);
+  }
+
+  /* Adaptive content container */
+  .content-adaptive {
+    font-size: var(--profile-font-size);
+    line-height: var(--profile-line-height);
+    max-width: var(--content-max-width);
+    margin: 0 auto;
+    letter-spacing: 0.02em;
+  }
+
+  /* Focus mode */
+  .focus-mode p:not(.focused) {
+    opacity: 0.3;
+    transition: opacity var(--animation-duration) var(--animation-timing);
+  }
+
+  .focus-mode p.focused {
+    opacity: 1;
+  }
+
+  /* Reading ruler */
+  .reading-ruler {
+    @apply fixed left-0 right-0 h-1 bg-primary/30 pointer-events-none z-40;
+    transition: top 50ms linear;
+  }
+
+  /* Skeleton loading animation */
+  .skeleton {
+    @apply bg-muted animate-pulse rounded;
+  }
+
+  /* Badge variants for accessibility status */
+  .badge-accessible {
+    @apply bg-success/20 text-success border border-success/30;
+  }
+
+  .badge-needs-remediation {
+    @apply bg-destructive/20 text-destructive border border-destructive/30;
+  }
+
+  .badge-partial {
+    @apply bg-warning/20 text-warning border border-warning/30;
+  }
+
+  /* Touch-friendly targets */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Progress bar gradient animation */
+  @keyframes progress-gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .progress-animated {
+    background: linear-gradient(90deg, 
+      hsl(var(--primary)), 
+      hsl(var(--accent)), 
+      hsl(var(--primary))
+    );
+    background-size: 200% 100%;
+    animation: progress-gradient 2s ease infinite;
+  }
+}
+
+@layer utilities {
+  /* Animation utilities */
+  .animate-in {
+    animation: animate-in var(--animation-duration) var(--animation-timing);
+  }
+
+  @keyframes animate-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scale-in var(--animation-duration) var(--animation-timing);
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+  }
+
+  /* Icon spin for loading */
+  .icon-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 }
