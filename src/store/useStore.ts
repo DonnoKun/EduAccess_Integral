@@ -259,6 +259,9 @@ export const useStore = create<GlobalState>()(
         const root = document.documentElement;
         
         if (profile) {
+          // Add data attribute to enable high-specificity CSS styles
+          root.setAttribute('data-user-profile', 'active');
+          
           // Apply font size and line height from preferences
           root.style.setProperty('--profile-font-size', `${profile.preferences.fontSize}px`);
           root.style.setProperty('--profile-line-height', String(profile.preferences.lineSpacing));
@@ -282,10 +285,15 @@ export const useStore = create<GlobalState>()(
             theme: profileTheme,
             animations: profile.preferences.enableAnimations
           });
-        } else if (theme !== 'light') {
-          // Apply theme even without profile
-          root.classList.remove('light', 'dark', 'high-contrast', 'inverted');
-          root.classList.add(theme);
+        } else {
+          // Remove data attribute when no profile
+          root.removeAttribute('data-user-profile');
+          
+          if (theme !== 'light') {
+            // Apply theme even without profile
+            root.classList.remove('light', 'dark', 'high-contrast', 'inverted');
+            root.classList.add(theme);
+          }
         }
       },
     }),
