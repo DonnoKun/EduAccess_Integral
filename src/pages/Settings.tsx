@@ -1,9 +1,9 @@
 /**
  * EduAccess - Settings Page
- * Full profile customization and preferences
+ * Full profile customization and preferences with sidebar navigation
  */
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
@@ -33,6 +32,14 @@ import { useStore } from '@/store/useStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import LanguageSelector from '@/components/LanguageSelector';
 import type { ThemeMode, ContrastMode } from '@/types';
+
+type SettingsTab = 'profile' | 'appearance' | 'accessibility' | 'data' | 'about';
+
+interface TabConfig {
+  id: SettingsTab;
+  label: string;
+  icon: React.ReactNode;
+}
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -48,6 +55,8 @@ export default function Settings() {
     sessionMetrics,
   } = useStore();
   const { isAuthenticated, logout } = useAuthStore();
+  
+  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -60,6 +69,14 @@ export default function Settings() {
   }, [isAuthenticated, hasCompletedOnboarding, navigate]);
 
   if (!visualProfile) return null;
+
+  const tabs: TabConfig[] = [
+    { id: 'profile', label: t('settings.tabs.profile'), icon: <User className="h-5 w-5" /> },
+    { id: 'appearance', label: t('settings.tabs.appearance'), icon: <Palette className="h-5 w-5" /> },
+    { id: 'accessibility', label: t('settings.tabs.accessibility'), icon: <Accessibility className="h-5 w-5" /> },
+    { id: 'data', label: t('settings.tabs.data'), icon: <Database className="h-5 w-5" /> },
+    { id: 'about', label: t('settings.tabs.about'), icon: <Info className="h-5 w-5" /> },
+  ];
 
   const handleFontSizeChange = (value: number[]) => {
     updateVisualProfile({
@@ -95,7 +112,6 @@ export default function Settings() {
       },
     });
     
-    // Update theme to match contrast
     if (value === 'high') {
       setTheme('high-contrast');
     } else if (value === 'inverted') {
@@ -171,88 +187,94 @@ export default function Settings() {
         </div>
       </header>
 
-      <main id="main-content" className="container mx-auto px-4 py-8 max-w-4xl">
+      <main id="main-content" className="container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          className="settings-layout"
         >
-          <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid grid-cols-5 w-full">
-              <TabsTrigger value="profile" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span className="hidden md:inline">{t('settings.tabs.profile')}</span>
-              </TabsTrigger>
-              <TabsTrigger value="appearance" className="flex items-center gap-2">
-                <Palette className="h-4 w-4" />
-                <span className="hidden md:inline">{t('settings.tabs.appearance')}</span>
-              </TabsTrigger>
-              <TabsTrigger value="accessibility" className="flex items-center gap-2">
-                <Accessibility className="h-4 w-4" />
-                <span className="hidden md:inline">{t('settings.tabs.accessibility')}</span>
-              </TabsTrigger>
-              <TabsTrigger value="data" className="flex items-center gap-2">
-                <Database className="h-4 w-4" />
-                <span className="hidden md:inline">{t('settings.tabs.data')}</span>
-              </TabsTrigger>
-              <TabsTrigger value="about" className="flex items-center gap-2">
-                <Info className="h-4 w-4" />
-                <span className="hidden md:inline">{t('settings.tabs.about')}</span>
-              </TabsTrigger>
-            </TabsList>
+          {/* Sidebar with tabs */}
+          <aside className="settings-sidebar">
+            <nav className="settings-nav" aria-label={t('settings.title')}>
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`settings-nav-item ${activeTab === tab.id ? 'active' : ''}`}
+                  aria-current={activeTab === tab.id ? 'page' : undefined}
+                >
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </nav>
+          </aside>
 
+          {/* Main content area */}
+          <div className="settings-content">
             {/* Profile Tab */}
-            <TabsContent value="profile">
-              <Card>
+            {activeTab === 'profile' && (
+              <Card className="settings-card">
                 <CardHeader>
-                  <CardTitle>{t('settings.profile.title')}</CardTitle>
+                  <CardTitle className="settings-title">{t('settings.profile.title')}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">{t('settings.profile.name')}</Label>
+                <CardContent className="settings-card-content">
+                  <div className="settings-field">
+                    <Label htmlFor="name" className="settings-label">{t('settings.profile.name')}</Label>
                     <Input
                       id="name"
                       value={visualProfile.userName}
                       onChange={(e) => updateVisualProfile({ userName: e.target.value })}
+                      className="settings-input"
                     />
                   </div>
 
-                  <div className="p-4 rounded-lg bg-secondary/50">
-                    <h3 className="font-semibold mb-2">{t('settings.profile.visualAcuity')}</h3>
-                    <p className="text-muted-foreground">
-                      Snellen: {visualProfile.visualAcuity.snellen} · 
-                      logMAR: {visualProfile.visualAcuity.logMAR.toFixed(2)} · 
-                      {t('onboarding.step1.severity')}: {visualProfile.visualAcuity.severity}
-                    </p>
-                    <Button variant="link" className="p-0 mt-2" onClick={() => navigate('/onboarding')}>
+                  <div className="settings-info-box">
+                    <h3 className="settings-info-title">{t('settings.profile.visualAcuity')}</h3>
+                    <div className="settings-info-grid">
+                      <div className="settings-info-item">
+                        <span className="settings-info-label">Snellen</span>
+                        <span className="settings-info-value">{visualProfile.visualAcuity.snellen}</span>
+                      </div>
+                      <div className="settings-info-item">
+                        <span className="settings-info-label">logMAR</span>
+                        <span className="settings-info-value">{visualProfile.visualAcuity.logMAR.toFixed(2)}</span>
+                      </div>
+                      <div className="settings-info-item">
+                        <span className="settings-info-label">{t('onboarding.step1.severity')}</span>
+                        <span className="settings-info-value">{visualProfile.visualAcuity.severity}</span>
+                      </div>
+                    </div>
+                    <Button variant="link" className="settings-reconfigure-link" onClick={() => navigate('/onboarding')}>
                       {t('settings.profile.reconfigure')}
                     </Button>
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
+            )}
 
             {/* Appearance Tab */}
-            <TabsContent value="appearance">
-              <Card>
+            {activeTab === 'appearance' && (
+              <Card className="settings-card">
                 <CardHeader>
-                  <CardTitle>{t('settings.appearance.title')}</CardTitle>
+                  <CardTitle className="settings-title">{t('settings.appearance.title')}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="settings-card-content">
                   {/* Theme Selection */}
-                  <div className="space-y-4">
-                    <Label>{t('settings.appearance.theme')}</Label>
-                    <div className="grid grid-cols-3 gap-4">
+                  <div className="settings-field">
+                    <Label className="settings-label">{t('settings.appearance.theme')}</Label>
+                    <div className="settings-theme-grid">
                       {(['light', 'dark', 'high-contrast'] as ThemeMode[]).map((theme) => (
                         <Button
                           key={theme}
                           variant={currentTheme === theme ? 'default' : 'outline'}
-                          className="h-20 flex-col gap-2"
+                          className="settings-theme-button"
                           onClick={() => setTheme(theme)}
                         >
                           {theme === 'light' && <Sun className="h-6 w-6" />}
                           {theme === 'dark' && <Moon className="h-6 w-6" />}
                           {theme === 'high-contrast' && <Contrast className="h-6 w-6" />}
-                          <span className="capitalize">
+                          <span>
                             {theme === 'light' && t('settings.appearance.light')}
                             {theme === 'dark' && t('settings.appearance.dark')}
                             {theme === 'high-contrast' && t('settings.appearance.highContrast')}
@@ -263,9 +285,10 @@ export default function Settings() {
                   </div>
 
                   {/* Font Size */}
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <Label>{t('settings.appearance.fontSize')}: {visualProfile.preferences.fontSize}px</Label>
+                  <div className="settings-field">
+                    <div className="settings-field-header">
+                      <Label className="settings-label">{t('settings.appearance.fontSize')}</Label>
+                      <span className="settings-field-value">{visualProfile.preferences.fontSize}px</span>
                     </div>
                     <Slider
                       value={[visualProfile.preferences.fontSize]}
@@ -273,19 +296,24 @@ export default function Settings() {
                       min={16}
                       max={48}
                       step={2}
+                      className="settings-slider"
                     />
                     <p 
-                      className="p-4 border rounded-lg"
-                      style={{ fontSize: `${visualProfile.preferences.fontSize}px` }}
+                      className="settings-preview-text"
+                      style={{ 
+                        fontSize: `${visualProfile.preferences.fontSize}px`,
+                        lineHeight: visualProfile.preferences.lineSpacing
+                      }}
                     >
                       {t('settings.appearance.previewText', { size: visualProfile.preferences.fontSize })}
                     </p>
                   </div>
 
                   {/* Line Spacing */}
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <Label>{t('settings.appearance.lineSpacing')}: {visualProfile.preferences.lineSpacing.toFixed(2)}</Label>
+                  <div className="settings-field">
+                    <div className="settings-field-header">
+                      <Label className="settings-label">{t('settings.appearance.lineSpacing')}</Label>
+                      <span className="settings-field-value">{visualProfile.preferences.lineSpacing.toFixed(2)}</span>
                     </div>
                     <Slider
                       value={[visualProfile.preferences.lineSpacing]}
@@ -293,47 +321,56 @@ export default function Settings() {
                       min={1.5}
                       max={3}
                       step={0.25}
+                      className="settings-slider"
                     />
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
+            )}
 
             {/* Accessibility Tab */}
-            <TabsContent value="accessibility">
-              <Card>
+            {activeTab === 'accessibility' && (
+              <Card className="settings-card">
                 <CardHeader>
-                  <CardTitle>{t('settings.accessibility.title')}</CardTitle>
+                  <CardTitle className="settings-title">{t('settings.accessibility.title')}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="settings-card-content">
                   {/* Contrast Mode */}
-                  <div className="space-y-4">
-                    <Label>{t('settings.accessibility.contrastMode')}</Label>
+                  <div className="settings-field">
+                    <Label className="settings-label">{t('settings.accessibility.contrastMode')}</Label>
                     <RadioGroup
                       value={visualProfile.preferences.contrast}
                       onValueChange={(v) => handleContrastChange(v as ContrastMode)}
-                      className="space-y-2"
+                      className="settings-radio-group"
                     >
-                      <div className="flex items-center space-x-2 p-3 rounded-lg border">
+                      <div className="settings-radio-item">
                         <RadioGroupItem value="normal" id="contrast-normal" />
-                        <Label htmlFor="contrast-normal">{t('settings.accessibility.normal')}</Label>
+                        <Label htmlFor="contrast-normal" className="settings-radio-label">
+                          {t('settings.accessibility.normal')}
+                        </Label>
                       </div>
-                      <div className="flex items-center space-x-2 p-3 rounded-lg border">
+                      <div className="settings-radio-item">
                         <RadioGroupItem value="high" id="contrast-high" />
-                        <Label htmlFor="contrast-high">{t('settings.accessibility.high')}</Label>
+                        <Label htmlFor="contrast-high" className="settings-radio-label">
+                          {t('settings.accessibility.high')}
+                        </Label>
                       </div>
-                      <div className="flex items-center space-x-2 p-3 rounded-lg border">
+                      <div className="settings-radio-item">
                         <RadioGroupItem value="inverted" id="contrast-inverted" />
-                        <Label htmlFor="contrast-inverted">{t('settings.accessibility.inverted')}</Label>
+                        <Label htmlFor="contrast-inverted" className="settings-radio-label">
+                          {t('settings.accessibility.inverted')}
+                        </Label>
                       </div>
                     </RadioGroup>
                   </div>
 
                   {/* Animations */}
-                  <div className="flex items-center justify-between p-4 rounded-lg border">
-                    <div>
-                      <Label htmlFor="animations">{t('settings.accessibility.animations')}</Label>
-                      <p className="text-sm text-muted-foreground">
+                  <div className="settings-toggle-item">
+                    <div className="settings-toggle-content">
+                      <Label htmlFor="animations" className="settings-toggle-label">
+                        {t('settings.accessibility.animations')}
+                      </Label>
+                      <p className="settings-toggle-description">
                         {t('settings.accessibility.animationsDesc')}
                       </p>
                     </div>
@@ -345,10 +382,12 @@ export default function Settings() {
                   </div>
 
                   {/* TTS Preference */}
-                  <div className="flex items-center justify-between p-4 rounded-lg border">
-                    <div>
-                      <Label htmlFor="tts">{t('settings.accessibility.tts')}</Label>
-                      <p className="text-sm text-muted-foreground">
+                  <div className="settings-toggle-item">
+                    <div className="settings-toggle-content">
+                      <Label htmlFor="tts" className="settings-toggle-label">
+                        {t('settings.accessibility.tts')}
+                      </Label>
+                      <p className="settings-toggle-description">
                         {t('settings.accessibility.ttsDesc')}
                       </p>
                     </div>
@@ -367,76 +406,85 @@ export default function Settings() {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
+            )}
 
             {/* Data Tab */}
-            <TabsContent value="data">
-              <Card>
+            {activeTab === 'data' && (
+              <Card className="settings-card">
                 <CardHeader>
-                  <CardTitle>{t('settings.data.title')}</CardTitle>
+                  <CardTitle className="settings-title">{t('settings.data.title')}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="p-4 rounded-lg bg-secondary/50">
-                    <h3 className="font-semibold mb-2">{t('settings.data.sessionStats')}</h3>
-                    <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>{t('settings.data.contentViewed')}: {sessionMetrics.contentViewed}</li>
-                      <li>{t('settings.data.tasksCompleted')}: {sessionMetrics.tasksCompleted}</li>
-                      <li>{t('settings.data.eventsTracked')}: {events.length}</li>
+                <CardContent className="settings-card-content">
+                  <div className="settings-info-box">
+                    <h3 className="settings-info-title">{t('settings.data.sessionStats')}</h3>
+                    <ul className="settings-stats-list">
+                      <li>
+                        <span>{t('settings.data.contentViewed')}:</span>
+                        <strong>{sessionMetrics.contentViewed}</strong>
+                      </li>
+                      <li>
+                        <span>{t('settings.data.tasksCompleted')}:</span>
+                        <strong>{sessionMetrics.tasksCompleted}</strong>
+                      </li>
+                      <li>
+                        <span>{t('settings.data.eventsTracked')}:</span>
+                        <strong>{events.length}</strong>
+                      </li>
                     </ul>
                   </div>
 
-                  <Button onClick={exportData} className="w-full">
+                  <Button onClick={exportData} className="settings-action-button">
                     <Database className="h-4 w-4 mr-2" />
                     {t('settings.data.exportData')}
                   </Button>
 
-                  <p className="text-sm text-muted-foreground">
+                  <p className="settings-privacy-note">
                     {t('settings.data.privacyNote')}
                   </p>
 
-                  <div className="pt-4 border-t">
-                    <Button 
-                      variant="destructive" 
-                      onClick={handleLogout}
-                      className="w-full"
-                    >
-                      <LogOut className="h-4 w-4 mr-2" />
-                      {t('settings.data.logout')}
-                    </Button>
-                  </div>
+                  <div className="settings-divider" />
+
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleLogout}
+                    className="settings-action-button"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    {t('settings.data.logout')}
+                  </Button>
                 </CardContent>
               </Card>
-            </TabsContent>
+            )}
 
             {/* About Tab */}
-            <TabsContent value="about">
-              <Card>
+            {activeTab === 'about' && (
+              <Card className="settings-card">
                 <CardHeader>
-                  <CardTitle>{t('settings.about.title')}</CardTitle>
+                  <CardTitle className="settings-title">{t('settings.about.title')}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3 mb-6">
+                <CardContent className="settings-card-content">
+                  <div className="settings-about-header">
                     <Sparkles className="h-12 w-12 text-primary" />
                     <div>
-                      <h2 className="text-2xl font-bold">{t('common.appName')}</h2>
-                      <p className="text-muted-foreground">{t('settings.about.version')}</p>
+                      <h2 className="settings-about-name">{t('common.appName')}</h2>
+                      <p className="settings-about-version">{t('settings.about.version')}</p>
                     </div>
                   </div>
 
-                  <p className="text-muted-foreground">
+                  <p className="settings-about-description">
                     {t('settings.about.description')}
                   </p>
 
-                  <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
-                    <h3 className="font-semibold mb-2">{t('settings.about.research')}</h3>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="settings-research-box">
+                    <h3 className="settings-research-title">{t('settings.about.research')}</h3>
+                    <p className="settings-research-description">
                       {t('settings.about.researchDesc')}
                     </p>
                   </div>
 
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <p><strong>{t('settings.about.techStack')}:</strong></p>
-                    <ul className="list-disc list-inside ml-4">
+                  <div className="settings-tech-stack">
+                    <p className="settings-tech-title">{t('settings.about.techStack')}:</p>
+                    <ul className="settings-tech-list">
                       <li>React 18 with TypeScript</li>
                       <li>Tailwind CSS + shadcn/ui</li>
                       <li>Zustand for state management</li>
@@ -446,8 +494,8 @@ export default function Settings() {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
-          </Tabs>
+            )}
+          </div>
         </motion.div>
       </main>
     </div>
