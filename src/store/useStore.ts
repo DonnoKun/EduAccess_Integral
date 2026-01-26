@@ -255,14 +255,37 @@ export const useStore = create<GlobalState>()(
 
       applyProfileStyles: () => {
         const profile = get().visualProfile;
+        const theme = get().currentTheme;
+        const root = document.documentElement;
+        
         if (profile) {
-          const root = document.documentElement;
-          root.style.setProperty('--profile-font-size', profile.technicalParameters.fontSizeCSS);
-          root.style.setProperty('--profile-line-height', profile.technicalParameters.lineHeightCSS);
+          // Apply font size and line height from preferences
+          root.style.setProperty('--profile-font-size', `${profile.preferences.fontSize}px`);
+          root.style.setProperty('--profile-line-height', String(profile.preferences.lineSpacing));
           root.style.setProperty(
             '--animation-duration',
-            `${profile.technicalParameters.animationDuration}ms`
+            profile.preferences.enableAnimations ? '300ms' : '0ms'
           );
+          
+          // Apply theme from profile contrast setting
+          const profileTheme = profile.preferences.contrast === 'high' ? 'high-contrast' 
+            : profile.preferences.contrast === 'inverted' ? 'inverted' 
+            : 'light';
+          root.classList.remove('light', 'dark', 'high-contrast', 'inverted');
+          if (profileTheme !== 'light') {
+            root.classList.add(profileTheme);
+          }
+          
+          console.log('✅ Visual profile applied:', {
+            fontSize: `${profile.preferences.fontSize}px`,
+            lineHeight: profile.preferences.lineSpacing,
+            theme: profileTheme,
+            animations: profile.preferences.enableAnimations
+          });
+        } else if (theme !== 'light') {
+          // Apply theme even without profile
+          root.classList.remove('light', 'dark', 'high-contrast', 'inverted');
+          root.classList.add(theme);
         }
       },
     }),
