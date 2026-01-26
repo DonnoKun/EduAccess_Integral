@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useStore } from "@/store/useStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import SearchPage from "./pages/Search";
@@ -15,8 +17,37 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Protected Route wrapper
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuthStore();
+  const { hasCompletedOnboarding } = useStore();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!hasCompletedOnboarding) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// Auth Route wrapper (for onboarding - requires auth but not profile)
+function AuthRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuthStore();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 function AppContent() {
-  const { hasCompletedOnboarding, applyProfileStyles, currentTheme } = useStore();
+  const { applyProfileStyles, currentTheme } = useStore();
+  const { isAuthenticated } = useAuthStore();
+  const { hasCompletedOnboarding } = useStore();
 
   useEffect(() => {
     applyProfileStyles();
@@ -31,14 +62,45 @@ function AppContent() {
   return (
     <Routes>
       <Route path="/" element={
-        hasCompletedOnboarding ? <Navigate to="/dashboard" replace /> : <Navigate to="/onboarding" replace />
+        isAuthenticated 
+          ? (hasCompletedOnboarding ? <Navigate to="/dashboard" replace /> : <Navigate to="/onboarding" replace />)
+          : <Navigate to="/login" replace />
       } />
-      <Route path="/onboarding" element={<Onboarding />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/search" element={<SearchPage />} />
-      <Route path="/remediate/:contentId" element={<RemediatePage />} />
-      <Route path="/content/:contentId" element={<ContentViewer />} />
-      <Route path="/settings" element={<Settings />} />
+      <Route path="/login" element={
+        isAuthenticated 
+          ? (hasCompletedOnboarding ? <Navigate to="/dashboard" replace /> : <Navigate to="/onboarding" replace />)
+          : <Login />
+      } />
+      <Route path="/onboarding" element={
+        <AuthRoute>
+          <Onboarding />
+        </AuthRoute>
+      } />
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/search" element={
+        <ProtectedRoute>
+          <SearchPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/remediate/:contentId" element={
+        <ProtectedRoute>
+          <RemediatePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/content/:contentId" element={
+        <ProtectedRoute>
+          <ContentViewer />
+        </ProtectedRoute>
+      } />
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <Settings />
+        </ProtectedRoute>
+      } />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
