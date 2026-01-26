@@ -21,6 +21,10 @@ import {
   Sun,
   Moon,
   Contrast,
+  User,
+  ChevronDown,
+  LogOut,
+  Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,10 +34,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useStore } from '@/store/useStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -57,7 +63,8 @@ export default function SearchPage() {
     currentTheme,
     setTheme,
   } = useStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, logout, currentUser } = useAuthStore();
+  const { visualProfile } = useStore();
 
   const [localQuery, setLocalQuery] = useState(searchParams.get('q') || '');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -100,6 +107,20 @@ export default function SearchPage() {
     e.preventDefault();
     setSearchParams(localQuery ? { q: localQuery } : {});
     performSearch(localQuery);
+  };
+
+  const handleLogout = () => {
+    console.log('🚪 Logging out user...');
+    const root = document.documentElement;
+    root.removeAttribute('data-user-profile');
+    root.removeAttribute('data-theme');
+    root.style.removeProperty('--profile-font-size');
+    root.style.removeProperty('--profile-line-height');
+    root.classList.remove('dark', 'high-contrast', 'inverted');
+    logout();
+    toast.success(t('auth.logoutSuccess'));
+    navigate('/login');
+    console.log('✅ Logout complete');
   };
 
   const handleContentClick = (contentId: string) => {
@@ -196,6 +217,37 @@ export default function SearchPage() {
                     {option.label}
                   </DropdownMenuCheckboxItem>
                 ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* User Menu with Logout */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2 px-3">
+                  <User className="h-4 w-4" />
+                  <span className="hidden md:inline max-w-[120px] truncate">
+                    {visualProfile?.userName || currentUser?.name || t('navigation.user')}
+                  </span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-background border">
+                <DropdownMenuItem onClick={() => navigate('/dashboard')} className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  {t('navigation.dashboard')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/settings')} className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  {t('navigation.settings')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
+                >
+                  <LogOut className="h-4 w-4" />
+                  {t('common.logout')}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

@@ -277,7 +277,9 @@
     "settings": "Configuración",
     "menu": "Menú",
     "changeTheme": "Cambiar tema",
-    "viewProfile": "Ver perfil"
+    "viewProfile": "Ver perfil",
+    "user": "Usuario",
+    "userMenu": "Menú de usuario"
   },
   "themes": {
     "light": "Claro",
