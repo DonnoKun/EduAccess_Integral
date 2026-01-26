@@ -3,7 +3,8 @@
  * Main hub with analytics, quick actions, and content recommendations
  */
 
-import { useEffect } from 'react';
+
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
@@ -31,6 +32,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 import { useStore } from '@/store/useStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { recentSearches, recommendedContent } from '@/data/mockData';
@@ -61,6 +68,26 @@ export default function Dashboard() {
     setTheme,
   } = useStore();
   const { isAuthenticated } = useAuthStore();
+  const [readingGuideEnabled, setReadingGuideEnabled] = useState(false);
+  const [guidePosition, setGuidePosition] = useState(0);
+
+  // Reading guide - follows mouse position
+  useEffect(() => {
+    if (!readingGuideEnabled) return;
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      setGuidePosition(e.clientY);
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [readingGuideEnabled]);
+
+  const toggleReadingGuide = () => {
+    const newState = !readingGuideEnabled;
+    setReadingGuideEnabled(newState);
+    toast.success(newState ? t('dashboard.readingGuideEnabled') : t('dashboard.readingGuideDisabled'));
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -108,6 +135,14 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Reading Guide Line */}
+      {readingGuideEnabled && (
+        <div 
+          className="reading-guide"
+          style={{ top: guidePosition }}
+          aria-hidden="true"
+        />
+      )}
       {/* Skip link */}
       <a href="#main-content" className="skip-link">
         {t('common.skipToMain')}
@@ -177,9 +212,22 @@ export default function Dashboard() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="ghost" size="icon" aria-label={t('navigation.viewProfile')}>
-              <Eye className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant={readingGuideEnabled ? 'default' : 'ghost'} 
+                  size="icon" 
+                  onClick={toggleReadingGuide}
+                  aria-label={t('dashboard.toggleReadingGuide')}
+                  aria-pressed={readingGuideEnabled}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t('dashboard.readingGuideTooltip')}</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </header>
