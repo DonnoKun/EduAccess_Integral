@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search as SearchIcon,
@@ -20,7 +21,6 @@ import {
   Sun,
   Moon,
   Contrast,
-  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,25 +36,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useStore } from '@/store/useStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import LanguageSelector from '@/components/LanguageSelector';
 import type { ContentType, EducationLevel, AccessibilityStatus, ThemeMode } from '@/types';
-
-const contentTypeLabels: Record<ContentType, string> = {
-  video: '📹 Video',
-  article: '📄 Article',
-  textbook: '📚 Textbook',
-  exercise: '✏️ Exercise',
-  diagram: '📊 Diagram',
-};
-
-const educationLevelLabels: Record<EducationLevel, string> = {
-  elementary: 'Elementary',
-  middle: 'Middle School',
-  high: 'High School',
-  college: 'College',
-};
 
 export default function SearchPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { 
     searchQuery,
@@ -69,11 +57,31 @@ export default function SearchPage() {
     currentTheme,
     setTheme,
   } = useStore();
+  const { isAuthenticated } = useAuthStore();
 
   const [localQuery, setLocalQuery] = useState(searchParams.get('q') || '');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+  const contentTypeLabels: Record<ContentType, string> = {
+    video: t('search.contentTypes.video'),
+    article: t('search.contentTypes.article'),
+    textbook: t('search.contentTypes.textbook'),
+    exercise: t('search.contentTypes.exercise'),
+    diagram: t('search.contentTypes.diagram'),
+  };
+
+  const educationLevelLabels: Record<EducationLevel, string> = {
+    elementary: t('search.educationLevels.elementary'),
+    middle: t('search.educationLevels.middle'),
+    high: t('search.educationLevels.high'),
+    college: t('search.educationLevels.college'),
+  };
+
   useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
     if (!hasCompletedOnboarding) {
       navigate('/onboarding');
       return;
@@ -84,10 +92,9 @@ export default function SearchPage() {
       setLocalQuery(queryParam);
       performSearch(queryParam);
     } else {
-      // Load all content initially
       performSearch('');
     }
-  }, [searchParams, hasCompletedOnboarding, navigate, performSearch]);
+  }, [searchParams, isAuthenticated, hasCompletedOnboarding, navigate, performSearch]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,68 +144,54 @@ export default function SearchPage() {
         return (
           <Badge className="badge-accessible">
             <CheckCircle2 className="h-3 w-3 mr-1" aria-hidden="true" />
-            Accessible
+            {t('search.badges.accessible')}
           </Badge>
         );
       case 'needs_remediation':
         return (
           <Badge className="badge-needs-remediation">
             <AlertCircle className="h-3 w-3 mr-1" aria-hidden="true" />
-            Needs Remediation
+            {t('search.badges.needsRemediation')}
           </Badge>
         );
       case 'partially_accessible':
         return (
           <Badge className="badge-partial">
             <AlertTriangle className="h-3 w-3 mr-1" aria-hidden="true" />
-            Partial
+            {t('search.badges.partial')}
           </Badge>
         );
     }
   };
 
   const themeOptions: { value: ThemeMode; label: string; icon: React.ReactNode }[] = [
-    { value: 'light', label: 'Light', icon: <Sun className="h-4 w-4" /> },
-    { value: 'dark', label: 'Dark', icon: <Moon className="h-4 w-4" /> },
-    { value: 'high-contrast', label: 'High Contrast', icon: <Contrast className="h-4 w-4" /> },
+    { value: 'light', label: t('themes.light'), icon: <Sun className="h-4 w-4" /> },
+    { value: 'dark', label: t('themes.dark'), icon: <Moon className="h-4 w-4" /> },
+    { value: 'high-contrast', label: t('themes.highContrast'), icon: <Contrast className="h-4 w-4" /> },
   ];
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Skip link */}
-      <a href="#search-results" className="skip-link">
-        Skip to search results
-      </a>
+      <a href="#search-results" className="skip-link">{t('common.skipToMain')}</a>
 
-      {/* Header */}
       <header className="sticky top-0 z-50 glass-card border-b">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/dashboard" className="flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />
-            <span className="text-xl font-bold hidden md:inline">EduAccess Search</span>
+            <span className="text-xl font-bold hidden md:inline">{t('search.title')}</span>
           </Link>
 
           <div className="flex items-center gap-2">
+            <LanguageSelector />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" aria-label="Change theme">
-                  {currentTheme === 'dark' ? (
-                    <Moon className="h-4 w-4" />
-                  ) : currentTheme === 'high-contrast' ? (
-                    <Contrast className="h-4 w-4" />
-                  ) : (
-                    <Sun className="h-4 w-4" />
-                  )}
+                <Button variant="outline" size="icon" aria-label={t('navigation.changeTheme')}>
+                  {currentTheme === 'dark' ? <Moon className="h-4 w-4" /> : currentTheme === 'high-contrast' ? <Contrast className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="bg-background border">
                 {themeOptions.map((option) => (
-                  <DropdownMenuCheckboxItem
-                    key={option.value}
-                    checked={currentTheme === option.value}
-                    onCheckedChange={() => setTheme(option.value)}
-                    className="flex items-center gap-2"
-                  >
+                  <DropdownMenuCheckboxItem key={option.value} checked={currentTheme === option.value} onCheckedChange={() => setTheme(option.value)} className="flex items-center gap-2">
                     {option.icon}
                     {option.label}
                   </DropdownMenuCheckboxItem>
@@ -210,260 +203,137 @@ export default function SearchPage() {
       </header>
 
       <main className="container mx-auto px-4 py-6">
-        {/* Search Bar */}
         <form onSubmit={handleSearch} className="mb-6">
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <SearchIcon 
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" 
-                aria-hidden="true" 
-              />
-              <Input
-                type="search"
-                placeholder="Search for educational content..."
-                value={localQuery}
-                onChange={(e) => setLocalQuery(e.target.value)}
-                className="pl-10 pr-10 h-12 text-lg"
-                aria-label="Search query"
-              />
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" aria-hidden="true" />
+              <Input type="search" placeholder={t('search.placeholder')} value={localQuery} onChange={(e) => setLocalQuery(e.target.value)} className="pl-10 pr-10 h-12 text-lg" aria-label={t('search.placeholder')} />
               {localQuery && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLocalQuery('');
-                    setSearchParams({});
-                    performSearch('');
-                  }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label="Clear search"
-                >
+                <button type="button" onClick={() => { setLocalQuery(''); setSearchParams({}); performSearch(''); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label={t('search.clearSearch')}>
                   <X className="h-5 w-5" />
                 </button>
               )}
             </div>
-            <Button type="button" variant="outline" size="icon" className="h-12 w-12" aria-label="Voice search">
+            <Button type="button" variant="outline" size="icon" className="h-12 w-12" aria-label={t('search.voiceSearch')}>
               <Mic className="h-5 w-5" />
             </Button>
-            <Button type="submit" className="h-12 px-6">
-              Search
-            </Button>
+            <Button type="submit" className="h-12 px-6">{t('search.searchButton')}</Button>
           </div>
         </form>
 
-        {/* Filters and View Toggle */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex flex-wrap items-center gap-2">
-            {/* Content Type Filter */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="h-9">
                   <Filter className="h-4 w-4 mr-2" aria-hidden="true" />
-                  Content Type
+                  {t('search.filters.contentType')}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuLabel>Filter by type</DropdownMenuLabel>
+              <DropdownMenuContent className="bg-background border">
+                <DropdownMenuLabel>{t('search.filters.filterByType')}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {(Object.entries(contentTypeLabels) as [ContentType, string][]).map(([type, label]) => (
-                  <DropdownMenuCheckboxItem
-                    key={type}
-                    checked={searchFilters.contentType?.includes(type)}
-                    onCheckedChange={(checked) => handleFilterChange('contentType', type, checked)}
-                  >
+                  <DropdownMenuCheckboxItem key={type} checked={searchFilters.contentType?.includes(type)} onCheckedChange={(checked) => handleFilterChange('contentType', type, checked)}>
                     {label}
                   </DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Education Level Filter */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-9">
-                  Level
-                </Button>
+                <Button variant="outline" className="h-9">{t('search.filters.level')}</Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuLabel>Education level</DropdownMenuLabel>
+              <DropdownMenuContent className="bg-background border">
+                <DropdownMenuLabel>{t('search.filters.educationLevel')}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {(Object.entries(educationLevelLabels) as [EducationLevel, string][]).map(([level, label]) => (
-                  <DropdownMenuCheckboxItem
-                    key={level}
-                    checked={searchFilters.educationLevel?.includes(level)}
-                    onCheckedChange={(checked) => handleFilterChange('educationLevel', level, checked)}
-                  >
+                  <DropdownMenuCheckboxItem key={level} checked={searchFilters.educationLevel?.includes(level)} onCheckedChange={(checked) => handleFilterChange('educationLevel', level, checked)}>
                     {label}
                   </DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Accessibility Filter */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-9">
-                  Accessibility
-                </Button>
+                <Button variant="outline" className="h-9">{t('search.filters.accessibility')}</Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuLabel>Accessibility status</DropdownMenuLabel>
+              <DropdownMenuContent className="bg-background border">
+                <DropdownMenuLabel>{t('search.filters.accessibilityStatus')}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem
-                  checked={searchFilters.accessibilityStatus?.includes('accessible')}
-                  onCheckedChange={(checked) => handleFilterChange('accessibilityStatus', 'accessible', checked)}
-                >
-                  ✅ Accessible
+                <DropdownMenuCheckboxItem checked={searchFilters.accessibilityStatus?.includes('accessible')} onCheckedChange={(checked) => handleFilterChange('accessibilityStatus', 'accessible', checked)}>
+                  {t('search.accessibilityStatuses.accessible')}
                 </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={searchFilters.accessibilityStatus?.includes('partially_accessible')}
-                  onCheckedChange={(checked) => handleFilterChange('accessibilityStatus', 'partially_accessible', checked)}
-                >
-                  🟡 Partially Accessible
+                <DropdownMenuCheckboxItem checked={searchFilters.accessibilityStatus?.includes('partially_accessible')} onCheckedChange={(checked) => handleFilterChange('accessibilityStatus', 'partially_accessible', checked)}>
+                  {t('search.accessibilityStatuses.partiallyAccessible')}
                 </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={searchFilters.accessibilityStatus?.includes('needs_remediation')}
-                  onCheckedChange={(checked) => handleFilterChange('accessibilityStatus', 'needs_remediation', checked)}
-                >
-                  🔴 Needs Remediation
+                <DropdownMenuCheckboxItem checked={searchFilters.accessibilityStatus?.includes('needs_remediation')} onCheckedChange={(checked) => handleFilterChange('accessibilityStatus', 'needs_remediation', checked)}>
+                  {t('search.accessibilityStatuses.needsRemediation')}
                 </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
             {activeFilterCount > 0 && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
-                Clear filters ({activeFilterCount})
+                {t('search.filters.clearFilters')} ({activeFilterCount})
               </Button>
             )}
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              {searchResults.length} results
-            </span>
+            <span className="text-sm text-muted-foreground">{t('search.results', { count: searchResults.length })}</span>
             <div className="flex border rounded-lg">
-              <Button
-                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-                aria-label="Grid view"
-                aria-pressed={viewMode === 'grid'}
-              >
+              <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('grid')} aria-label={t('search.gridView')} aria-pressed={viewMode === 'grid'}>
                 <Grid3X3 className="h-4 w-4" />
               </Button>
-              <Button
-                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                aria-label="List view"
-                aria-pressed={viewMode === 'list'}
-              >
+              <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('list')} aria-label={t('search.listView')} aria-pressed={viewMode === 'list'}>
                 <List className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Results */}
         <section id="search-results" aria-label="Search results" aria-busy={searchLoading}>
           {searchLoading ? (
             <div className={`grid gap-4 ${viewMode === 'grid' ? 'md:grid-cols-2 lg:grid-cols-3' : ''}`}>
               {[...Array(6)].map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-4">
-                    <Skeleton className="h-40 w-full mb-4" />
-                    <Skeleton className="h-6 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-full mb-2" />
-                    <Skeleton className="h-4 w-2/3" />
-                  </CardContent>
-                </Card>
+                <Card key={i}><CardContent className="p-4"><Skeleton className="h-40 w-full mb-4" /><Skeleton className="h-6 w-3/4 mb-2" /><Skeleton className="h-4 w-full mb-2" /><Skeleton className="h-4 w-2/3" /></CardContent></Card>
               ))}
             </div>
           ) : searchResults.length === 0 ? (
             <div className="text-center py-12">
               <SearchIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" aria-hidden="true" />
-              <h2 className="text-xl font-semibold mb-2">No results found</h2>
-              <p className="text-muted-foreground">
-                Try adjusting your search or filters
-              </p>
+              <h2 className="text-xl font-semibold mb-2">{t('search.noResults')}</h2>
+              <p className="text-muted-foreground">{t('search.noResultsHint')}</p>
             </div>
           ) : (
             <AnimatePresence mode="wait">
-              <motion.div
-                key={viewMode}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className={`grid gap-4 ${viewMode === 'grid' ? 'md:grid-cols-2 lg:grid-cols-3' : ''}`}
-              >
+              <motion.div key={viewMode} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={`grid gap-4 ${viewMode === 'grid' ? 'md:grid-cols-2 lg:grid-cols-3' : ''}`}>
                 {searchResults.map((result, index) => (
-                  <motion.div
-                    key={result.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <Card 
-                      className="h-full hover:shadow-lg transition-shadow cursor-pointer group"
-                      onClick={() => handleContentClick(result.id)}
-                      role="article"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleContentClick(result.id);
-                        }
-                      }}
-                    >
+                  <motion.div key={result.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+                    <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => handleContentClick(result.id)} role="article" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleContentClick(result.id); } }}>
                       <CardContent className={`p-4 ${viewMode === 'list' ? 'flex gap-4' : ''}`}>
-                        {/* Thumbnail */}
-                        <div className={`relative overflow-hidden rounded-lg bg-muted ${
-                          viewMode === 'list' ? 'w-32 h-24 flex-shrink-0' : 'h-40 mb-4'
-                        }`}>
+                        <div className={`relative overflow-hidden rounded-lg bg-muted ${viewMode === 'list' ? 'w-32 h-24 flex-shrink-0' : 'h-40 mb-4'}`}>
                           {result.thumbnail ? (
-                            <img
-                              src={result.thumbnail}
-                              alt=""
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                            />
+                            <img src={result.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-4xl">
-                              {contentTypeLabels[result.contentType]?.split(' ')[0]}
-                            </div>
+                            <div className="w-full h-full flex items-center justify-center text-4xl">{contentTypeLabels[result.contentType]?.split(' ')[0]}</div>
                           )}
-                          <div className="absolute top-2 right-2">
-                            {getAccessibilityBadge(result.accessibilityStatus)}
-                          </div>
+                          <div className="absolute top-2 right-2">{getAccessibilityBadge(result.accessibilityStatus)}</div>
                         </div>
-
-                        {/* Content */}
                         <div className="flex-1">
-                          <h3 className="font-semibold text-lg mb-1 line-clamp-2 group-hover:text-primary transition-colors">
-                            {result.title}
-                          </h3>
+                          <h3 className="font-semibold text-lg mb-1 line-clamp-2 group-hover:text-primary transition-colors">{result.title}</h3>
                           <p className="text-sm text-muted-foreground mb-2">
                             {result.source.charAt(0).toUpperCase() + result.source.slice(1)}
                             {result.metadata.duration && ` · ${result.metadata.duration}`}
                             {result.metadata.wordCount && ` · ${result.metadata.wordCount.toLocaleString()} words`}
-                            {result.metadata.pageCount && ` · ${result.metadata.pageCount} pages`}
                           </p>
-                          <p className={`text-sm text-muted-foreground ${viewMode === 'list' ? '' : 'line-clamp-2'}`}>
-                            {result.description}
-                          </p>
-                          
+                          <p className={`text-sm text-muted-foreground ${viewMode === 'list' ? '' : 'line-clamp-2'}`}>{result.description}</p>
                           {result.accessibilityIssues && result.accessibilityIssues.length > 0 && (
-                            <p className="text-xs text-destructive mt-2">
-                              Issues: {result.accessibilityIssues.join(', ')}
-                            </p>
+                            <p className="text-xs text-warning mt-2">{t('search.issues', { count: result.accessibilityIssues.length })}</p>
                           )}
-
-                          <div className="flex flex-wrap gap-1 mt-3">
-                            <Badge variant="secondary" className="text-xs">
-                              {educationLevelLabels[result.educationLevel]}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {contentTypeLabels[result.contentType]}
-                            </Badge>
-                          </div>
                         </div>
                       </CardContent>
                     </Card>

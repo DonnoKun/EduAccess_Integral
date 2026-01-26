@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Eye, 
@@ -32,6 +33,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useStore, createVisualProfile } from '@/store/useStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import LanguageSelector from '@/components/LanguageSelector';
 import type { 
   SnellenNotation, 
   ContrastMode, 
@@ -40,22 +43,16 @@ import type {
 } from '@/types';
 import { snellenToLogMAR, getSeverityFromLogMAR } from '@/types';
 
-const steps = [
-  { id: 1, title: 'Visual Acuity', icon: Eye },
-  { id: 2, title: 'Font Size', icon: Type },
-  { id: 3, title: 'Contrast', icon: Contrast },
-  { id: 4, title: 'Modality', icon: Volume2 },
-  { id: 5, title: 'Additional', icon: Settings2 },
-];
-
 const snellenOptions: SnellenNotation[] = ['6/6', '6/12', '6/18', '6/24', '6/36', '6/60'];
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { setVisualProfile, completeOnboarding, setTheme } = useStore();
+  const { currentUser, updateUserName, isAuthenticated } = useAuthStore();
   
   const [currentStep, setCurrentStep] = useState(1);
-  const [userName, setUserName] = useState('');
+  const [userName, setUserName] = useState(currentUser?.name || '');
   const [snellen, setSnellen] = useState<SnellenNotation>('6/12');
   const [fontSize, setFontSize] = useState(20);
   const [lineSpacing, setLineSpacing] = useState(1.75);
@@ -63,6 +60,21 @@ export default function Onboarding() {
   const [modality, setModality] = useState<PreferredModality>('visual');
   const [enableAnimations, setEnableAnimations] = useState(true);
   const [brightnessSensitivity, setBrightnessSensitivity] = useState<BrightnessSensitivity>('low');
+
+  const steps = [
+    { id: 1, title: t('onboarding.step1.title'), icon: Eye },
+    { id: 2, title: t('onboarding.step2.title'), icon: Type },
+    { id: 3, title: t('onboarding.step3.title'), icon: Contrast },
+    { id: 4, title: t('onboarding.step4.title'), icon: Volume2 },
+    { id: 5, title: t('onboarding.step5.title'), icon: Settings2 },
+  ];
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, navigate]);
 
   // Apply live preview
   useEffect(() => {
@@ -94,7 +106,8 @@ export default function Onboarding() {
   };
 
   const handleComplete = () => {
-    const profile = createVisualProfile(userName || 'User', snellen, {
+    const finalName = userName || 'User';
+    const profile = createVisualProfile(finalName, snellen, {
       fontSize,
       contrast,
       lineSpacing,
@@ -102,6 +115,11 @@ export default function Onboarding() {
       enableAnimations,
       brightnessSensitivity,
     });
+    
+    // Update user name in auth store
+    if (userName) {
+      updateUserName(userName);
+    }
     
     setVisualProfile(profile);
     completeOnboarding();
@@ -115,8 +133,13 @@ export default function Onboarding() {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 md:p-8">
       {/* Skip link for accessibility */}
       <a href="#main-content" className="skip-link">
-        Skip to main content
+        {t('common.skipToMain')}
       </a>
+
+      {/* Language selector */}
+      <div className="absolute top-4 right-4">
+        <LanguageSelector />
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -132,11 +155,11 @@ export default function Onboarding() {
           >
             <Sparkles className="h-8 w-8 text-primary" aria-hidden="true" />
             <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-              EduAccess
+              {t('common.appName')}
             </h1>
           </motion.div>
           <p className="text-muted-foreground text-lg">
-            Configure your visual profile for an optimized experience
+            {t('onboarding.subtitle')}
           </p>
         </header>
 
@@ -164,7 +187,7 @@ export default function Onboarding() {
                       }
                     `}
                     aria-current={isActive ? 'step' : undefined}
-                    aria-label={`Step ${step.id}: ${step.title}${isCompleted ? ' (completed)' : ''}`}
+                    aria-label={`${t('onboarding.stepOf', { current: step.id, total: 5, name: step.title })}${isCompleted ? ' (completed)' : ''}`}
                   >
                     {isCompleted ? (
                       <Check className="h-5 w-5" aria-hidden="true" />
@@ -185,7 +208,7 @@ export default function Onboarding() {
             })}
           </ol>
           <p className="text-center text-sm text-muted-foreground mt-4" aria-live="polite">
-            Step {currentStep} of 5: {steps[currentStep - 1].title}
+            {t('onboarding.stepOf', { current: currentStep, total: 5, name: steps[currentStep - 1].title })}
           </p>
         </nav>
 
@@ -206,25 +229,25 @@ export default function Onboarding() {
               {currentStep === 1 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold mb-2">Visual Acuity</h2>
+                    <h2 className="text-2xl font-semibold mb-2">{t('onboarding.step1.title')}</h2>
                     <p className="text-muted-foreground">
-                      Select your Snellen notation from your eye exam. This helps us optimize text display.
+                      {t('onboarding.step1.description')}
                     </p>
                   </div>
 
                   <div className="space-y-4">
-                    <Label htmlFor="userName">Your Name</Label>
+                    <Label htmlFor="userName">{t('onboarding.step1.nameLabel')}</Label>
                     <Input
                       id="userName"
                       value={userName}
                       onChange={(e) => setUserName(e.target.value)}
-                      placeholder="Enter your name"
+                      placeholder={t('onboarding.step1.namePlaceholder')}
                       className="text-lg"
                     />
                   </div>
 
                   <div className="space-y-4">
-                    <Label htmlFor="snellen">Snellen Notation</Label>
+                    <Label htmlFor="snellen">{t('onboarding.step1.snellenLabel')}</Label>
                     <Select value={snellen} onValueChange={(v) => setSnellen(v as SnellenNotation)}>
                       <SelectTrigger id="snellen" className="text-lg">
                         <SelectValue />
@@ -232,22 +255,22 @@ export default function Onboarding() {
                       <SelectContent>
                         {snellenOptions.map((option) => (
                           <SelectItem key={option} value={option} className="text-lg">
-                            {option} {option === '6/6' && '(Normal vision)'}
+                            {option} {option === '6/6' && t('onboarding.step1.normalVision')}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     <p className="text-sm text-muted-foreground">
-                      ℹ️ This measure comes from your optometrist or eye doctor
+                      ℹ️ {t('onboarding.step1.tooltip')}
                     </p>
                   </div>
 
                   <div className="p-4 rounded-lg bg-secondary/50">
                     <p className="text-sm">
-                      <strong>Calculated Values:</strong>
+                      <strong>{t('onboarding.step1.calculatedValues')}</strong>
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      logMAR: {logMAR.toFixed(2)} · Severity: {severity}
+                      {t('onboarding.step1.logMAR')}: {logMAR.toFixed(2)} · {t('onboarding.step1.severity')}: {severity}
                     </p>
                   </div>
                 </div>
@@ -257,15 +280,15 @@ export default function Onboarding() {
               {currentStep === 2 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold mb-2">Font Size Preference</h2>
+                    <h2 className="text-2xl font-semibold mb-2">{t('onboarding.step2.title')}</h2>
                     <p className="text-muted-foreground">
-                      Adjust the text size to your comfort. The preview below updates in real-time.
+                      {t('onboarding.step2.description')}
                     </p>
                   </div>
 
                   <div className="space-y-4">
                     <div className="flex justify-between">
-                      <Label>Font Size: {fontSize}px</Label>
+                      <Label>{t('onboarding.step2.fontSizeLabel')}: {fontSize}px</Label>
                       <span className="text-muted-foreground">16px - 48px</span>
                     </div>
                     <Slider
@@ -274,13 +297,13 @@ export default function Onboarding() {
                       min={16}
                       max={48}
                       step={2}
-                      aria-label="Font size"
+                      aria-label={t('onboarding.step2.fontSizeLabel')}
                     />
                   </div>
 
                   <div className="space-y-4">
                     <div className="flex justify-between">
-                      <Label>Line Spacing: {lineSpacing.toFixed(2)}</Label>
+                      <Label>{t('onboarding.step2.lineSpacingLabel')}: {lineSpacing.toFixed(2)}</Label>
                       <span className="text-muted-foreground">1.5 - 3.0</span>
                     </div>
                     <Slider
@@ -289,7 +312,7 @@ export default function Onboarding() {
                       min={1.5}
                       max={3}
                       step={0.25}
-                      aria-label="Line spacing"
+                      aria-label={t('onboarding.step2.lineSpacingLabel')}
                     />
                   </div>
 
@@ -300,7 +323,7 @@ export default function Onboarding() {
                     style={{ fontSize: `${fontSize}px`, lineHeight: lineSpacing }}
                   >
                     <p>
-                      The quick brown fox jumps over the lazy dog. This text will appear at your selected size and spacing.
+                      {t('onboarding.step2.preview')}
                     </p>
                   </div>
                 </div>
@@ -310,9 +333,9 @@ export default function Onboarding() {
               {currentStep === 3 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold mb-2">Contrast Mode</h2>
+                    <h2 className="text-2xl font-semibold mb-2">{t('onboarding.step3.title')}</h2>
                     <p className="text-muted-foreground">
-                      Choose a contrast setting that works best for your vision.
+                      {t('onboarding.step3.description')}
                     </p>
                   </div>
 
@@ -324,27 +347,27 @@ export default function Onboarding() {
                     <div className="flex items-center space-x-3 p-4 rounded-lg border hover:bg-secondary/50 transition-colors">
                       <RadioGroupItem value="normal" id="contrast-normal" />
                       <Label htmlFor="contrast-normal" className="flex-1 cursor-pointer">
-                        <span className="font-medium">Normal</span>
+                        <span className="font-medium">{t('onboarding.step3.normal')}</span>
                         <p className="text-sm text-muted-foreground">
-                          Standard contrast ratio (4.5:1)
+                          {t('onboarding.step3.normalDesc')}
                         </p>
                       </Label>
                     </div>
                     <div className="flex items-center space-x-3 p-4 rounded-lg border hover:bg-secondary/50 transition-colors">
                       <RadioGroupItem value="high" id="contrast-high" />
                       <Label htmlFor="contrast-high" className="flex-1 cursor-pointer">
-                        <span className="font-medium">High Contrast</span>
+                        <span className="font-medium">{t('onboarding.step3.high')}</span>
                         <p className="text-sm text-muted-foreground">
-                          Maximum contrast (21:1) - Yellow on black
+                          {t('onboarding.step3.highDesc')}
                         </p>
                       </Label>
                     </div>
                     <div className="flex items-center space-x-3 p-4 rounded-lg border hover:bg-secondary/50 transition-colors">
                       <RadioGroupItem value="inverted" id="contrast-inverted" />
                       <Label htmlFor="contrast-inverted" className="flex-1 cursor-pointer">
-                        <span className="font-medium">Inverted</span>
+                        <span className="font-medium">{t('onboarding.step3.inverted')}</span>
                         <p className="text-sm text-muted-foreground">
-                          Warm colors for light sensitivity (photophobia)
+                          {t('onboarding.step3.invertedDesc')}
                         </p>
                       </Label>
                     </div>
@@ -356,9 +379,9 @@ export default function Onboarding() {
               {currentStep === 4 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold mb-2">Preferred Modality</h2>
+                    <h2 className="text-2xl font-semibold mb-2">{t('onboarding.step4.title')}</h2>
                     <p className="text-muted-foreground">
-                      How would you prefer to consume educational content?
+                      {t('onboarding.step4.description')}
                     </p>
                   </div>
 
@@ -370,27 +393,27 @@ export default function Onboarding() {
                     <div className="flex items-center space-x-3 p-4 rounded-lg border hover:bg-secondary/50 transition-colors">
                       <RadioGroupItem value="visual" id="modality-visual" />
                       <Label htmlFor="modality-visual" className="flex-1 cursor-pointer">
-                        <span className="font-medium">Visual</span>
+                        <span className="font-medium">{t('onboarding.step4.visual')}</span>
                         <p className="text-sm text-muted-foreground">
-                          I prefer reading text and viewing diagrams
+                          {t('onboarding.step4.visualDesc')}
                         </p>
                       </Label>
                     </div>
                     <div className="flex items-center space-x-3 p-4 rounded-lg border hover:bg-secondary/50 transition-colors">
                       <RadioGroupItem value="audio" id="modality-audio" />
                       <Label htmlFor="modality-audio" className="flex-1 cursor-pointer">
-                        <span className="font-medium">Audio</span>
+                        <span className="font-medium">{t('onboarding.step4.audio')}</span>
                         <p className="text-sm text-muted-foreground">
-                          I prefer listening to content with text-to-speech
+                          {t('onboarding.step4.audioDesc')}
                         </p>
                       </Label>
                     </div>
                     <div className="flex items-center space-x-3 p-4 rounded-lg border hover:bg-secondary/50 transition-colors">
                       <RadioGroupItem value="mixed" id="modality-mixed" />
                       <Label htmlFor="modality-mixed" className="flex-1 cursor-pointer">
-                        <span className="font-medium">Mixed</span>
+                        <span className="font-medium">{t('onboarding.step4.mixed')}</span>
                         <p className="text-sm text-muted-foreground">
-                          I want both visual and audio options available
+                          {t('onboarding.step4.mixedDesc')}
                         </p>
                       </Label>
                     </div>
@@ -402,18 +425,18 @@ export default function Onboarding() {
               {currentStep === 5 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold mb-2">Additional Options</h2>
+                    <h2 className="text-2xl font-semibold mb-2">{t('onboarding.step5.title')}</h2>
                     <p className="text-muted-foreground">
-                      Fine-tune your experience with these accessibility settings.
+                      {t('onboarding.step5.description')}
                     </p>
                   </div>
 
                   <div className="space-y-6">
                     <div className="flex items-center justify-between p-4 rounded-lg border">
                       <div>
-                        <Label htmlFor="animations" className="font-medium">Enable Animations</Label>
+                        <Label htmlFor="animations" className="font-medium">{t('onboarding.step5.animations')}</Label>
                         <p className="text-sm text-muted-foreground">
-                          Smooth transitions and micro-interactions
+                          {t('onboarding.step5.animationsDesc')}
                         </p>
                       </div>
                       <Switch
@@ -424,7 +447,7 @@ export default function Onboarding() {
                     </div>
 
                     <div className="space-y-4">
-                      <Label>Brightness Sensitivity</Label>
+                      <Label>{t('onboarding.step5.brightness')}</Label>
                       <RadioGroup 
                         value={brightnessSensitivity} 
                         onValueChange={(v) => setBrightnessSensitivity(v as BrightnessSensitivity)}
@@ -432,31 +455,18 @@ export default function Onboarding() {
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="low" id="brightness-low" />
-                          <Label htmlFor="brightness-low">Low</Label>
+                          <Label htmlFor="brightness-low">{t('onboarding.step5.brightnessLow')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="medium" id="brightness-medium" />
-                          <Label htmlFor="brightness-medium">Medium</Label>
+                          <Label htmlFor="brightness-medium">{t('onboarding.step5.brightnessMedium')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="high" id="brightness-high" />
-                          <Label htmlFor="brightness-high">High</Label>
+                          <Label htmlFor="brightness-high">{t('onboarding.step5.brightnessHigh')}</Label>
                         </div>
                       </RadioGroup>
                     </div>
-                  </div>
-
-                  {/* Profile Summary */}
-                  <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
-                    <h3 className="font-semibold mb-2">Profile Summary</h3>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>👤 Name: {userName || 'User'}</li>
-                      <li>👁️ Visual Acuity: {snellen} (logMAR: {logMAR.toFixed(2)})</li>
-                      <li>🔤 Font Size: {fontSize}px</li>
-                      <li>🎨 Contrast: {contrast}</li>
-                      <li>🔊 Modality: {modality}</li>
-                      <li>✨ Animations: {enableAnimations ? 'Enabled' : 'Disabled'}</li>
-                    </ul>
                   </div>
                 </div>
               )}
@@ -464,7 +474,7 @@ export default function Onboarding() {
           </AnimatePresence>
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8 pt-6 border-t">
+          <div className="flex justify-between mt-8">
             <Button
               variant="outline"
               onClick={handleBack}
@@ -472,18 +482,18 @@ export default function Onboarding() {
               className="touch-target"
             >
               <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
-              Back
+              {t('common.back')}
             </Button>
 
             {currentStep < 5 ? (
               <Button onClick={handleNext} className="touch-target">
-                Next
+                {t('common.next')}
                 <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
               </Button>
             ) : (
               <Button onClick={handleComplete} className="touch-target bg-success hover:bg-success/90">
                 <Check className="mr-2 h-4 w-4" aria-hidden="true" />
-                Complete Setup
+                {t('onboarding.complete')}
               </Button>
             )}
           </div>

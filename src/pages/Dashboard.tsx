@@ -5,6 +5,7 @@
 
 import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
   Search,
@@ -31,7 +32,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useStore } from '@/store/useStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { recentSearches, recommendedContent } from '@/data/mockData';
+import LanguageSelector from '@/components/LanguageSelector';
 import type { ThemeMode } from '@/types';
 
 const container = {
@@ -49,6 +52,7 @@ const item = {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { 
     visualProfile, 
     hasCompletedOnboarding, 
@@ -56,20 +60,36 @@ export default function Dashboard() {
     currentTheme,
     setTheme,
   } = useStore();
+  const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
     if (!hasCompletedOnboarding) {
       navigate('/onboarding');
     }
-  }, [hasCompletedOnboarding, navigate]);
+  }, [isAuthenticated, hasCompletedOnboarding, navigate]);
 
   if (!visualProfile) return null;
 
   const themeOptions: { value: ThemeMode; label: string; icon: React.ReactNode }[] = [
-    { value: 'light', label: 'Light', icon: <Sun className="h-4 w-4" /> },
-    { value: 'dark', label: 'Dark', icon: <Moon className="h-4 w-4" /> },
-    { value: 'high-contrast', label: 'High Contrast', icon: <Contrast className="h-4 w-4" /> },
+    { value: 'light', label: t('themes.light'), icon: <Sun className="h-4 w-4" /> },
+    { value: 'dark', label: t('themes.dark'), icon: <Moon className="h-4 w-4" /> },
+    { value: 'high-contrast', label: t('themes.highContrast'), icon: <Contrast className="h-4 w-4" /> },
   ];
+
+  const getContrastLabel = () => {
+    switch (visualProfile.preferences.contrast) {
+      case 'high':
+        return t('dashboard.contrastHigh');
+      case 'inverted':
+        return t('dashboard.contrastInverted');
+      default:
+        return t('dashboard.contrastNormal');
+    }
+  };
 
   const getSourceIcon = (source: string) => {
     switch (source) {
@@ -90,19 +110,19 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       {/* Skip link */}
       <a href="#main-content" className="skip-link">
-        Skip to main content
+        {t('common.skipToMain')}
       </a>
 
       {/* Header */}
       <header className="sticky top-0 z-50 glass-card border-b">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="md:hidden" aria-label="Menu">
+            <Button variant="ghost" size="icon" className="md:hidden" aria-label={t('navigation.menu')}>
               <Menu className="h-5 w-5" />
             </Button>
             <Link to="/dashboard" className="flex items-center gap-2">
               <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />
-              <span className="text-xl font-bold">EduAccess</span>
+              <span className="text-xl font-bold">{t('common.appName')}</span>
             </Link>
           </div>
 
@@ -111,27 +131,29 @@ export default function Dashboard() {
               to="/search" 
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              Search
+              {t('navigation.search')}
             </Link>
             <Link 
               to="/dashboard" 
               className="text-foreground font-medium"
               aria-current="page"
             >
-              Dashboard
+              {t('navigation.dashboard')}
             </Link>
             <Link 
               to="/settings" 
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              Settings
+              {t('navigation.settings')}
             </Link>
           </nav>
 
           <div className="flex items-center gap-2">
+            <LanguageSelector />
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" aria-label="Change theme">
+                <Button variant="outline" size="icon" aria-label={t('navigation.changeTheme')}>
                   {currentTheme === 'dark' ? (
                     <Moon className="h-4 w-4" />
                   ) : currentTheme === 'high-contrast' ? (
@@ -141,7 +163,7 @@ export default function Dashboard() {
                   )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="bg-background border">
                 {themeOptions.map((option) => (
                   <DropdownMenuItem
                     key={option.value}
@@ -155,7 +177,7 @@ export default function Dashboard() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="ghost" size="icon" aria-label="View profile">
+            <Button variant="ghost" size="icon" aria-label={t('navigation.viewProfile')}>
               <Eye className="h-4 w-4" />
             </Button>
           </div>
@@ -177,27 +199,28 @@ export default function Dashboard() {
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div>
                     <h1 className="text-2xl md:text-3xl font-bold mb-2">
-                      Welcome back, {visualProfile.userName}! 👋
+                      {t('dashboard.welcome', { name: visualProfile.userName })}
                     </h1>
                     <p className="text-muted-foreground">
-                      Your profile: {visualProfile.visualAcuity.snellen} · {' '}
-                      {visualProfile.preferences.contrast === 'high' ? 'High Contrast' : 
-                       visualProfile.preferences.contrast === 'inverted' ? 'Inverted' : 'Normal'} · {' '}
-                      {visualProfile.preferences.fontSize}px
+                      {t('dashboard.profileInfo', {
+                        snellen: visualProfile.visualAcuity.snellen,
+                        contrast: getContrastLabel(),
+                        fontSize: visualProfile.preferences.fontSize,
+                      })}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <Button onClick={() => navigate('/search')} className="touch-target">
                       <Search className="mr-2 h-4 w-4" aria-hidden="true" />
-                      New Search
+                      {t('dashboard.quickActions.search')}
                     </Button>
                     <Button variant="outline" onClick={() => navigate('/library')} className="touch-target">
                       <BookOpen className="mr-2 h-4 w-4" aria-hidden="true" />
-                      My Library
+                      {t('dashboard.quickActions.library')}
                     </Button>
                     <Button variant="ghost" onClick={() => navigate('/settings')} className="touch-target">
                       <Settings className="mr-2 h-4 w-4" aria-hidden="true" />
-                      Settings
+                      {t('dashboard.quickActions.settings')}
                     </Button>
                   </div>
                 </div>
@@ -213,7 +236,7 @@ export default function Dashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Clock className="h-5 w-5 text-primary" aria-hidden="true" />
-                    Recent Searches
+                    {t('dashboard.recentSearches')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -241,7 +264,7 @@ export default function Dashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5 text-primary" aria-hidden="true" />
-                    Recommended Content
+                    {t('dashboard.recommendedContent')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -272,9 +295,9 @@ export default function Dashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-primary" aria-hidden="true" />
-                  Session Analytics
+                  {t('dashboard.sessionAnalytics')}
                   <span className="text-xs font-normal text-muted-foreground ml-2">
-                    (For Research)
+                    {t('dashboard.forResearch')}
                   </span>
                 </CardTitle>
               </CardHeader>
@@ -285,7 +308,7 @@ export default function Dashboard() {
                       <BookOpen className="h-6 w-6 text-primary" aria-hidden="true" />
                     </div>
                     <p className="text-2xl font-bold">{sessionMetrics.contentViewed}</p>
-                    <p className="text-sm text-muted-foreground">Content Viewed</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.contentViewed')}</p>
                   </div>
                   
                   <div className="p-4 rounded-lg bg-secondary/50 text-center">
@@ -295,7 +318,7 @@ export default function Dashboard() {
                     <p className="text-2xl font-bold">
                       {Math.floor(sessionMetrics.totalTimeSpent / 60)}m
                     </p>
-                    <p className="text-sm text-muted-foreground">Time Spent</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.timeSpent')}</p>
                   </div>
                   
                   <div className="p-4 rounded-lg bg-secondary/50 text-center">
@@ -303,7 +326,7 @@ export default function Dashboard() {
                       <CheckCircle2 className="h-6 w-6 text-success" aria-hidden="true" />
                     </div>
                     <p className="text-2xl font-bold">{sessionMetrics.tasksCompleted}</p>
-                    <p className="text-sm text-muted-foreground">Tasks Completed</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.tasksCompleted')}</p>
                   </div>
                   
                   <div className="p-4 rounded-lg bg-secondary/50 text-center">
@@ -311,7 +334,7 @@ export default function Dashboard() {
                       <Target className="h-6 w-6 text-warning" aria-hidden="true" />
                     </div>
                     <p className="text-2xl font-bold">87%</p>
-                    <p className="text-sm text-muted-foreground">Success Rate</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.successRate')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -324,13 +347,13 @@ export default function Dashboard() {
               <CardContent className="p-6">
                 <h3 className="font-semibold mb-2 flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" />
-                  Quick Tips
+                  {t('dashboard.quickTips')}
                 </h3>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Use the search bar to find educational content across multiple sources</li>
-                  <li>• Content marked with 🔴 needs accessibility remediation before viewing</li>
-                  <li>• Adjust your visual profile in Settings at any time</li>
-                  <li>• Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">?</kbd> for keyboard shortcuts</li>
+                  <li>• {t('dashboard.tip1')}</li>
+                  <li>• {t('dashboard.tip2')}</li>
+                  <li>• {t('dashboard.tip3')}</li>
+                  <li>• {t('dashboard.tip4')}</li>
                 </ul>
               </CardContent>
             </Card>

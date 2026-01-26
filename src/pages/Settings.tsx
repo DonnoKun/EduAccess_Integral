@@ -5,6 +5,7 @@
 
 import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
   User,
@@ -17,7 +18,7 @@ import {
   Sun,
   Moon,
   Contrast,
-  Check,
+  LogOut,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,11 +28,16 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useToast } from '@/hooks/use-toast';
 import { useStore } from '@/store/useStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import LanguageSelector from '@/components/LanguageSelector';
 import type { ThemeMode, ContrastMode } from '@/types';
 
 export default function Settings() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { toast } = useToast();
   const {
     visualProfile,
     hasCompletedOnboarding,
@@ -41,12 +47,17 @@ export default function Settings() {
     events,
     sessionMetrics,
   } = useStore();
+  const { isAuthenticated, logout } = useAuthStore();
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
     if (!hasCompletedOnboarding) {
       navigate('/onboarding');
     }
-  }, [hasCompletedOnboarding, navigate]);
+  }, [isAuthenticated, hasCompletedOnboarding, navigate]);
 
   if (!visualProfile) return null;
 
@@ -122,13 +133,25 @@ export default function Settings() {
     a.download = `eduaccess-data-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    
+    toast({
+      description: t('toasts.dataExported'),
+    });
+  };
+
+  const handleLogout = () => {
+    logout();
+    toast({
+      description: t('auth.logoutSuccess'),
+    });
+    navigate('/login');
   };
 
   return (
     <div className="min-h-screen bg-background">
       {/* Skip link */}
       <a href="#main-content" className="skip-link">
-        Skip to main content
+        {t('common.skipToMain')}
       </a>
 
       {/* Header */}
@@ -137,13 +160,14 @@ export default function Settings() {
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={() => navigate('/dashboard')}>
               <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
-              Back
+              {t('common.back')}
             </Button>
             <Link to="/dashboard" className="flex items-center gap-2">
               <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />
-              <span className="text-xl font-bold">Settings</span>
+              <span className="text-xl font-bold">{t('settings.title')}</span>
             </Link>
           </div>
+          <LanguageSelector />
         </div>
       </header>
 
@@ -156,23 +180,23 @@ export default function Settings() {
             <TabsList className="grid grid-cols-5 w-full">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
-                <span className="hidden md:inline">Profile</span>
+                <span className="hidden md:inline">{t('settings.tabs.profile')}</span>
               </TabsTrigger>
               <TabsTrigger value="appearance" className="flex items-center gap-2">
                 <Palette className="h-4 w-4" />
-                <span className="hidden md:inline">Appearance</span>
+                <span className="hidden md:inline">{t('settings.tabs.appearance')}</span>
               </TabsTrigger>
               <TabsTrigger value="accessibility" className="flex items-center gap-2">
                 <Accessibility className="h-4 w-4" />
-                <span className="hidden md:inline">Accessibility</span>
+                <span className="hidden md:inline">{t('settings.tabs.accessibility')}</span>
               </TabsTrigger>
               <TabsTrigger value="data" className="flex items-center gap-2">
                 <Database className="h-4 w-4" />
-                <span className="hidden md:inline">Data</span>
+                <span className="hidden md:inline">{t('settings.tabs.data')}</span>
               </TabsTrigger>
               <TabsTrigger value="about" className="flex items-center gap-2">
                 <Info className="h-4 w-4" />
-                <span className="hidden md:inline">About</span>
+                <span className="hidden md:inline">{t('settings.tabs.about')}</span>
               </TabsTrigger>
             </TabsList>
 
@@ -180,11 +204,11 @@ export default function Settings() {
             <TabsContent value="profile">
               <Card>
                 <CardHeader>
-                  <CardTitle>Profile Settings</CardTitle>
+                  <CardTitle>{t('settings.profile.title')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name">{t('settings.profile.name')}</Label>
                     <Input
                       id="name"
                       value={visualProfile.userName}
@@ -193,14 +217,14 @@ export default function Settings() {
                   </div>
 
                   <div className="p-4 rounded-lg bg-secondary/50">
-                    <h3 className="font-semibold mb-2">Visual Acuity</h3>
+                    <h3 className="font-semibold mb-2">{t('settings.profile.visualAcuity')}</h3>
                     <p className="text-muted-foreground">
                       Snellen: {visualProfile.visualAcuity.snellen} · 
                       logMAR: {visualProfile.visualAcuity.logMAR.toFixed(2)} · 
-                      Severity: {visualProfile.visualAcuity.severity}
+                      {t('onboarding.step1.severity')}: {visualProfile.visualAcuity.severity}
                     </p>
                     <Button variant="link" className="p-0 mt-2" onClick={() => navigate('/onboarding')}>
-                      Reconfigure visual profile
+                      {t('settings.profile.reconfigure')}
                     </Button>
                   </div>
                 </CardContent>
@@ -211,12 +235,12 @@ export default function Settings() {
             <TabsContent value="appearance">
               <Card>
                 <CardHeader>
-                  <CardTitle>Appearance Settings</CardTitle>
+                  <CardTitle>{t('settings.appearance.title')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Theme Selection */}
                   <div className="space-y-4">
-                    <Label>Theme</Label>
+                    <Label>{t('settings.appearance.theme')}</Label>
                     <div className="grid grid-cols-3 gap-4">
                       {(['light', 'dark', 'high-contrast'] as ThemeMode[]).map((theme) => (
                         <Button
@@ -228,7 +252,11 @@ export default function Settings() {
                           {theme === 'light' && <Sun className="h-6 w-6" />}
                           {theme === 'dark' && <Moon className="h-6 w-6" />}
                           {theme === 'high-contrast' && <Contrast className="h-6 w-6" />}
-                          <span className="capitalize">{theme.replace('-', ' ')}</span>
+                          <span className="capitalize">
+                            {theme === 'light' && t('settings.appearance.light')}
+                            {theme === 'dark' && t('settings.appearance.dark')}
+                            {theme === 'high-contrast' && t('settings.appearance.highContrast')}
+                          </span>
                         </Button>
                       ))}
                     </div>
@@ -237,7 +265,7 @@ export default function Settings() {
                   {/* Font Size */}
                   <div className="space-y-4">
                     <div className="flex justify-between">
-                      <Label>Font Size: {visualProfile.preferences.fontSize}px</Label>
+                      <Label>{t('settings.appearance.fontSize')}: {visualProfile.preferences.fontSize}px</Label>
                     </div>
                     <Slider
                       value={[visualProfile.preferences.fontSize]}
@@ -250,14 +278,14 @@ export default function Settings() {
                       className="p-4 border rounded-lg"
                       style={{ fontSize: `${visualProfile.preferences.fontSize}px` }}
                     >
-                      Preview text at {visualProfile.preferences.fontSize}px
+                      {t('settings.appearance.previewText', { size: visualProfile.preferences.fontSize })}
                     </p>
                   </div>
 
                   {/* Line Spacing */}
                   <div className="space-y-4">
                     <div className="flex justify-between">
-                      <Label>Line Spacing: {visualProfile.preferences.lineSpacing.toFixed(2)}</Label>
+                      <Label>{t('settings.appearance.lineSpacing')}: {visualProfile.preferences.lineSpacing.toFixed(2)}</Label>
                     </div>
                     <Slider
                       value={[visualProfile.preferences.lineSpacing]}
@@ -275,12 +303,12 @@ export default function Settings() {
             <TabsContent value="accessibility">
               <Card>
                 <CardHeader>
-                  <CardTitle>Accessibility Settings</CardTitle>
+                  <CardTitle>{t('settings.accessibility.title')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Contrast Mode */}
                   <div className="space-y-4">
-                    <Label>Contrast Mode</Label>
+                    <Label>{t('settings.accessibility.contrastMode')}</Label>
                     <RadioGroup
                       value={visualProfile.preferences.contrast}
                       onValueChange={(v) => handleContrastChange(v as ContrastMode)}
@@ -288,15 +316,15 @@ export default function Settings() {
                     >
                       <div className="flex items-center space-x-2 p-3 rounded-lg border">
                         <RadioGroupItem value="normal" id="contrast-normal" />
-                        <Label htmlFor="contrast-normal">Normal (4.5:1 contrast)</Label>
+                        <Label htmlFor="contrast-normal">{t('settings.accessibility.normal')}</Label>
                       </div>
                       <div className="flex items-center space-x-2 p-3 rounded-lg border">
                         <RadioGroupItem value="high" id="contrast-high" />
-                        <Label htmlFor="contrast-high">High Contrast (21:1)</Label>
+                        <Label htmlFor="contrast-high">{t('settings.accessibility.high')}</Label>
                       </div>
                       <div className="flex items-center space-x-2 p-3 rounded-lg border">
                         <RadioGroupItem value="inverted" id="contrast-inverted" />
-                        <Label htmlFor="contrast-inverted">Inverted (for photophobia)</Label>
+                        <Label htmlFor="contrast-inverted">{t('settings.accessibility.inverted')}</Label>
                       </div>
                     </RadioGroup>
                   </div>
@@ -304,9 +332,9 @@ export default function Settings() {
                   {/* Animations */}
                   <div className="flex items-center justify-between p-4 rounded-lg border">
                     <div>
-                      <Label htmlFor="animations">Enable Animations</Label>
+                      <Label htmlFor="animations">{t('settings.accessibility.animations')}</Label>
                       <p className="text-sm text-muted-foreground">
-                        Smooth transitions and micro-interactions
+                        {t('settings.accessibility.animationsDesc')}
                       </p>
                     </div>
                     <Switch
@@ -319,9 +347,9 @@ export default function Settings() {
                   {/* TTS Preference */}
                   <div className="flex items-center justify-between p-4 rounded-lg border">
                     <div>
-                      <Label htmlFor="tts">Text-to-Speech</Label>
+                      <Label htmlFor="tts">{t('settings.accessibility.tts')}</Label>
                       <p className="text-sm text-muted-foreground">
-                        Enable audio narration for content
+                        {t('settings.accessibility.ttsDesc')}
                       </p>
                     </div>
                     <Switch
@@ -345,27 +373,37 @@ export default function Settings() {
             <TabsContent value="data">
               <Card>
                 <CardHeader>
-                  <CardTitle>Data & Privacy</CardTitle>
+                  <CardTitle>{t('settings.data.title')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="p-4 rounded-lg bg-secondary/50">
-                    <h3 className="font-semibold mb-2">Session Statistics</h3>
+                    <h3 className="font-semibold mb-2">{t('settings.data.sessionStats')}</h3>
                     <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>Content viewed: {sessionMetrics.contentViewed}</li>
-                      <li>Tasks completed: {sessionMetrics.tasksCompleted}</li>
-                      <li>Events tracked: {events.length}</li>
+                      <li>{t('settings.data.contentViewed')}: {sessionMetrics.contentViewed}</li>
+                      <li>{t('settings.data.tasksCompleted')}: {sessionMetrics.tasksCompleted}</li>
+                      <li>{t('settings.data.eventsTracked')}: {events.length}</li>
                     </ul>
                   </div>
 
                   <Button onClick={exportData} className="w-full">
                     <Database className="h-4 w-4 mr-2" />
-                    Export My Data (GDPR)
+                    {t('settings.data.exportData')}
                   </Button>
 
                   <p className="text-sm text-muted-foreground">
-                    Your data is stored locally in your browser and is used only for research purposes.
-                    No personal information is shared with third parties.
+                    {t('settings.data.privacyNote')}
                   </p>
+
+                  <div className="pt-4 border-t">
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleLogout}
+                      className="w-full"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      {t('settings.data.logout')}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -374,33 +412,30 @@ export default function Settings() {
             <TabsContent value="about">
               <Card>
                 <CardHeader>
-                  <CardTitle>About EduAccess</CardTitle>
+                  <CardTitle>{t('settings.about.title')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center gap-3 mb-6">
                     <Sparkles className="h-12 w-12 text-primary" />
                     <div>
-                      <h2 className="text-2xl font-bold">EduAccess</h2>
-                      <p className="text-muted-foreground">Version 1.0.0 (Doctoral Thesis Prototype)</p>
+                      <h2 className="text-2xl font-bold">{t('common.appName')}</h2>
+                      <p className="text-muted-foreground">{t('settings.about.version')}</p>
                     </div>
                   </div>
 
                   <p className="text-muted-foreground">
-                    EduAccess is an intelligent educational content aggregation ecosystem with automatic 
-                    accessibility remediation for students with mild to moderate visual impairment.
+                    {t('settings.about.description')}
                   </p>
 
                   <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
-                    <h3 className="font-semibold mb-2">Research Project</h3>
+                    <h3 className="font-semibold mb-2">{t('settings.about.research')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      This prototype is part of a doctoral thesis investigating middleware architectures 
-                      for educational accessibility. Based on research by Michael (2024), Jeanneret & Baudet (2022), 
-                      and ISO/IEC 24751 standards.
+                      {t('settings.about.researchDesc')}
                     </p>
                   </div>
 
                   <div className="space-y-2 text-sm text-muted-foreground">
-                    <p><strong>Technology Stack:</strong></p>
+                    <p><strong>{t('settings.about.techStack')}:</strong></p>
                     <ul className="list-disc list-inside ml-4">
                       <li>React 18 with TypeScript</li>
                       <li>Tailwind CSS + shadcn/ui</li>

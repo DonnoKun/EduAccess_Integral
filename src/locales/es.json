@@ -1,0 +1,286 @@
+{
+  "common": {
+    "appName": "EduAccess",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Guardar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "skip": "Omitir",
+    "search": "Buscar",
+    "settings": "Configuración",
+    "logout": "Cerrar sesión",
+    "skipToMain": "Saltar al contenido principal"
+  },
+  "auth": {
+    "welcome": "Bienvenido a EduAccess",
+    "signInSubtitle": "Inicia sesión para acceder a tu perfil visual",
+    "email": "Correo electrónico",
+    "phone": "Teléfono",
+    "emailPlaceholder": "tu@email.com",
+    "phonePlaceholder": "+34 600 000 000",
+    "sendCode": "Enviar código de verificación",
+    "newUserNote": "¿Usuario nuevo? Tu perfil se creará automáticamente en el primer inicio de sesión.",
+    "verificationTitle": "Código de Verificación Enviado",
+    "verificationSubtitle": "Enviamos un código de 4 dígitos a:",
+    "enterCode": "Ingresa el código:",
+    "verifyButton": "Verificar y Continuar",
+    "resendCode": "Reenviar código",
+    "resendIn": "Reenviar en {{seconds}}s",
+    "invalidCode": "Código inválido. Inténtalo de nuevo.",
+    "codeExpired": "El código ha expirado. Por favor solicita uno nuevo.",
+    "tooManyAttempts": "Demasiados intentos. Por favor espera 5 minutos.",
+    "codeSent": "¡Código enviado! Revisa tu {{method}}.",
+    "invalidEmail": "Por favor ingresa un correo electrónico válido",
+    "invalidPhone": "Por favor ingresa un número de teléfono válido",
+    "loginSuccess": "¡Inicio de sesión exitoso!",
+    "logoutSuccess": "Has cerrado sesión correctamente"
+  },
+  "onboarding": {
+    "title": "Configura tu Perfil Visual",
+    "subtitle": "Configura tu perfil visual para una experiencia optimizada",
+    "stepOf": "Paso {{current}} de {{total}}: {{name}}",
+    "step1": {
+      "title": "Agudeza Visual",
+      "description": "Selecciona tu notación Snellen de tu examen ocular. Esto nos ayuda a optimizar la visualización de texto.",
+      "nameLabel": "Tu Nombre",
+      "namePlaceholder": "Ingresa tu nombre",
+      "snellenLabel": "Notación Snellen",
+      "tooltip": "Esta medida la obtienes de tu oftalmólogo u oculista",
+      "normalVision": "(Visión normal)",
+      "calculatedValues": "Valores Calculados:",
+      "logMAR": "logMAR",
+      "severity": "Severidad"
+    },
+    "step2": {
+      "title": "Tamaño de Fuente",
+      "description": "Ajusta el tamaño del texto a tu comodidad. La vista previa se actualiza en tiempo real.",
+      "fontSizeLabel": "Tamaño de fuente",
+      "lineSpacingLabel": "Espaciado de línea",
+      "preview": "El veloz murciélago hindú comía feliz cardillo y kiwi. Este texto aparecerá con el tamaño y espaciado seleccionados."
+    },
+    "step3": {
+      "title": "Modo de Contraste",
+      "description": "Elige una configuración de contraste que funcione mejor para tu visión.",
+      "normal": "Normal",
+      "normalDesc": "Relación de contraste estándar (4.5:1)",
+      "high": "Alto Contraste",
+      "highDesc": "Máximo contraste (21:1) - Amarillo sobre negro",
+      "inverted": "Invertido",
+      "invertedDesc": "Colores cálidos para sensibilidad a la luz (fotofobia)"
+    },
+    "step4": {
+      "title": "Modalidad Preferida",
+      "description": "¿Cómo prefieres consumir contenido educativo?",
+      "visual": "Visual",
+      "visualDesc": "Prefiero leer texto y ver diagramas",
+      "audio": "Audio",
+      "audioDesc": "Prefiero escuchar contenido con texto a voz",
+      "mixed": "Mixto",
+      "mixedDesc": "Quiero ambas opciones disponibles"
+    },
+    "step5": {
+      "title": "Opciones Adicionales",
+      "description": "Ajusta tu experiencia con estas configuraciones de accesibilidad.",
+      "animations": "Habilitar Animaciones",
+      "animationsDesc": "Transiciones suaves y micro-interacciones",
+      "brightness": "Sensibilidad al Brillo",
+      "brightnessLow": "Baja",
+      "brightnessMedium": "Media",
+      "brightnessHigh": "Alta"
+    },
+    "complete": "Completar Configuración",
+    "startExploring": "¡Tu perfil está listo! Comienza a explorar contenido accesible."
+  },
+  "dashboard": {
+    "welcome": "¡Bienvenido de nuevo, {{name}}! 👋",
+    "profileInfo": "Tu perfil: {{snellen}} · {{contrast}} · {{fontSize}}px",
+    "contrastNormal": "Normal",
+    "contrastHigh": "Alto Contraste",
+    "contrastInverted": "Invertido",
+    "quickActions": {
+      "search": "Nueva Búsqueda",
+      "library": "Mi Biblioteca",
+      "settings": "Configuración"
+    },
+    "recentSearches": "Búsquedas Recientes",
+    "recommendedContent": "Contenido Recomendado",
+    "sessionAnalytics": "Análisis de Sesión",
+    "forResearch": "(Para Investigación)",
+    "contentViewed": "Contenido Visto",
+    "timeSpent": "Tiempo Empleado",
+    "tasksCompleted": "Tareas Completadas",
+    "successRate": "Tasa de Éxito",
+    "quickTips": "Consejos Rápidos",
+    "tip1": "Usa la barra de búsqueda para encontrar contenido educativo de múltiples fuentes",
+    "tip2": "El contenido marcado con 🔴 necesita remediación de accesibilidad antes de verlo",
+    "tip3": "Ajusta tu perfil visual en Configuración en cualquier momento",
+    "tip4": "Presiona ? para atajos de teclado"
+  },
+  "search": {
+    "title": "Búsqueda EduAccess",
+    "placeholder": "Buscar contenido educativo...",
+    "voiceSearch": "Búsqueda por voz",
+    "searchButton": "Buscar",
+    "clearSearch": "Limpiar búsqueda",
+    "filters": {
+      "contentType": "Tipo de Contenido",
+      "filterByType": "Filtrar por tipo",
+      "level": "Nivel",
+      "educationLevel": "Nivel educativo",
+      "accessibility": "Accesibilidad",
+      "accessibilityStatus": "Estado de accesibilidad",
+      "clearFilters": "Limpiar filtros"
+    },
+    "contentTypes": {
+      "video": "📹 Video",
+      "article": "📄 Artículo",
+      "textbook": "📚 Libro de texto",
+      "exercise": "✏️ Ejercicio",
+      "diagram": "📊 Diagrama"
+    },
+    "educationLevels": {
+      "elementary": "Primaria",
+      "middle": "Secundaria",
+      "high": "Preparatoria",
+      "college": "Universidad"
+    },
+    "accessibilityStatuses": {
+      "accessible": "✅ Accesible",
+      "partiallyAccessible": "🟡 Parcialmente Accesible",
+      "needsRemediation": "🔴 Necesita Remediación"
+    },
+    "results": "{{count}} resultados",
+    "noResults": "No se encontraron resultados",
+    "noResultsHint": "Intenta ajustar tu búsqueda o filtros",
+    "gridView": "Vista de cuadrícula",
+    "listView": "Vista de lista",
+    "badges": {
+      "accessible": "Accesible",
+      "needsRemediation": "Necesita Remediación",
+      "partial": "Parcial"
+    },
+    "issues": "{{count}} problema(s) de accesibilidad"
+  },
+  "remediation": {
+    "title": "Remediando Contenido",
+    "complete": "¡Remediación Completa!",
+    "progress": "Progreso",
+    "estimatedTime": "Tiempo estimado restante: ~{{seconds}} segundos",
+    "stages": {
+      "analyzing": "Analizando contenido",
+      "ocr": "Extrayendo texto (OCR)",
+      "altText": "Generando texto alternativo",
+      "tts": "Creando audio (TTS)",
+      "simplification": "Simplificando texto"
+    },
+    "processing": "Procesando...",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "cancel": "Cancelar",
+    "viewContent": "Ver Contenido"
+  },
+  "contentViewer": {
+    "backToSearch": "Volver a Búsqueda",
+    "remediationComplete": "Remediación Completa",
+    "services": "Servicios",
+    "confidence": "Confianza",
+    "time": "Tiempo",
+    "quickAdjustments": "Ajustes Rápidos",
+    "decreaseFontSize": "Disminuir tamaño de fuente",
+    "increaseFontSize": "Aumentar tamaño de fuente",
+    "listen": "Escuchar",
+    "stopAudio": "Detener Audio",
+    "focusMode": "Modo Enfoque",
+    "simplified": "Simplificado",
+    "altText": "Texto alternativo",
+    "markCompleted": "Marcar como Completado",
+    "saveToLibrary": "Guardar en Biblioteca",
+    "bookmark": "Marcador",
+    "share": "Compartir"
+  },
+  "settings": {
+    "title": "Configuración",
+    "tabs": {
+      "profile": "Perfil",
+      "appearance": "Apariencia",
+      "accessibility": "Accesibilidad",
+      "data": "Datos",
+      "about": "Acerca de"
+    },
+    "profile": {
+      "title": "Configuración del Perfil",
+      "name": "Nombre",
+      "visualAcuity": "Agudeza Visual",
+      "reconfigure": "Reconfigurar perfil visual"
+    },
+    "appearance": {
+      "title": "Configuración de Apariencia",
+      "theme": "Tema",
+      "light": "Claro",
+      "dark": "Oscuro",
+      "highContrast": "Alto Contraste",
+      "fontSize": "Tamaño de Fuente",
+      "lineSpacing": "Espaciado de Línea",
+      "previewText": "Texto de vista previa a {{size}}px"
+    },
+    "accessibility": {
+      "title": "Configuración de Accesibilidad",
+      "contrastMode": "Modo de Contraste",
+      "normal": "Normal (contraste 4.5:1)",
+      "high": "Alto Contraste (21:1)",
+      "inverted": "Invertido (para fotofobia)",
+      "animations": "Habilitar Animaciones",
+      "animationsDesc": "Transiciones suaves y micro-interacciones",
+      "tts": "Texto a Voz",
+      "ttsDesc": "Habilitar narración de audio para contenido"
+    },
+    "data": {
+      "title": "Datos y Privacidad",
+      "sessionStats": "Estadísticas de Sesión",
+      "contentViewed": "Contenido visto",
+      "tasksCompleted": "Tareas completadas",
+      "eventsTracked": "Eventos rastreados",
+      "exportData": "Exportar Mis Datos (RGPD)",
+      "privacyNote": "Tus datos se almacenan localmente en tu navegador y se usan solo para fines de investigación. No se comparte información personal con terceros.",
+      "logout": "Cerrar Sesión",
+      "logoutConfirm": "¿Estás seguro de que quieres cerrar sesión?"
+    },
+    "about": {
+      "title": "Acerca de EduAccess",
+      "version": "Versión 1.0.0 (Prototipo de Tesis Doctoral)",
+      "description": "EduAccess es un ecosistema inteligente de agregación de contenido educativo con remediación automática de accesibilidad para estudiantes con discapacidad visual leve a moderada.",
+      "research": "Proyecto de Investigación",
+      "researchDesc": "Este prototipo es parte de una tesis doctoral que investiga arquitecturas middleware para accesibilidad educativa. Basado en investigaciones de Michael (2024), Jeanneret & Baudet (2022), y estándares ISO/IEC 24751.",
+      "techStack": "Stack Tecnológico"
+    }
+  },
+  "navigation": {
+    "search": "Buscar",
+    "dashboard": "Panel",
+    "settings": "Configuración",
+    "menu": "Menú",
+    "changeTheme": "Cambiar tema",
+    "viewProfile": "Ver perfil"
+  },
+  "themes": {
+    "light": "Claro",
+    "dark": "Oscuro",
+    "highContrast": "Alto Contraste"
+  },
+  "errors": {
+    "generic": "Algo salió mal. Por favor intenta de nuevo.",
+    "searchFailed": "Error al buscar contenido. Por favor intenta de nuevo.",
+    "loadFailed": "Error al cargar contenido.",
+    "networkError": "Error de red. Verifica tu conexión."
+  },
+  "toasts": {
+    "profileSaved": "Perfil guardado exitosamente",
+    "settingsUpdated": "Configuración actualizada",
+    "contentBookmarked": "Contenido guardado en biblioteca",
+    "dataExported": "Datos exportados exitosamente"
+  }
+}
