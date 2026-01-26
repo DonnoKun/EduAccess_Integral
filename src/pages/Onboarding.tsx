@@ -76,22 +76,33 @@ export default function Onboarding() {
     }
   }, [isAuthenticated, navigate]);
 
-  // Apply live preview
+  // Apply live preview for font size and line spacing - CUMULATIVE across all steps
   useEffect(() => {
-    document.documentElement.style.setProperty('--profile-font-size', `${fontSize}px`);
-    document.documentElement.style.setProperty('--profile-line-height', String(lineSpacing));
+    const root = document.documentElement;
+    root.style.setProperty('--profile-font-size', `${fontSize}px`);
+    root.style.setProperty('--profile-line-height', String(lineSpacing));
+    console.log('📐 Preview: Font size:', fontSize, 'Line spacing:', lineSpacing);
   }, [fontSize, lineSpacing]);
 
-  // Apply contrast preview
+  // Apply contrast preview - CUMULATIVE across all steps
   useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove('light', 'dark', 'high-contrast', 'inverted');
+    
     if (contrast === 'high') {
-      setTheme('high-contrast');
+      root.classList.add('high-contrast');
     } else if (contrast === 'inverted') {
-      setTheme('inverted');
-    } else {
-      setTheme('light');
+      root.classList.add('inverted');
     }
-  }, [contrast, setTheme]);
+    console.log('🎨 Preview: Contrast mode:', contrast);
+  }, [contrast]);
+
+  // Apply animations preview - CUMULATIVE across all steps
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--animation-duration', enableAnimations ? '300ms' : '0ms');
+    console.log('🎬 Preview: Animations:', enableAnimations);
+  }, [enableAnimations]);
 
   const handleNext = () => {
     if (currentStep < 5) {
@@ -121,8 +132,24 @@ export default function Onboarding() {
       updateUserName(userName);
     }
     
+    // Set profile (this will also apply styles globally)
     setVisualProfile(profile);
+    
+    // Set the theme based on contrast preference
+    const themeMode = contrast === 'high' ? 'high-contrast' 
+      : contrast === 'inverted' ? 'inverted' 
+      : 'light';
+    setTheme(themeMode);
+    
     completeOnboarding();
+    
+    console.log('✅ Onboarding complete - Profile saved:', {
+      fontSize: profile.preferences.fontSize,
+      lineSpacing: profile.preferences.lineSpacing,
+      contrast: profile.preferences.contrast,
+      animations: profile.preferences.enableAnimations
+    });
+    
     navigate('/dashboard');
   };
 
@@ -215,7 +242,7 @@ export default function Onboarding() {
         {/* Main Content */}
         <main 
           id="main-content" 
-          className="glass-card rounded-2xl p-6 md:p-8"
+          className="glass-card rounded-2xl p-6 md:p-8 onboarding-content"
         >
           <AnimatePresence mode="wait">
             <motion.div

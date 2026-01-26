@@ -271,6 +271,40 @@
                 color var(--animation-duration) var(--animation-timing);
   }
 
+  /* ===== USER VISUAL PROFILE - APPLIED GLOBALLY ===== */
+  /* Content text uses user preferences */
+  main p, 
+  main li, 
+  main span:not([class*="icon"]), 
+  main label,
+  .content-adaptive p,
+  .content-adaptive li,
+  .content-adaptive span,
+  .onboarding-content p,
+  .onboarding-content label,
+  .dashboard-content p,
+  .search-results p,
+  .content-viewer p {
+    font-size: var(--profile-font-size) !important;
+    line-height: var(--profile-line-height) !important;
+  }
+
+  /* Headings scale proportionally to base font size */
+  main h1, .onboarding-content h1, .dashboard-content h1 {
+    font-size: calc(var(--profile-font-size) * 1.75) !important;
+    line-height: calc(var(--profile-line-height) * 0.9) !important;
+  }
+
+  main h2, .onboarding-content h2, .dashboard-content h2 {
+    font-size: calc(var(--profile-font-size) * 1.5) !important;
+    line-height: calc(var(--profile-line-height) * 0.95) !important;
+  }
+
+  main h3, .onboarding-content h3, .dashboard-content h3 {
+    font-size: calc(var(--profile-font-size) * 1.25) !important;
+    line-height: var(--profile-line-height) !important;
+  }
+
   /* Respect reduced motion preferences */
   @media (prefers-reduced-motion: reduce) {
     * {
