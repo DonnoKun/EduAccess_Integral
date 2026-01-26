@@ -47,107 +47,9 @@ export default function RemediatePage() {
   } = useStore();
 
   const [isPaused, setIsPaused] = useState(false);
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [startTime] = useState(Date.now());
-
-  const simulateRemediation = useCallback(async () => {
-    for (let i = currentStepIndex; i < remediationSteps.length; i++) {
-      if (isPaused) {
-        setCurrentStepIndex(i);
-        return;
-      }
-
-      const step = remediationSteps[i];
-      
-      updateRemediationProgress({
-        stage: step.id,
-        percentage: ((i + 0.5) / remediationSteps.length) * 100,
-        currentService: step.service,
-        estimatedTimeRemaining: remediationSteps
-          .slice(i)
-          .reduce((acc, s) => acc + s.duration, 0) / 1000,
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, step.duration));
-
-      setCompletedSteps((prev) => [...prev, step.id]);
-      
-      updateRemediationProgress({
-        stage: step.id,
-        percentage: ((i + 1) / remediationSteps.length) * 100,
-        servicesCompleted: [...completedSteps, step.service],
-      });
-    }
-
-    // Complete remediation
-    const totalTime = Date.now() - startTime;
-    
-    const remediatedContent: RemediatedContent = {
-      originalContentId: contentId || '',
-      originalURL: currentContent?.url || '',
-      contentType: currentContent?.contentType || '',
-      remediatedElements: {
-        extractedText: {
-          extractedText: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-          confidence: 95,
-          language: 'en',
-          processingTimeMs: 2100,
-        },
-        imageDescriptions: [
-          {
-            altText: 'Diagram showing the key concepts with labeled components',
-            detailedDescription: 'A detailed educational diagram illustrating the main topic with annotations and visual representations.',
-            containsText: true,
-            confidence: 89,
-            processingTimeMs: 1500,
-          },
-        ],
-        audioNarration: {
-          audioURL: '/audio/narration.mp3',
-          duration: 225,
-          format: 'mp3',
-          voice: 'en-US-Female',
-          speed: 1.0,
-          processingTimeMs: 1200,
-        },
-        simplifiedText: {
-          originalText: 'Complex academic terminology...',
-          simplifiedText: 'Simpler explanation of the same concepts in easier words.',
-          readingLevel: 'middle',
-          reductionPercentage: 35,
-          processingTimeMs: 500,
-        },
-      },
-      metricsSummary: {
-        totalProcessingTimeMs: totalTime,
-        servicesUsed: remediationSteps.map((s) => s.service),
-        averageConfidence: 89,
-        accessibilityScore: 92,
-      },
-      timestamp: new Date(),
-    };
-
-    setRemediatedContent(remediatedContent);
-    updateRemediationProgress({ stage: 'complete', percentage: 100 });
-    incrementContentViewed();
-
-    // Navigate to content viewer after short delay
-    setTimeout(() => {
-      navigate(`/content/${contentId}`);
-    }, 1000);
-  }, [
-    currentStepIndex,
-    isPaused,
-    completedSteps,
-    contentId,
-    currentContent,
-    navigate,
-    startTime,
-    updateRemediationProgress,
-    setRemediatedContent,
-    incrementContentViewed,
-  ]);
+  const [isRunning, setIsRunning] = useState(false);
 
   useEffect(() => {
     if (!currentContent) {
@@ -155,10 +57,106 @@ export default function RemediatePage() {
       return;
     }
 
-    if (!isPaused && remediationProgress.stage !== 'complete') {
-      simulateRemediation();
+    // Only start if not already running and not paused
+    if (isRunning || isPaused || remediationProgress.stage === 'complete') {
+      return;
     }
-  }, [isPaused, currentContent, navigate, remediationProgress.stage, simulateRemediation]);
+
+    const runRemediation = async () => {
+      setIsRunning(true);
+      console.log('🔧 Starting remediation for:', currentContent.title);
+
+      const localCompletedSteps: string[] = [];
+
+      for (let i = 0; i < remediationSteps.length; i++) {
+        const step = remediationSteps[i];
+
+        console.log(`✅ Stage ${i + 1}/${remediationSteps.length}: ${step.name}`);
+
+        updateRemediationProgress({
+          stage: step.id,
+          percentage: ((i + 0.5) / remediationSteps.length) * 100,
+          currentService: step.service,
+          estimatedTimeRemaining: remediationSteps
+            .slice(i)
+            .reduce((acc, s) => acc + s.duration, 0) / 1000,
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, step.duration));
+
+        localCompletedSteps.push(step.id);
+        setCompletedSteps([...localCompletedSteps]);
+
+        updateRemediationProgress({
+          stage: step.id,
+          percentage: ((i + 1) / remediationSteps.length) * 100,
+          servicesCompleted: remediationSteps.slice(0, i + 1).map(s => s.service),
+        });
+      }
+
+      // Complete remediation
+      const totalTime = Date.now() - startTime;
+      console.log('✅ Remediation complete in', totalTime, 'ms');
+
+      const remediatedContent: RemediatedContent = {
+        originalContentId: contentId || '',
+        originalURL: currentContent?.url || '',
+        contentType: currentContent?.contentType || '',
+        remediatedElements: {
+          extractedText: {
+            extractedText: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+            confidence: 95,
+            language: 'en',
+            processingTimeMs: 2100,
+          },
+          imageDescriptions: [
+            {
+              altText: 'Diagram showing the key concepts with labeled components',
+              detailedDescription: 'A detailed educational diagram illustrating the main topic with annotations and visual representations.',
+              containsText: true,
+              confidence: 89,
+              processingTimeMs: 1500,
+            },
+          ],
+          audioNarration: {
+            audioURL: '/audio/narration.mp3',
+            duration: 225,
+            format: 'mp3',
+            voice: 'en-US-Female',
+            speed: 1.0,
+            processingTimeMs: 1200,
+          },
+          simplifiedText: {
+            originalText: 'Complex academic terminology...',
+            simplifiedText: 'Simpler explanation of the same concepts in easier words.',
+            readingLevel: 'middle',
+            reductionPercentage: 35,
+            processingTimeMs: 500,
+          },
+        },
+        metricsSummary: {
+          totalProcessingTimeMs: totalTime,
+          servicesUsed: remediationSteps.map((s) => s.service),
+          averageConfidence: 89,
+          accessibilityScore: 92,
+        },
+        timestamp: new Date(),
+      };
+
+      setRemediatedContent(remediatedContent);
+      updateRemediationProgress({ stage: 'complete', percentage: 100 });
+      incrementContentViewed();
+
+      console.log('✅ Navigating to content viewer...');
+      
+      // Navigate to content viewer after short delay
+      setTimeout(() => {
+        navigate(`/content/${contentId}`);
+      }, 1000);
+    };
+
+    runRemediation();
+  }, [currentContent, isPaused, isRunning, remediationProgress.stage, contentId, navigate, startTime, updateRemediationProgress, setRemediatedContent, incrementContentViewed]);
 
   const handleCancel = () => {
     navigate('/search');
