@@ -132,14 +132,39 @@ export const useStore = create<GlobalState>()(
       },
 
       setTheme: (theme) => {
-        set({ currentTheme: theme });
-        // Apply theme class to document
+        console.log('🎨 Theme change requested:', theme);
+        
+        // Apply theme to document IMMEDIATELY before state update
         const root = document.documentElement;
         root.classList.remove('light', 'dark', 'high-contrast', 'inverted');
+        root.setAttribute('data-theme', theme);
         if (theme !== 'light') {
           root.classList.add(theme);
         }
+        
+        // Update state
+        set({ currentTheme: theme });
+        
+        // Update visual profile if exists
+        const profile = get().visualProfile;
+        if (profile) {
+          const contrastValue = theme === 'high-contrast' ? 'high' 
+            : theme === 'inverted' ? 'inverted' 
+            : theme === 'dark' ? 'normal'
+            : 'normal';
+          set({
+            visualProfile: {
+              ...profile,
+              preferences: {
+                ...profile.preferences,
+                contrast: contrastValue as 'normal' | 'high' | 'inverted',
+              },
+            },
+          });
+        }
+        
         get().trackEvent({ type: 'theme_change', details: { theme } });
+        console.log('✅ Theme changed to:', theme);
       },
 
       setSearchQuery: (query) => set({ searchQuery: query }),
