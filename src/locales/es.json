@@ -21,7 +21,7 @@
     "email": "Correo electrónico",
     "phone": "Teléfono",
     "emailPlaceholder": "tu@email.com",
-    "phonePlaceholder": "+34 600 000 000",
+    "phonePlaceholder": "123 456 7890",
     "sendCode": "Enviar código de verificación",
     "newUserNote": "¿Usuario nuevo? Tu perfil se creará automáticamente en el primer inicio de sesión.",
     "verificationTitle": "Código de Verificación Enviado",
@@ -37,7 +37,16 @@
     "invalidEmail": "Por favor ingresa un correo electrónico válido",
     "invalidPhone": "Por favor ingresa un número de teléfono válido",
     "loginSuccess": "¡Inicio de sesión exitoso!",
-    "logoutSuccess": "Has cerrado sesión correctamente"
+    "logoutSuccess": "Has cerrado sesión correctamente",
+    "phoneTooShort": "El número es muy corto (mín. {{min}} dígitos)",
+    "phoneTooLong": "El número es muy largo (máx. {{max}} dígitos)"
+  },
+  "login": {
+    "countryCode": "Código de país",
+    "phoneNumber": "Número de teléfono",
+    "selectCountry": "Selecciona tu país",
+    "searchCountry": "Buscar país...",
+    "noCountriesFound": "No se encontraron países"
   },
   "onboarding": {
     "title": "Configura tu Perfil Visual",
