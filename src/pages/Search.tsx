@@ -25,6 +25,7 @@ import {
   ChevronDown,
   LogOut,
   Settings,
+  Eye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,9 +63,11 @@ export default function SearchPage() {
     hasCompletedOnboarding,
     currentTheme,
     setTheme,
+    readingGuideEnabled,
+    toggleReadingGuide,
+    visualProfile,
   } = useStore();
   const { isAuthenticated, logout, currentUser } = useAuthStore();
-  const { visualProfile } = useStore();
 
   const [localQuery, setLocalQuery] = useState(searchParams.get('q') || '');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -219,6 +222,19 @@ export default function SearchPage() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <Button 
+              variant={readingGuideEnabled ? 'default' : 'ghost'} 
+              size="icon" 
+              onClick={() => {
+                toggleReadingGuide();
+                toast.success(!readingGuideEnabled ? t('dashboard.readingGuideEnabled') : t('dashboard.readingGuideDisabled'));
+              }}
+              aria-label={t('dashboard.toggleReadingGuide')}
+              aria-pressed={readingGuideEnabled}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
 
             {/* User Menu with Logout */}
             <DropdownMenu>

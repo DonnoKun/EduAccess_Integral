@@ -4,7 +4,7 @@
  */
 
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
@@ -70,27 +70,14 @@ export default function Dashboard() {
     sessionMetrics,
     currentTheme,
     setTheme,
+    readingGuideEnabled,
+    toggleReadingGuide,
   } = useStore();
   const { isAuthenticated, logout, currentUser } = useAuthStore();
-  const [readingGuideEnabled, setReadingGuideEnabled] = useState(false);
-  const [guidePosition, setGuidePosition] = useState(0);
 
-  // Reading guide - follows mouse position
-  useEffect(() => {
-    if (!readingGuideEnabled) return;
-    
-    const handleMouseMove = (e: MouseEvent) => {
-      setGuidePosition(e.clientY);
-    };
-    
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [readingGuideEnabled]);
-
-  const toggleReadingGuide = () => {
-    const newState = !readingGuideEnabled;
-    setReadingGuideEnabled(newState);
-    toast.success(newState ? t('dashboard.readingGuideEnabled') : t('dashboard.readingGuideDisabled'));
+  const handleToggleReadingGuide = () => {
+    toggleReadingGuide();
+    toast.success(!readingGuideEnabled ? t('dashboard.readingGuideEnabled') : t('dashboard.readingGuideDisabled'));
   };
 
   const handleLogout = () => {
@@ -162,15 +149,10 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Reading Guide Line */}
-      {readingGuideEnabled && (
-        <div 
-          className="reading-guide"
-          style={{ top: guidePosition }}
-          aria-hidden="true"
-        />
-      )}
       {/* Skip link */}
+      <a href="#main-content" className="skip-link">
+        {t('common.skipToMain')}
+      </a>
       <a href="#main-content" className="skip-link">
         {t('common.skipToMain')}
       </a>
@@ -244,7 +226,7 @@ export default function Dashboard() {
                 <Button 
                   variant={readingGuideEnabled ? 'default' : 'ghost'} 
                   size="icon" 
-                  onClick={toggleReadingGuide}
+                  onClick={handleToggleReadingGuide}
                   aria-label={t('dashboard.toggleReadingGuide')}
                   aria-pressed={readingGuideEnabled}
                 >

@@ -518,7 +518,11 @@ export default function Onboarding() {
                 <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
               </Button>
             ) : (
-              <Button onClick={handleComplete} className="touch-target bg-success hover:bg-success/90">
+              <Button 
+                onClick={handleComplete} 
+                className="complete-setup-btn touch-target bg-success hover:bg-success/90"
+                size="lg"
+              >
                 <Check className="mr-2 h-4 w-4" aria-hidden="true" />
                 {t('onboarding.complete')}
               </Button>

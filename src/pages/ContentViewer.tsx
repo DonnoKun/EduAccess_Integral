@@ -50,6 +50,8 @@ export default function ContentViewer() {
     focusModeEnabled,
     toggleFocusMode,
     hasCompletedOnboarding,
+    readingGuideEnabled,
+    toggleReadingGuide,
   } = useStore();
 
   const [fontSize, setFontSize] = useState(visualProfile?.preferences.fontSize || 20);
@@ -115,7 +117,7 @@ export default function ContentViewer() {
       {/* Header */}
       <header className="sticky top-0 z-50 glass-card border-b">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate(-1)}>
+          <Button variant="ghost" onClick={() => navigate('/search', { replace: true })}>
             <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
             Back to Search
           </Button>
@@ -146,6 +148,16 @@ export default function ContentViewer() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <Button 
+              variant={readingGuideEnabled ? 'default' : 'outline'} 
+              size="icon" 
+              onClick={toggleReadingGuide}
+              aria-label="Toggle reading guide"
+              aria-pressed={readingGuideEnabled}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
 
             <Button variant="outline" size="icon" aria-label="Settings">
               <Settings2 className="h-4 w-4" />
