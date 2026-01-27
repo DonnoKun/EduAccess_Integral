@@ -14,6 +14,7 @@ import RemediatePage from "./pages/Remediate";
 import ContentViewer from "./pages/ContentViewer";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import ReadingGuide from "./components/ReadingGuide";
 
 const queryClient = new QueryClient();
 
@@ -103,13 +104,24 @@ function AppContent() {
   );
 }
 
+function AppWrapper() {
+  const { readingGuideEnabled } = useStore();
+  
+  return (
+    <>
+      <AppContent />
+      <ReadingGuide enabled={readingGuideEnabled} />
+    </>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AppContent />
+        <AppWrapper />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

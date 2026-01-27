@@ -48,6 +48,7 @@ interface GlobalState {
   sidebarOpen: boolean;
   readingMode: boolean;
   focusModeEnabled: boolean;
+  readingGuideEnabled: boolean;
   
   // Analytics
   sessionMetrics: SessionMetrics;
@@ -69,6 +70,7 @@ interface GlobalState {
   toggleSidebar: () => void;
   toggleReadingMode: () => void;
   toggleFocusMode: () => void;
+  toggleReadingGuide: () => void;
   trackEvent: (event: Omit<MetricEvent, 'timestamp'>) => void;
   incrementContentViewed: () => void;
   applyProfileStyles: () => void;
@@ -108,6 +110,7 @@ export const useStore = create<GlobalState>()(
       sidebarOpen: true,
       readingMode: false,
       focusModeEnabled: false,
+      readingGuideEnabled: false,
       sessionMetrics: initialSessionMetrics,
       events: [],
 
@@ -264,6 +267,8 @@ export const useStore = create<GlobalState>()(
 
       toggleFocusMode: () => set((state) => ({ focusModeEnabled: !state.focusModeEnabled })),
 
+      toggleReadingGuide: () => set((state) => ({ readingGuideEnabled: !state.readingGuideEnabled })),
+
       trackEvent: (event) => {
         const fullEvent: MetricEvent = { ...event, timestamp: new Date() };
         set((state) => ({ events: [...state.events, fullEvent] }));
@@ -328,6 +333,7 @@ export const useStore = create<GlobalState>()(
         visualProfile: state.visualProfile,
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         currentTheme: state.currentTheme,
+        readingGuideEnabled: state.readingGuideEnabled,
       }),
     }
   )
