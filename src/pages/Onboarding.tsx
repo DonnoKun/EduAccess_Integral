@@ -503,25 +503,58 @@ export default function Onboarding() {
                       />
                     </div>
 
-                    <div className="space-y-4">
-                      <Label>{t('onboarding.step5.brightness')}</Label>
+                    <div className="space-y-4" style={{ fontSize: '1em' }}>
+                      <Label style={{ fontSize: '1em' }}>{t('onboarding.step5.brightness')}</Label>
                       <RadioGroup 
                         value={brightnessSensitivity} 
                         onValueChange={(v) => setBrightnessSensitivity(v as BrightnessSensitivity)}
-                        className="flex gap-4"
+                        className="flex flex-wrap gap-3"
+                        style={{ fontSize: '1em' }}
                       >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="low" id="brightness-low" />
-                          <Label htmlFor="brightness-low">{t('onboarding.step5.brightnessLow')}</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="medium" id="brightness-medium" />
-                          <Label htmlFor="brightness-medium">{t('onboarding.step5.brightnessMedium')}</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="high" id="brightness-high" />
-                          <Label htmlFor="brightness-high">{t('onboarding.step5.brightnessHigh')}</Label>
-                        </div>
+                        {[
+                          { value: 'low', id: 'brightness-low', label: t('onboarding.step5.brightnessLow') },
+                          { value: 'medium', id: 'brightness-medium', label: t('onboarding.step5.brightnessMedium') },
+                          { value: 'high', id: 'brightness-high', label: t('onboarding.step5.brightnessHigh') },
+                        ].map((option) => (
+                          <label
+                            key={option.value}
+                            htmlFor={option.id}
+                            className={`
+                              flex items-center gap-2 px-4 py-3 rounded-lg border-2 cursor-pointer
+                              transition-all duration-200 min-w-fit
+                              ${brightnessSensitivity === option.value 
+                                ? 'border-primary bg-primary/10 font-semibold' 
+                                : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                              }
+                            `}
+                            style={{ fontSize: '1em', lineHeight: 1.4 }}
+                          >
+                            <RadioGroupItem 
+                              value={option.value} 
+                              id={option.id}
+                              className="sr-only"
+                            />
+                            <div 
+                              className={`
+                                w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0
+                                ${brightnessSensitivity === option.value 
+                                  ? 'border-primary' 
+                                  : 'border-muted-foreground'
+                                }
+                              `}
+                              style={{ width: '1.25em', height: '1.25em' }}
+                              aria-hidden="true"
+                            >
+                              {brightnessSensitivity === option.value && (
+                                <div 
+                                  className="rounded-full bg-primary"
+                                  style={{ width: '0.625em', height: '0.625em' }}
+                                />
+                              )}
+                            </div>
+                            <span style={{ fontSize: '1em' }}>{option.label}</span>
+                          </label>
+                        ))}
                       </RadioGroup>
                     </div>
                   </div>
