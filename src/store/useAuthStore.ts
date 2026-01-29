@@ -6,6 +6,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { resetVisualSettingsToDefault, clearAllUserData } from '@/lib/resetVisualSettings';
+import { useStore } from '@/store/useStore';
 
 export interface User {
   id: string;
@@ -185,7 +186,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         console.log('🚪 Logging out user...');
         
-        // 1. Clear Zustand state
+        // 1. Clear Zustand auth state
         set({
           currentUser: null,
           isAuthenticated: false,
@@ -193,13 +194,16 @@ export const useAuthStore = create<AuthState>()(
           error: null,
         });
         
-        // 2. Reset visual settings to defaults (privacy)
+        // 2. Reset reading guide state in global store
+        useStore.getState().resetReadingGuide();
+        
+        // 3. Reset visual settings to defaults (privacy)
         resetVisualSettingsToDefault();
         
-        // 3. Clear all user data from localStorage
+        // 4. Clear all user data from localStorage
         clearAllUserData();
         
-        console.log('✅ Logout complete - all user data cleared');
+        console.log('✅ Logout complete - all user data cleared, reading guide disabled');
       },
 
       clearError: () => set({ error: null }),

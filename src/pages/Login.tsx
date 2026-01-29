@@ -382,8 +382,10 @@ export default function Login() {
       </main>
 
       {/* Footer */}
-      <footer className="p-4 text-center text-sm text-muted-foreground">
-        <p>EduAccess - {t('settings.about.description').slice(0, 60)}...</p>
+      <footer className="p-4 text-center border-t border-border">
+        <p className="text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          {t('common.appName')} - {t('settings.about.description')}
+        </p>
       </footer>
     </div>
   );

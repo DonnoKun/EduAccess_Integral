@@ -106,11 +106,15 @@ function AppContent() {
 
 function AppWrapper() {
   const { readingGuideEnabled } = useStore();
+  const { isAuthenticated } = useAuthStore();
+  
+  // Only show reading guide when user is authenticated
+  const showReadingGuide = readingGuideEnabled && isAuthenticated;
   
   return (
     <>
       <AppContent />
-      <ReadingGuide enabled={readingGuideEnabled} />
+      <ReadingGuide enabled={showReadingGuide} />
     </>
   );
 }
