@@ -27,6 +27,16 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useStore } from '@/store/useStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -57,6 +67,7 @@ export default function Settings() {
   const { isAuthenticated, logout } = useAuthStore();
   
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -156,11 +167,19 @@ export default function Settings() {
   };
 
   const handleLogout = () => {
+    setShowLogoutDialog(true);
+  };
+
+  const confirmLogout = () => {
+    console.log('🚪 User confirmed logout');
     logout();
     toast({
       description: t('auth.logoutSuccess'),
     });
-    navigate('/login');
+    // Navigate after a brief delay to allow state cleanup
+    setTimeout(() => {
+      navigate('/login');
+    }, 100);
   };
 
   return (
@@ -498,6 +517,27 @@ export default function Settings() {
           </div>
         </motion.div>
       </main>
+
+      {/* Logout Confirmation Dialog */}
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('settings.data.logoutConfirm')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('settings.data.logoutDescription')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmLogout}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t('settings.data.logout')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

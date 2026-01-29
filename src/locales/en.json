@@ -260,7 +260,8 @@
       "exportData": "Export My Data (GDPR)",
       "privacyNote": "Your data is stored locally in your browser and is used only for research purposes. No personal information is shared with third parties.",
       "logout": "Logout",
-      "logoutConfirm": "Are you sure you want to logout?"
+      "logoutConfirm": "Are you sure you want to logout?",
+      "logoutDescription": "Your visual settings will be reset to default values."
     },
     "about": {
       "title": "About EduAccess",
