@@ -86,7 +86,8 @@
   }
 
   /* ===== DARK THEME ===== */
-  .dark {
+  .dark,
+  [data-theme="dark"] {
     --background: 222 47% 6%;
     --foreground: 210 40% 98%;
 
@@ -141,7 +142,8 @@
   }
 
   /* ===== HIGH CONTRAST THEME ===== */
-  .high-contrast {
+  .high-contrast,
+  [data-theme="high-contrast"] {
     --background: 0 0% 0%;
     --foreground: 0 0% 100%;
 
@@ -199,7 +201,8 @@
   }
 
   /* ===== INVERTED THEME (For Photophobia) ===== */
-  .inverted {
+  .inverted,
+  [data-theme="inverted"] {
     --background: 60 56% 91%;
     --foreground: 240 100% 25%;
 
@@ -551,6 +554,35 @@
   }
 
   /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  /* ONBOARDING PAGE STYLES */
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+  .onboarding-page {
+    /* Container inherits font-size from inline styles */
+  }
+
+  .onboarding-page h2,
+  .onboarding-page h3 {
+    line-height: 1.3;
+  }
+
+  .onboarding-page p,
+  .onboarding-page label,
+  .onboarding-page span {
+    line-height: inherit;
+  }
+
+  .onboarding-nav-buttons {
+    flex-wrap: wrap;
+  }
+
+  .onboarding-nav-btn {
+    height: auto !important;
+    white-space: nowrap;
+    line-height: 1.4;
+  }
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   /* COMPLETE SETUP BUTTON (Onboarding) */
   /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   
@@ -559,7 +591,8 @@
     width: auto !important;
     padding: 1rem 2rem !important;
     white-space: nowrap !important;
-    font-size: var(--profile-font-size, 16px) !important;
+    font-size: inherit !important;
+    height: auto !important;
   }
 
   /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
@@ -710,6 +743,21 @@
     color: hsl(var(--muted-foreground));
     transition: all 0.2s ease;
     width: 100%;
+    /* CRITICAL: Allow text wrap for long labels like "Accesibilidad" */
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-height: 2.75rem;
+    line-height: 1.3;
+  }
+
+  .settings-nav-item svg {
+    flex-shrink: 0;
+  }
+
+  .settings-nav-item span {
+    flex: 1;
+    min-width: 0;
   }
 
   .settings-nav-item:hover {

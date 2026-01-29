@@ -156,8 +156,18 @@ export default function Onboarding() {
   const logMAR = snellenToLogMAR(snellen);
   const severity = getSeverityFromLogMAR(logMAR);
 
+  // Get current preview values for dynamic styling
+  const currentFontSizePx = `${fontSize}px`;
+  const currentLineHeightVal = lineSpacing;
+
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 md:p-8">
+    <div 
+      className="min-h-screen bg-background flex flex-col items-center justify-center p-4 md:p-8 onboarding-page"
+      style={{
+        fontSize: currentFontSizePx,
+        lineHeight: currentLineHeightVal,
+      }}
+    >
       {/* Skip link for accessibility */}
       <a href="#main-content" className="skip-link">
         {t('common.skipToMain')}
@@ -180,12 +190,18 @@ export default function Onboarding() {
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
           >
-            <Sparkles className="h-8 w-8 text-primary" aria-hidden="true" />
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+            <Sparkles style={{ width: '1.5em', height: '1.5em' }} className="text-primary" aria-hidden="true" />
+            <h1 
+              className="font-bold text-foreground"
+              style={{ fontSize: `calc(${currentFontSizePx} * 1.75)` }}
+            >
               {t('common.appName')}
             </h1>
           </motion.div>
-          <p className="text-muted-foreground text-lg">
+          <p 
+            className="text-muted-foreground"
+            style={{ fontSize: `calc(${currentFontSizePx} * 0.875)` }}
+          >
             {t('onboarding.subtitle')}
           </p>
         </header>
@@ -234,7 +250,11 @@ export default function Onboarding() {
               );
             })}
           </ol>
-          <p className="text-center text-sm text-muted-foreground mt-4" aria-live="polite">
+          <p 
+            className="text-center text-muted-foreground mt-4" 
+            style={{ fontSize: `calc(${currentFontSizePx} * 0.75)` }}
+            aria-live="polite"
+          >
             {t('onboarding.stepOf', { current: currentStep, total: 5, name: steps[currentStep - 1].title })}
           </p>
         </nav>
@@ -256,8 +276,10 @@ export default function Onboarding() {
               {currentStep === 1 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold mb-2">{t('onboarding.step1.title')}</h2>
-                    <p className="text-muted-foreground">
+                    <h2 className="font-semibold mb-2" style={{ fontSize: `calc(${currentFontSizePx} * 1.5)` }}>
+                      {t('onboarding.step1.title')}
+                    </h2>
+                    <p className="text-muted-foreground" style={{ fontSize: currentFontSizePx }}>
                       {t('onboarding.step1.description')}
                     </p>
                   </div>
@@ -307,8 +329,10 @@ export default function Onboarding() {
               {currentStep === 2 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold mb-2">{t('onboarding.step2.title')}</h2>
-                    <p className="text-muted-foreground">
+                    <h2 className="font-semibold mb-2" style={{ fontSize: `calc(${currentFontSizePx} * 1.5)` }}>
+                      {t('onboarding.step2.title')}
+                    </h2>
+                    <p className="text-muted-foreground" style={{ fontSize: currentFontSizePx }}>
                       {t('onboarding.step2.description')}
                     </p>
                   </div>
@@ -360,8 +384,10 @@ export default function Onboarding() {
               {currentStep === 3 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold mb-2">{t('onboarding.step3.title')}</h2>
-                    <p className="text-muted-foreground">
+                    <h2 className="font-semibold mb-2" style={{ fontSize: `calc(${currentFontSizePx} * 1.5)` }}>
+                      {t('onboarding.step3.title')}
+                    </h2>
+                    <p className="text-muted-foreground" style={{ fontSize: currentFontSizePx }}>
                       {t('onboarding.step3.description')}
                     </p>
                   </div>
@@ -406,8 +432,10 @@ export default function Onboarding() {
               {currentStep === 4 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold mb-2">{t('onboarding.step4.title')}</h2>
-                    <p className="text-muted-foreground">
+                    <h2 className="font-semibold mb-2" style={{ fontSize: `calc(${currentFontSizePx} * 1.5)` }}>
+                      {t('onboarding.step4.title')}
+                    </h2>
+                    <p className="text-muted-foreground" style={{ fontSize: currentFontSizePx }}>
                       {t('onboarding.step4.description')}
                     </p>
                   </div>
@@ -452,8 +480,10 @@ export default function Onboarding() {
               {currentStep === 5 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold mb-2">{t('onboarding.step5.title')}</h2>
-                    <p className="text-muted-foreground">
+                    <h2 className="font-semibold mb-2" style={{ fontSize: `calc(${currentFontSizePx} * 1.5)` }}>
+                      {t('onboarding.step5.title')}
+                    </h2>
+                    <p className="text-muted-foreground" style={{ fontSize: currentFontSizePx }}>
                       {t('onboarding.step5.description')}
                     </p>
                   </div>
@@ -501,29 +531,39 @@ export default function Onboarding() {
           </AnimatePresence>
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8">
+          <div className="flex justify-between mt-8 gap-4 onboarding-nav-buttons">
             <Button
               variant="outline"
               onClick={handleBack}
               disabled={currentStep === 1}
-              className="touch-target"
+              className="touch-target onboarding-nav-btn"
+              style={{ fontSize: currentFontSizePx, padding: '0.75em 1.5em' }}
             >
-              <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+              <ArrowLeft className="mr-2" style={{ width: '1em', height: '1em' }} aria-hidden="true" />
               {t('common.back')}
             </Button>
 
             {currentStep < 5 ? (
-              <Button onClick={handleNext} className="touch-target">
+              <Button 
+                onClick={handleNext} 
+                className="touch-target onboarding-nav-btn"
+                style={{ fontSize: currentFontSizePx, padding: '0.75em 1.5em' }}
+              >
                 {t('common.next')}
-                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+                <ArrowRight className="ml-2" style={{ width: '1em', height: '1em' }} aria-hidden="true" />
               </Button>
             ) : (
               <Button 
                 onClick={handleComplete} 
                 className="complete-setup-btn touch-target bg-success hover:bg-success/90"
-                size="lg"
+                style={{ 
+                  fontSize: currentFontSizePx, 
+                  padding: '0.875em 2em',
+                  minWidth: '280px',
+                  whiteSpace: 'nowrap',
+                }}
               >
-                <Check className="mr-2 h-4 w-4" aria-hidden="true" />
+                <Check className="mr-2" style={{ width: '1em', height: '1em' }} aria-hidden="true" />
                 {t('onboarding.complete')}
               </Button>
             )}
