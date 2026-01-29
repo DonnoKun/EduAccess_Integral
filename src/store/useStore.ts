@@ -141,6 +141,8 @@ export const useStore = create<GlobalState>()(
         const root = document.documentElement;
         root.classList.remove('light', 'dark', 'high-contrast', 'inverted');
         root.setAttribute('data-theme', theme);
+        
+        // Add class for themes that need it
         if (theme !== 'light') {
           root.classList.add(theme);
         }
@@ -148,13 +150,12 @@ export const useStore = create<GlobalState>()(
         // Update state
         set({ currentTheme: theme });
         
-        // Update visual profile if exists
+        // Update visual profile if exists, preserving font settings
         const profile = get().visualProfile;
         if (profile) {
           const contrastValue = theme === 'high-contrast' ? 'high' 
             : theme === 'inverted' ? 'inverted' 
-            : theme === 'dark' ? 'normal'
-            : 'normal';
+            : 'normal';  // Both light and dark use 'normal' contrast
           set({
             visualProfile: {
               ...profile,
@@ -167,7 +168,7 @@ export const useStore = create<GlobalState>()(
         }
         
         get().trackEvent({ type: 'theme_change', details: { theme } });
-        console.log('✅ Theme changed to:', theme);
+        console.log('✅ Theme changed to:', theme, 'class:', root.classList.toString());
       },
 
       setSearchQuery: (query) => set({ searchQuery: query }),
@@ -300,30 +301,22 @@ export const useStore = create<GlobalState>()(
             profile.preferences.enableAnimations ? '300ms' : '0ms'
           );
           
-          // Apply theme from profile contrast setting
-          const profileTheme = profile.preferences.contrast === 'high' ? 'high-contrast' 
-            : profile.preferences.contrast === 'inverted' ? 'inverted' 
-            : 'light';
-          root.classList.remove('light', 'dark', 'high-contrast', 'inverted');
-          if (profileTheme !== 'light') {
-            root.classList.add(profileTheme);
-          }
-          
           console.log('✅ Visual profile applied:', {
             fontSize: `${profile.preferences.fontSize}px`,
             lineHeight: profile.preferences.lineSpacing,
-            theme: profileTheme,
+            theme: theme,
             animations: profile.preferences.enableAnimations
           });
         } else {
           // Remove data attribute when no profile
           root.removeAttribute('data-user-profile');
-          
-          if (theme !== 'light') {
-            // Apply theme even without profile
-            root.classList.remove('light', 'dark', 'high-contrast', 'inverted');
-            root.classList.add(theme);
-          }
+        }
+        
+        // Apply theme from currentTheme (independent of profile contrast)
+        root.classList.remove('light', 'dark', 'high-contrast', 'inverted');
+        root.setAttribute('data-theme', theme);
+        if (theme !== 'light') {
+          root.classList.add(theme);
         }
       },
     }),
