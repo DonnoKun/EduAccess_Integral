@@ -5,6 +5,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { resetVisualSettingsToDefault, clearAllUserData } from '@/lib/resetVisualSettings';
 
 export interface User {
   id: string;
@@ -182,12 +183,23 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        console.log('🚪 Logging out user...');
+        
+        // 1. Clear Zustand state
         set({
           currentUser: null,
           isAuthenticated: false,
           otpSession: null,
           error: null,
         });
+        
+        // 2. Reset visual settings to defaults (privacy)
+        resetVisualSettingsToDefault();
+        
+        // 3. Clear all user data from localStorage
+        clearAllUserData();
+        
+        console.log('✅ Logout complete - all user data cleared');
       },
 
       clearError: () => set({ error: null }),

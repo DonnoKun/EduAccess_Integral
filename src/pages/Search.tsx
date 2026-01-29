@@ -113,17 +113,11 @@ export default function SearchPage() {
   };
 
   const handleLogout = () => {
-    console.log('🚪 Logging out user...');
-    const root = document.documentElement;
-    root.removeAttribute('data-user-profile');
-    root.removeAttribute('data-theme');
-    root.style.removeProperty('--profile-font-size');
-    root.style.removeProperty('--profile-line-height');
-    root.classList.remove('dark', 'high-contrast', 'inverted');
+    console.log('🚪 Logging out user from Search...');
     logout();
     toast.success(t('auth.logoutSuccess'));
-    navigate('/login');
-    console.log('✅ Logout complete');
+    // Navigate after a brief delay to allow state cleanup
+    setTimeout(() => navigate('/login'), 100);
   };
 
   const handleContentClick = (contentId: string) => {
