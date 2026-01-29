@@ -49,6 +49,7 @@ export function clearAllUserData() {
     'currentUser',
     'authToken',
     'onboardingCompleted',
+    'readingGuideEnabled',
   ];
   
   keysToRemove.forEach(key => {
@@ -57,6 +58,13 @@ export function clearAllUserData() {
       console.log(`  Removed: ${key}`);
     }
   });
+  
+  // Remove reading guide element from DOM if it exists
+  const readingGuideElement = document.querySelector('.reading-guide');
+  if (readingGuideElement) {
+    readingGuideElement.remove();
+    console.log('  Removed: reading guide element from DOM');
+  }
   
   // Keep language preference (optional UX choice)
   // localStorage.removeItem('i18nextLng');

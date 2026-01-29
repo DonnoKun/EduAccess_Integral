@@ -71,6 +71,7 @@ interface GlobalState {
   toggleReadingMode: () => void;
   toggleFocusMode: () => void;
   toggleReadingGuide: () => void;
+  resetReadingGuide: () => void;
   trackEvent: (event: Omit<MetricEvent, 'timestamp'>) => void;
   incrementContentViewed: () => void;
   applyProfileStyles: () => void;
@@ -269,6 +270,8 @@ export const useStore = create<GlobalState>()(
       toggleFocusMode: () => set((state) => ({ focusModeEnabled: !state.focusModeEnabled })),
 
       toggleReadingGuide: () => set((state) => ({ readingGuideEnabled: !state.readingGuideEnabled })),
+
+      resetReadingGuide: () => set({ readingGuideEnabled: false }),
 
       trackEvent: (event) => {
         const fullEvent: MetricEvent = { ...event, timestamp: new Date() };
