@@ -396,34 +396,59 @@ export default function Onboarding() {
                     value={contrast} 
                     onValueChange={(v) => setContrast(v as ContrastMode)}
                     className="space-y-4"
+                    style={{ fontSize: '1em' }}
                   >
-                    <div className="flex items-center space-x-3 p-4 rounded-lg border hover:bg-secondary/50 transition-colors">
-                      <RadioGroupItem value="normal" id="contrast-normal" />
-                      <Label htmlFor="contrast-normal" className="flex-1 cursor-pointer">
-                        <span className="font-medium">{t('onboarding.step3.normal')}</span>
-                        <p className="text-sm text-muted-foreground">
-                          {t('onboarding.step3.normalDesc')}
-                        </p>
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-3 p-4 rounded-lg border hover:bg-secondary/50 transition-colors">
-                      <RadioGroupItem value="high" id="contrast-high" />
-                      <Label htmlFor="contrast-high" className="flex-1 cursor-pointer">
-                        <span className="font-medium">{t('onboarding.step3.high')}</span>
-                        <p className="text-sm text-muted-foreground">
-                          {t('onboarding.step3.highDesc')}
-                        </p>
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-3 p-4 rounded-lg border hover:bg-secondary/50 transition-colors">
-                      <RadioGroupItem value="inverted" id="contrast-inverted" />
-                      <Label htmlFor="contrast-inverted" className="flex-1 cursor-pointer">
-                        <span className="font-medium">{t('onboarding.step3.inverted')}</span>
-                        <p className="text-sm text-muted-foreground">
-                          {t('onboarding.step3.invertedDesc')}
-                        </p>
-                      </Label>
-                    </div>
+                    {[
+                      { value: 'normal', id: 'contrast-normal', title: t('onboarding.step3.normal'), desc: t('onboarding.step3.normalDesc') },
+                      { value: 'high', id: 'contrast-high', title: t('onboarding.step3.high'), desc: t('onboarding.step3.highDesc') },
+                      { value: 'inverted', id: 'contrast-inverted', title: t('onboarding.step3.inverted'), desc: t('onboarding.step3.invertedDesc') },
+                    ].map((option) => (
+                      <label
+                        key={option.value}
+                        htmlFor={option.id}
+                        className={`
+                          flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer
+                          transition-all duration-200
+                          ${contrast === option.value 
+                            ? 'border-primary bg-primary/10' 
+                            : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                          }
+                        `}
+                        style={{ fontSize: '1em', padding: '1em' }}
+                      >
+                        <RadioGroupItem 
+                          value={option.value} 
+                          id={option.id}
+                          className="sr-only"
+                        />
+                        <div 
+                          className={`
+                            rounded-full border-2 flex items-center justify-center shrink-0 mt-1
+                            ${contrast === option.value 
+                              ? 'border-primary' 
+                              : 'border-muted-foreground'
+                            }
+                          `}
+                          style={{ width: '1.25em', height: '1.25em' }}
+                          aria-hidden="true"
+                        >
+                          {contrast === option.value && (
+                            <div 
+                              className="rounded-full bg-primary"
+                              style={{ width: '0.625em', height: '0.625em' }}
+                            />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <span className="font-semibold block" style={{ fontSize: '1.1em', lineHeight: 1.3 }}>
+                            {option.title}
+                          </span>
+                          <p className="text-muted-foreground" style={{ fontSize: '0.9em', lineHeight: 1.4, marginTop: '0.25em' }}>
+                            {option.desc}
+                          </p>
+                        </div>
+                      </label>
+                    ))}
                   </RadioGroup>
                 </div>
               )}
@@ -444,34 +469,59 @@ export default function Onboarding() {
                     value={modality} 
                     onValueChange={(v) => setModality(v as PreferredModality)}
                     className="space-y-4"
+                    style={{ fontSize: '1em' }}
                   >
-                    <div className="flex items-center space-x-3 p-4 rounded-lg border hover:bg-secondary/50 transition-colors">
-                      <RadioGroupItem value="visual" id="modality-visual" />
-                      <Label htmlFor="modality-visual" className="flex-1 cursor-pointer">
-                        <span className="font-medium">{t('onboarding.step4.visual')}</span>
-                        <p className="text-sm text-muted-foreground">
-                          {t('onboarding.step4.visualDesc')}
-                        </p>
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-3 p-4 rounded-lg border hover:bg-secondary/50 transition-colors">
-                      <RadioGroupItem value="audio" id="modality-audio" />
-                      <Label htmlFor="modality-audio" className="flex-1 cursor-pointer">
-                        <span className="font-medium">{t('onboarding.step4.audio')}</span>
-                        <p className="text-sm text-muted-foreground">
-                          {t('onboarding.step4.audioDesc')}
-                        </p>
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-3 p-4 rounded-lg border hover:bg-secondary/50 transition-colors">
-                      <RadioGroupItem value="mixed" id="modality-mixed" />
-                      <Label htmlFor="modality-mixed" className="flex-1 cursor-pointer">
-                        <span className="font-medium">{t('onboarding.step4.mixed')}</span>
-                        <p className="text-sm text-muted-foreground">
-                          {t('onboarding.step4.mixedDesc')}
-                        </p>
-                      </Label>
-                    </div>
+                    {[
+                      { value: 'visual', id: 'modality-visual', title: t('onboarding.step4.visual'), desc: t('onboarding.step4.visualDesc') },
+                      { value: 'audio', id: 'modality-audio', title: t('onboarding.step4.audio'), desc: t('onboarding.step4.audioDesc') },
+                      { value: 'mixed', id: 'modality-mixed', title: t('onboarding.step4.mixed'), desc: t('onboarding.step4.mixedDesc') },
+                    ].map((option) => (
+                      <label
+                        key={option.value}
+                        htmlFor={option.id}
+                        className={`
+                          flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer
+                          transition-all duration-200
+                          ${modality === option.value 
+                            ? 'border-primary bg-primary/10' 
+                            : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                          }
+                        `}
+                        style={{ fontSize: '1em', padding: '1em' }}
+                      >
+                        <RadioGroupItem 
+                          value={option.value} 
+                          id={option.id}
+                          className="sr-only"
+                        />
+                        <div 
+                          className={`
+                            rounded-full border-2 flex items-center justify-center shrink-0 mt-1
+                            ${modality === option.value 
+                              ? 'border-primary' 
+                              : 'border-muted-foreground'
+                            }
+                          `}
+                          style={{ width: '1.25em', height: '1.25em' }}
+                          aria-hidden="true"
+                        >
+                          {modality === option.value && (
+                            <div 
+                              className="rounded-full bg-primary"
+                              style={{ width: '0.625em', height: '0.625em' }}
+                            />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <span className="font-semibold block" style={{ fontSize: '1.1em', lineHeight: 1.3 }}>
+                            {option.title}
+                          </span>
+                          <p className="text-muted-foreground" style={{ fontSize: '0.9em', lineHeight: 1.4, marginTop: '0.25em' }}>
+                            {option.desc}
+                          </p>
+                        </div>
+                      </label>
+                    ))}
                   </RadioGroup>
                 </div>
               )}
@@ -488,19 +538,39 @@ export default function Onboarding() {
                     </p>
                   </div>
 
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between p-4 rounded-lg border">
-                      <div>
-                        <Label htmlFor="animations" className="font-medium">{t('onboarding.step5.animations')}</Label>
-                        <p className="text-sm text-muted-foreground">
+                  <div className="space-y-6" style={{ fontSize: '1em' }}>
+                    <div 
+                      className="flex items-center justify-between rounded-lg border-2 border-border bg-card"
+                      style={{ padding: '1em', gap: '1.5rem' }}
+                    >
+                      <div className="flex-1">
+                        <Label 
+                          htmlFor="animations" 
+                          className="font-semibold block cursor-pointer"
+                          style={{ fontSize: '1.1em', lineHeight: 1.3 }}
+                        >
+                          {t('onboarding.step5.animations')}
+                        </Label>
+                        <p 
+                          className="text-muted-foreground"
+                          style={{ fontSize: '0.9em', lineHeight: 1.4, marginTop: '0.25em' }}
+                        >
                           {t('onboarding.step5.animationsDesc')}
                         </p>
                       </div>
-                      <Switch
-                        id="animations"
-                        checked={enableAnimations}
-                        onCheckedChange={setEnableAnimations}
-                      />
+                      <div 
+                        className="shrink-0"
+                        style={{ 
+                          transform: `scale(${Math.max(1, fontSize / 16 * 1.1)})`,
+                          transformOrigin: 'center right'
+                        }}
+                      >
+                        <Switch
+                          id="animations"
+                          checked={enableAnimations}
+                          onCheckedChange={setEnableAnimations}
+                        />
+                      </div>
                     </div>
 
                     <div className="space-y-4" style={{ fontSize: '1em' }}>

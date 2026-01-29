@@ -204,6 +204,12 @@ export const useAuthStore = create<AuthState>()(
         clearAllUserData();
         
         console.log('✅ Logout complete - all user data cleared, reading guide disabled');
+        
+        // 5. CRITICAL: Force navigation to login page using window.location.replace
+        // This ensures a full page reload to clear any stale React state
+        setTimeout(() => {
+          window.location.replace('/login');
+        }, 50);
       },
 
       clearError: () => set({ error: null }),
