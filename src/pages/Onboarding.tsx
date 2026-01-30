@@ -634,40 +634,60 @@ export default function Onboarding() {
           </AnimatePresence>
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8 gap-4 onboarding-nav-buttons">
+          <div 
+            className="flex flex-wrap justify-between items-stretch mt-8 gap-4"
+            style={{ fontSize: currentFontSizePx }}
+          >
             <Button
               variant="outline"
               onClick={handleBack}
               disabled={currentStep === 1}
-              className="touch-target onboarding-nav-btn"
-              style={{ fontSize: currentFontSizePx, padding: '0.75em 1.5em' }}
+              className="touch-target flex items-center gap-2"
+              style={{ 
+                fontSize: '1em', 
+                padding: '0.75em 1.5em',
+                minHeight: '3em',
+                flexShrink: 0,
+              }}
             >
-              <ArrowLeft className="mr-2" style={{ width: '1em', height: '1em' }} aria-hidden="true" />
-              {t('common.back')}
+              <ArrowLeft style={{ width: '1em', height: '1em', flexShrink: 0 }} aria-hidden="true" />
+              <span>{t('common.back')}</span>
             </Button>
 
             {currentStep < 5 ? (
               <Button 
                 onClick={handleNext} 
-                className="touch-target onboarding-nav-btn"
-                style={{ fontSize: currentFontSizePx, padding: '0.75em 1.5em' }}
+                className="touch-target flex items-center gap-2"
+                style={{ 
+                  fontSize: '1em', 
+                  padding: '0.75em 1.5em',
+                  minHeight: '3em',
+                }}
               >
-                {t('common.next')}
-                <ArrowRight className="ml-2" style={{ width: '1em', height: '1em' }} aria-hidden="true" />
+                <span>{t('common.next')}</span>
+                <ArrowRight style={{ width: '1em', height: '1em', flexShrink: 0 }} aria-hidden="true" />
               </Button>
             ) : (
               <Button 
                 onClick={handleComplete} 
-                className="complete-setup-btn touch-target bg-success hover:bg-success/90"
+                className="touch-target flex items-center justify-center gap-2 flex-1 sm:flex-none"
                 style={{ 
-                  fontSize: currentFontSizePx, 
-                  padding: '0.875em 2em',
-                  minWidth: '280px',
-                  whiteSpace: 'nowrap',
+                  fontSize: '1em', 
+                  padding: '0.875em 1.5em',
+                  minHeight: '3em',
+                  minWidth: 'min(280px, 100%)',
+                  maxWidth: '100%',
+                  backgroundColor: 'hsl(142 71% 45%)',
+                  color: 'white',
+                  fontWeight: 600,
+                  whiteSpace: 'normal',
+                  wordBreak: 'break-word',
+                  textAlign: 'center',
+                  lineHeight: 1.3,
                 }}
               >
-                <Check className="mr-2" style={{ width: '1em', height: '1em' }} aria-hidden="true" />
-                {t('onboarding.complete')}
+                <Check style={{ width: '1.2em', height: '1.2em', flexShrink: 0 }} aria-hidden="true" />
+                <span>{t('onboarding.complete')}</span>
               </Button>
             )}
           </div>

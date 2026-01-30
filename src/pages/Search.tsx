@@ -156,30 +156,74 @@ export default function SearchPage() {
     return count;
   }, [searchFilters]);
 
+  // Get the current font size for badge scaling
+  const currentFontSize = visualProfile?.preferences?.fontSize 
+    ? parseInt(String(visualProfile.preferences.fontSize)) 
+    : 16;
+  const badgeScale = Math.max(0.85, currentFontSize / 16);
+
   const getAccessibilityBadge = (status: AccessibilityStatus) => {
-    switch (status) {
-      case 'accessible':
-        return (
-          <Badge className="badge-accessible">
-            <CheckCircle2 className="h-3 w-3 mr-1" aria-hidden="true" />
-            {t('search.badges.accessible')}
-          </Badge>
-        );
-      case 'needs_remediation':
-        return (
-          <Badge className="badge-needs-remediation">
-            <AlertCircle className="h-3 w-3 mr-1" aria-hidden="true" />
-            {t('search.badges.needsRemediation')}
-          </Badge>
-        );
-      case 'partially_accessible':
-        return (
-          <Badge className="badge-partial">
-            <AlertTriangle className="h-3 w-3 mr-1" aria-hidden="true" />
-            {t('search.badges.partial')}
-          </Badge>
-        );
-    }
+    const badgeConfigs = {
+      accessible: {
+        icon: CheckCircle2,
+        label: t('search.badges.accessible'),
+        bgColor: 'rgba(22, 163, 74, 0.15)',
+        textColor: '#16A34A',
+        borderColor: '#16A34A',
+        darkBgColor: 'rgba(34, 197, 94, 0.2)',
+        darkTextColor: '#86EFAC',
+        darkBorderColor: '#22C55E',
+      },
+      needs_remediation: {
+        icon: AlertCircle,
+        label: t('search.badges.needsRemediation'),
+        bgColor: 'rgba(220, 38, 38, 0.15)',
+        textColor: '#DC2626',
+        borderColor: '#DC2626',
+        darkBgColor: 'rgba(239, 68, 68, 0.2)',
+        darkTextColor: '#FCA5A5',
+        darkBorderColor: '#EF4444',
+      },
+      partially_accessible: {
+        icon: AlertTriangle,
+        label: t('search.badges.partial'),
+        bgColor: 'rgba(245, 158, 11, 0.15)',
+        textColor: '#D97706',
+        borderColor: '#F59E0B',
+        darkBgColor: 'rgba(245, 158, 11, 0.2)',
+        darkTextColor: '#FCD34D',
+        darkBorderColor: '#F59E0B',
+      },
+    };
+
+    const config = badgeConfigs[status];
+    const Icon = config.icon;
+    const isDark = currentTheme === 'dark';
+
+    return (
+      <div
+        className="inline-flex items-center gap-1.5 rounded-full border-2 font-semibold whitespace-nowrap shadow-sm"
+        style={{
+          fontSize: `${Math.max(12, currentFontSize * 0.7)}px`,
+          padding: `${0.4 * badgeScale}em ${0.8 * badgeScale}em`,
+          backgroundColor: isDark ? config.darkBgColor : config.bgColor,
+          color: isDark ? config.darkTextColor : config.textColor,
+          borderColor: isDark ? config.darkBorderColor : config.borderColor,
+          lineHeight: 1.2,
+        }}
+        role="status"
+      >
+        <Icon 
+          style={{ 
+            width: `${1.1 * badgeScale}em`, 
+            height: `${1.1 * badgeScale}em`,
+            flexShrink: 0,
+          }} 
+          aria-hidden="true" 
+        />
+        <span style={{ fontWeight: 600 }}>{config.label}</span>
+      </div>
+    );
   };
 
   const themeOptions: { value: ThemeMode; label: string; icon: React.ReactNode }[] = [
