@@ -157,12 +157,15 @@ export default function SearchPage() {
   }, [searchFilters]);
 
   // Get the current font size for badge scaling
+  // Use higher scale for large font sizes to ensure readability
   const currentFontSize = visualProfile?.preferences?.fontSize 
     ? parseInt(String(visualProfile.preferences.fontSize)) 
     : 16;
-  const badgeScale = Math.max(0.85, currentFontSize / 16);
+  // For small fonts (≤24px): 80%, for large fonts (>24px): 90%
+  const badgeScaleFactor = currentFontSize <= 24 ? 0.8 : 0.9;
+  const badgeFontSize = Math.max(14, currentFontSize * badgeScaleFactor);
 
-  const getAccessibilityBadge = (status: AccessibilityStatus) => {
+  const getAccessibilityBadge = (status: AccessibilityStatus, isListView = false) => {
     const badgeConfigs = {
       accessible: {
         icon: CheckCircle2,
@@ -170,7 +173,7 @@ export default function SearchPage() {
         bgColor: 'rgba(22, 163, 74, 0.15)',
         textColor: '#16A34A',
         borderColor: '#16A34A',
-        darkBgColor: 'rgba(34, 197, 94, 0.2)',
+        darkBgColor: 'rgba(34, 197, 94, 0.25)',
         darkTextColor: '#86EFAC',
         darkBorderColor: '#22C55E',
       },
@@ -180,7 +183,7 @@ export default function SearchPage() {
         bgColor: 'rgba(220, 38, 38, 0.15)',
         textColor: '#DC2626',
         borderColor: '#DC2626',
-        darkBgColor: 'rgba(239, 68, 68, 0.2)',
+        darkBgColor: 'rgba(239, 68, 68, 0.25)',
         darkTextColor: '#FCA5A5',
         darkBorderColor: '#EF4444',
       },
@@ -190,7 +193,7 @@ export default function SearchPage() {
         bgColor: 'rgba(245, 158, 11, 0.15)',
         textColor: '#D97706',
         borderColor: '#F59E0B',
-        darkBgColor: 'rgba(245, 158, 11, 0.2)',
+        darkBgColor: 'rgba(245, 158, 11, 0.25)',
         darkTextColor: '#FCD34D',
         darkBorderColor: '#F59E0B',
       },
@@ -202,26 +205,28 @@ export default function SearchPage() {
 
     return (
       <div
-        className="inline-flex items-center gap-1.5 rounded-full border-2 font-semibold whitespace-nowrap shadow-sm"
+        className="inline-flex items-center gap-2 rounded-full border-2 font-semibold whitespace-nowrap"
         style={{
-          fontSize: `${Math.max(12, currentFontSize * 0.7)}px`,
-          padding: `${0.4 * badgeScale}em ${0.8 * badgeScale}em`,
+          fontSize: `${badgeFontSize}px`,
+          padding: `0.4em 0.9em`,
           backgroundColor: isDark ? config.darkBgColor : config.bgColor,
           color: isDark ? config.darkTextColor : config.textColor,
           borderColor: isDark ? config.darkBorderColor : config.borderColor,
           lineHeight: 1.2,
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
+          flexShrink: 0,
         }}
         role="status"
       >
         <Icon 
           style={{ 
-            width: `${1.1 * badgeScale}em`, 
-            height: `${1.1 * badgeScale}em`,
+            width: '1.2em', 
+            height: '1.2em',
             flexShrink: 0,
           }} 
           aria-hidden="true" 
         />
-        <span style={{ fontWeight: 600 }}>{config.label}</span>
+        <span style={{ fontWeight: 600, lineHeight: 1.1 }}>{config.label}</span>
       </div>
     );
   };
@@ -416,21 +421,64 @@ export default function SearchPage() {
             </div>
           ) : (
             <AnimatePresence mode="wait">
-              <motion.div key={viewMode} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={`grid gap-4 ${viewMode === 'grid' ? 'md:grid-cols-2 lg:grid-cols-3' : ''}`}>
+              <motion.div 
+                key={viewMode} 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }} 
+                className={`grid gap-4 ${viewMode === 'grid' ? 'md:grid-cols-2 lg:grid-cols-3' : ''}`}
+              >
                 {searchResults.map((result, index) => (
                   <motion.div key={result.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                    <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => handleContentClick(result.id)} role="article" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleContentClick(result.id); } }}>
+                    <Card 
+                      className="h-full hover:shadow-lg transition-shadow cursor-pointer group" 
+                      onClick={() => handleContentClick(result.id)} 
+                      role="article" 
+                      tabIndex={0} 
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleContentClick(result.id); } }}
+                    >
                       <CardContent className={`p-4 ${viewMode === 'list' ? 'flex gap-4' : ''}`}>
-                        <div className={`relative overflow-hidden rounded-lg bg-muted ${viewMode === 'list' ? 'w-32 h-24 flex-shrink-0' : 'h-40 mb-4'}`}>
-                          {result.thumbnail ? (
-                            <img src={result.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-4xl">{contentTypeLabels[result.contentType]?.split(' ')[0]}</div>
+                        {/* GRID VIEW: Badge inside thumbnail */}
+                        {viewMode === 'grid' && (
+                          <div className="relative overflow-hidden rounded-lg bg-muted h-40 mb-4">
+                            {result.thumbnail ? (
+                              <img src={result.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-4xl">{contentTypeLabels[result.contentType]?.split(' ')[0]}</div>
+                            )}
+                            <div className="absolute top-2 right-2">{getAccessibilityBadge(result.accessibilityStatus)}</div>
+                          </div>
+                        )}
+                        
+                        {/* LIST VIEW: Thumbnail without badge */}
+                        {viewMode === 'list' && (
+                          <div className="relative overflow-hidden rounded-lg bg-muted w-32 h-24 flex-shrink-0">
+                            {result.thumbnail ? (
+                              <img src={result.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-2xl">{contentTypeLabels[result.contentType]?.split(' ')[0]}</div>
+                            )}
+                          </div>
+                        )}
+                        
+                        <div className="flex-1 min-w-0">
+                          {/* LIST VIEW: Title + Badge in same row */}
+                          {viewMode === 'list' && (
+                            <div className="flex flex-wrap items-start gap-3 mb-2">
+                              <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors flex-1 min-w-[150px]">
+                                {result.title}
+                              </h3>
+                              {getAccessibilityBadge(result.accessibilityStatus, true)}
+                            </div>
                           )}
-                          <div className="absolute top-2 right-2">{getAccessibilityBadge(result.accessibilityStatus)}</div>
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg mb-1 line-clamp-2 group-hover:text-primary transition-colors">{result.title}</h3>
+                          
+                          {/* GRID VIEW: Title only */}
+                          {viewMode === 'grid' && (
+                            <h3 className="font-semibold text-lg mb-1 line-clamp-2 group-hover:text-primary transition-colors">
+                              {result.title}
+                            </h3>
+                          )}
+                          
                           <p className="text-sm text-muted-foreground mb-2">
                             {result.source.charAt(0).toUpperCase() + result.source.slice(1)}
                             {result.metadata.duration && ` · ${result.metadata.duration}`}

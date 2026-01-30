@@ -540,10 +540,16 @@ export default function Onboarding() {
 
                   <div className="space-y-6" style={{ fontSize: '1em' }}>
                     <div 
-                      className="flex items-center justify-between rounded-lg border-2 border-border bg-card"
-                      style={{ padding: '1em', gap: '1.5rem' }}
+                      className="rounded-lg border-2 border-border bg-card"
+                      style={{ 
+                        display: 'grid',
+                        gridTemplateColumns: '1fr auto',
+                        gap: '1.5rem',
+                        padding: '1.25em',
+                        alignItems: 'center',
+                      }}
                     >
-                      <div className="flex-1">
+                      <div style={{ minWidth: 0 }}>
                         <Label 
                           htmlFor="animations" 
                           className="font-semibold block cursor-pointer"
@@ -553,16 +559,26 @@ export default function Onboarding() {
                         </Label>
                         <p 
                           className="text-muted-foreground"
-                          style={{ fontSize: '0.9em', lineHeight: 1.4, marginTop: '0.25em' }}
+                          style={{ 
+                            fontSize: '0.9em', 
+                            lineHeight: 1.4, 
+                            marginTop: '0.25em',
+                            wordBreak: 'break-word',
+                          }}
                         >
                           {t('onboarding.step5.animationsDesc')}
                         </p>
                       </div>
                       <div 
-                        className="shrink-0"
                         style={{ 
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          paddingLeft: '1rem',
+                          borderLeft: '1px solid hsl(var(--border))',
+                          minHeight: '3em',
                           transform: `scale(${Math.max(1, fontSize / 16 * 1.1)})`,
-                          transformOrigin: 'center right'
+                          transformOrigin: 'center',
                         }}
                       >
                         <Switch
