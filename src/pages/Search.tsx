@@ -256,11 +256,23 @@ export default function SearchPage() {
                   {currentTheme === 'dark' ? <Moon className="h-4 w-4" /> : currentTheme === 'high-contrast' ? <Contrast className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-background border">
+              <DropdownMenuContent 
+                align="end" 
+                className="bg-background border"
+                style={{ fontSize: `${currentFontSize}px` }}
+              >
                 {themeOptions.map((option) => (
-                  <DropdownMenuCheckboxItem key={option.value} checked={currentTheme === option.value} onCheckedChange={() => setTheme(option.value)} className="flex items-center gap-2">
-                    {option.icon}
-                    {option.label}
+                  <DropdownMenuCheckboxItem 
+                    key={option.value} 
+                    checked={currentTheme === option.value} 
+                    onCheckedChange={() => setTheme(option.value)} 
+                    className="flex items-center gap-2"
+                    style={{ fontSize: '1em', padding: '0.75em 1em' }}
+                  >
+                    <span style={{ width: '1.25em', height: '1.25em', display: 'flex', alignItems: 'center' }}>
+                      {option.icon}
+                    </span>
+                    <span>{option.label}</span>
                   </DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>
@@ -290,22 +302,35 @@ export default function SearchPage() {
                   <ChevronDown className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-background border">
-                <DropdownMenuItem onClick={() => navigate('/dashboard')} className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" />
-                  {t('navigation.dashboard')}
+              <DropdownMenuContent 
+                align="end" 
+                className="w-56 bg-background border"
+                style={{ fontSize: `${currentFontSize}px` }}
+              >
+                <DropdownMenuItem 
+                  onClick={() => navigate('/dashboard')} 
+                  className="flex items-center gap-2"
+                  style={{ fontSize: '1em', padding: '0.75em 1em' }}
+                >
+                  <Sparkles style={{ width: '1.25em', height: '1.25em', flexShrink: 0 }} />
+                  <span>{t('navigation.dashboard')}</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/settings')} className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  {t('navigation.settings')}
+                <DropdownMenuItem 
+                  onClick={() => navigate('/settings')} 
+                  className="flex items-center gap-2"
+                  style={{ fontSize: '1em', padding: '0.75em 1em' }}
+                >
+                  <Settings style={{ width: '1.25em', height: '1.25em', flexShrink: 0 }} />
+                  <span>{t('navigation.settings')}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   onClick={handleLogout}
                   className="flex items-center gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
+                  style={{ fontSize: '1em', padding: '0.75em 1em' }}
                 >
-                  <LogOut className="h-4 w-4" />
-                  {t('common.logout')}
+                  <LogOut style={{ width: '1.25em', height: '1.25em', flexShrink: 0 }} />
+                  <span>{t('common.logout')}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -438,16 +463,18 @@ export default function SearchPage() {
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleContentClick(result.id); } }}
                     >
                       <CardContent className={`p-4 ${viewMode === 'list' ? 'flex gap-4' : ''}`}>
-                        {/* GRID VIEW: Badge inside thumbnail */}
+                        {/* GRID VIEW: Thumbnail + Badge below */}
                         {viewMode === 'grid' && (
-                          <div className="relative overflow-hidden rounded-lg bg-muted h-40 mb-4">
-                            {result.thumbnail ? (
-                              <img src={result.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-4xl">{contentTypeLabels[result.contentType]?.split(' ')[0]}</div>
-                            )}
-                            <div className="absolute top-2 right-2">{getAccessibilityBadge(result.accessibilityStatus)}</div>
-                          </div>
+                          <>
+                            <div className="relative overflow-hidden rounded-lg bg-muted h-40 mb-3">
+                              {result.thumbnail ? (
+                                <img src={result.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-4xl">{contentTypeLabels[result.contentType]?.split(' ')[0]}</div>
+                              )}
+                            </div>
+                            <div className="mb-3">{getAccessibilityBadge(result.accessibilityStatus)}</div>
+                          </>
                         )}
                         
                         {/* LIST VIEW: Thumbnail without badge */}
