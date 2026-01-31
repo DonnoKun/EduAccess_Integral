@@ -243,13 +243,25 @@ export default function Dashboard() {
               </DropdownMenuTrigger>
               <DropdownMenuContent 
                 align="end" 
-                className="w-56 bg-background border"
-                style={{ fontSize: visualProfile?.preferences?.fontSize || '16px' }}
+                className="bg-background border"
+                style={{ 
+                  fontSize: visualProfile?.preferences?.fontSize || '16px',
+                  minWidth: 'max-content',
+                  width: 'auto',
+                }}
               >
+                <DropdownMenuItem 
+                  onClick={() => navigate('/dashboard')} 
+                  className="flex items-center gap-2"
+                  style={{ fontSize: '1em', padding: '0.75em 1.25em', whiteSpace: 'nowrap' }}
+                >
+                  <Sparkles style={{ width: '1.25em', height: '1.25em', flexShrink: 0 }} />
+                  <span>{t('navigation.dashboard')}</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => navigate('/settings')} 
                   className="flex items-center gap-2"
-                  style={{ fontSize: '1em', padding: '0.75em 1em' }}
+                  style={{ fontSize: '1em', padding: '0.75em 1.25em', whiteSpace: 'nowrap' }}
                 >
                   <Settings style={{ width: '1.25em', height: '1.25em', flexShrink: 0 }} />
                   <span>{t('navigation.settings')}</span>
@@ -258,7 +270,7 @@ export default function Dashboard() {
                 <DropdownMenuItem 
                   onClick={handleLogout}
                   className="flex items-center gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
-                  style={{ fontSize: '1em', padding: '0.75em 1em' }}
+                  style={{ fontSize: '1em', padding: '0.75em 1.25em', whiteSpace: 'nowrap' }}
                 >
                   <LogOut style={{ width: '1.25em', height: '1.25em', flexShrink: 0 }} />
                   <span>{t('common.logout')}</span>
