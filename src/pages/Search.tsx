@@ -40,6 +40,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useStore } from '@/store/useStore';
@@ -203,9 +209,9 @@ export default function SearchPage() {
     const Icon = config.icon;
     const isDark = currentTheme === 'dark';
 
-    return (
+    const badgeContent = (
       <div
-        className="inline-flex items-center gap-2 rounded-full border-2 font-semibold"
+        className="inline-flex items-center gap-2 rounded-full border-2 font-semibold cursor-help"
         style={{
           fontSize: `${badgeFontSize}px`,
           padding: `0.4em 0.9em`,
@@ -237,6 +243,24 @@ export default function SearchPage() {
           textOverflow: 'ellipsis',
         }}>{config.label}</span>
       </div>
+    );
+
+    // Wrap in tooltip to show full text on hover
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {badgeContent}
+          </TooltipTrigger>
+          <TooltipContent 
+            side="top" 
+            className="bg-popover text-popover-foreground border shadow-lg"
+            style={{ fontSize: `${Math.max(14, currentFontSize * 0.85)}px` }}
+          >
+            <p>{config.label}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   };
 
