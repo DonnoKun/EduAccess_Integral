@@ -205,7 +205,7 @@ export default function SearchPage() {
 
     return (
       <div
-        className="inline-flex items-center gap-2 rounded-full border-2 font-semibold whitespace-nowrap"
+        className="inline-flex items-center gap-2 rounded-full border-2 font-semibold"
         style={{
           fontSize: `${badgeFontSize}px`,
           padding: `0.4em 0.9em`,
@@ -215,6 +215,10 @@ export default function SearchPage() {
           lineHeight: 1.2,
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
           flexShrink: 0,
+          maxWidth: '100%',
+          overflow: 'hidden',
+          whiteSpace: 'nowrap',
+          textOverflow: 'ellipsis',
         }}
         role="status"
       >
@@ -226,7 +230,12 @@ export default function SearchPage() {
           }} 
           aria-hidden="true" 
         />
-        <span style={{ fontWeight: 600, lineHeight: 1.1 }}>{config.label}</span>
+        <span style={{ 
+          fontWeight: 600, 
+          lineHeight: 1.1, 
+          overflow: 'hidden', 
+          textOverflow: 'ellipsis',
+        }}>{config.label}</span>
       </div>
     );
   };
@@ -304,13 +313,17 @@ export default function SearchPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent 
                 align="end" 
-                className="w-56 bg-background border"
-                style={{ fontSize: `${currentFontSize}px` }}
+                className="bg-background border"
+                style={{ 
+                  fontSize: `${currentFontSize}px`,
+                  minWidth: 'max-content',
+                  width: 'auto',
+                }}
               >
                 <DropdownMenuItem 
                   onClick={() => navigate('/dashboard')} 
                   className="flex items-center gap-2"
-                  style={{ fontSize: '1em', padding: '0.75em 1em' }}
+                  style={{ fontSize: '1em', padding: '0.75em 1.25em', whiteSpace: 'nowrap' }}
                 >
                   <Sparkles style={{ width: '1.25em', height: '1.25em', flexShrink: 0 }} />
                   <span>{t('navigation.dashboard')}</span>
@@ -318,7 +331,7 @@ export default function SearchPage() {
                 <DropdownMenuItem 
                   onClick={() => navigate('/settings')} 
                   className="flex items-center gap-2"
-                  style={{ fontSize: '1em', padding: '0.75em 1em' }}
+                  style={{ fontSize: '1em', padding: '0.75em 1.25em', whiteSpace: 'nowrap' }}
                 >
                   <Settings style={{ width: '1.25em', height: '1.25em', flexShrink: 0 }} />
                   <span>{t('navigation.settings')}</span>
@@ -327,7 +340,7 @@ export default function SearchPage() {
                 <DropdownMenuItem 
                   onClick={handleLogout}
                   className="flex items-center gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
-                  style={{ fontSize: '1em', padding: '0.75em 1em' }}
+                  style={{ fontSize: '1em', padding: '0.75em 1.25em', whiteSpace: 'nowrap' }}
                 >
                   <LogOut style={{ width: '1.25em', height: '1.25em', flexShrink: 0 }} />
                   <span>{t('common.logout')}</span>
@@ -462,7 +475,7 @@ export default function SearchPage() {
                       tabIndex={0} 
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleContentClick(result.id); } }}
                     >
-                      <CardContent className={`p-4 ${viewMode === 'list' ? 'flex gap-4' : ''}`}>
+                      <CardContent className={`p-4 ${viewMode === 'list' ? 'flex gap-4' : ''}`} style={{ overflow: 'hidden' }}>
                         {/* GRID VIEW: Thumbnail + Badge below */}
                         {viewMode === 'grid' && (
                           <>
@@ -473,7 +486,7 @@ export default function SearchPage() {
                                 <div className="w-full h-full flex items-center justify-center text-4xl">{contentTypeLabels[result.contentType]?.split(' ')[0]}</div>
                               )}
                             </div>
-                            <div className="mb-3">{getAccessibilityBadge(result.accessibilityStatus)}</div>
+                            <div className="mb-3" style={{ maxWidth: '100%', overflow: 'hidden' }}>{getAccessibilityBadge(result.accessibilityStatus)}</div>
                           </>
                         )}
                         
