@@ -542,14 +542,14 @@ export default function Onboarding() {
                     <div 
                       className="rounded-lg border-2 border-border bg-card"
                       style={{ 
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: '1.5rem',
+                        display: 'grid',
+                        gridTemplateColumns: '1fr auto',
+                        gap: '2rem',
                         padding: '1.25em',
+                        alignItems: 'center',
                       }}
                     >
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ minWidth: 0 }}>
                         <Label 
                           htmlFor="animations" 
                           className="font-semibold block cursor-pointer"
@@ -563,7 +563,6 @@ export default function Onboarding() {
                             fontSize: '0.9em', 
                             lineHeight: 1.4, 
                             marginTop: '0.25em',
-                            wordBreak: 'break-word',
                           }}
                         >
                           {t('onboarding.step5.animationsDesc')}
@@ -573,8 +572,7 @@ export default function Onboarding() {
                         style={{ 
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
+                          justifyContent: 'flex-end',
                           transform: `scale(${Math.max(1.2, fontSize / 16 * 1.2)})`,
                           transformOrigin: 'center right',
                         }}
