@@ -542,14 +542,14 @@ export default function Onboarding() {
                     <div 
                       className="rounded-lg border-2 border-border bg-card"
                       style={{ 
-                        display: 'grid',
-                        gridTemplateColumns: '1fr auto',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
                         gap: '1.5rem',
                         padding: '1.25em',
-                        alignItems: 'center',
                       }}
                     >
-                      <div style={{ minWidth: 0 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <Label 
                           htmlFor="animations" 
                           className="font-semibold block cursor-pointer"
@@ -574,11 +574,9 @@ export default function Onboarding() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          paddingLeft: '1rem',
-                          borderLeft: '1px solid hsl(var(--border))',
-                          minHeight: '3em',
-                          transform: `scale(${Math.max(1, fontSize / 16 * 1.1)})`,
-                          transformOrigin: 'center',
+                          flexShrink: 0,
+                          transform: `scale(${Math.max(1.2, fontSize / 16 * 1.2)})`,
+                          transformOrigin: 'center right',
                         }}
                       >
                         <Switch
@@ -684,27 +682,40 @@ export default function Onboarding() {
                 <ArrowRight style={{ width: '1em', height: '1em', flexShrink: 0 }} aria-hidden="true" />
               </Button>
             ) : (
-              <Button 
+              <button 
                 onClick={handleComplete} 
-                className="touch-target flex items-center justify-center gap-2 flex-1 sm:flex-none"
+                className="touch-target"
                 style={{ 
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5em',
                   fontSize: '1em', 
-                  padding: '0.875em 1.5em',
-                  minHeight: '3em',
-                  minWidth: 'min(280px, 100%)',
-                  maxWidth: '100%',
-                  backgroundColor: 'hsl(142 71% 45%)',
+                  padding: '1em 1.5em',
+                  minHeight: '3.5em',
+                  width: '100%',
+                  maxWidth: '400px',
+                  backgroundColor: '#16A34A',
                   color: 'white',
-                  fontWeight: 600,
-                  whiteSpace: 'normal',
-                  wordBreak: 'break-word',
-                  textAlign: 'center',
+                  fontWeight: 700,
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
                   lineHeight: 1.3,
+                  flexWrap: 'wrap',
+                  boxSizing: 'border-box',
+                  overflow: 'hidden',
                 }}
               >
-                <Check style={{ width: '1.2em', height: '1.2em', flexShrink: 0 }} aria-hidden="true" />
-                <span>{t('onboarding.complete')}</span>
-              </Button>
+                <Check style={{ width: '1.25em', height: '1.25em', flexShrink: 0 }} aria-hidden="true" />
+                <span style={{ 
+                  wordBreak: 'break-word', 
+                  overflowWrap: 'break-word',
+                  textAlign: 'center',
+                }}>
+                  {t('onboarding.complete')}
+                </span>
+              </button>
             )}
           </div>
         </main>

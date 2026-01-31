@@ -192,15 +192,22 @@ export default function Dashboard() {
                   )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-background border">
+              <DropdownMenuContent 
+                align="end" 
+                className="bg-background border"
+                style={{ fontSize: visualProfile?.preferences?.fontSize || '16px' }}
+              >
                 {themeOptions.map((option) => (
                   <DropdownMenuItem
                     key={option.value}
                     onClick={() => setTheme(option.value)}
                     className="flex items-center gap-2"
+                    style={{ fontSize: '1em', padding: '0.75em 1em' }}
                   >
-                    {option.icon}
-                    {option.label}
+                    <span style={{ width: '1.25em', height: '1.25em', display: 'flex', alignItems: 'center' }}>
+                      {option.icon}
+                    </span>
+                    <span>{option.label}</span>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -234,18 +241,27 @@ export default function Dashboard() {
                   <ChevronDown className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-background border">
-                <DropdownMenuItem onClick={() => navigate('/settings')} className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  {t('navigation.settings')}
+              <DropdownMenuContent 
+                align="end" 
+                className="w-56 bg-background border"
+                style={{ fontSize: visualProfile?.preferences?.fontSize || '16px' }}
+              >
+                <DropdownMenuItem 
+                  onClick={() => navigate('/settings')} 
+                  className="flex items-center gap-2"
+                  style={{ fontSize: '1em', padding: '0.75em 1em' }}
+                >
+                  <Settings style={{ width: '1.25em', height: '1.25em', flexShrink: 0 }} />
+                  <span>{t('navigation.settings')}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   onClick={handleLogout}
                   className="flex items-center gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
+                  style={{ fontSize: '1em', padding: '0.75em 1em' }}
                 >
-                  <LogOut className="h-4 w-4" />
-                  {t('common.logout')}
+                  <LogOut style={{ width: '1.25em', height: '1.25em', flexShrink: 0 }} />
+                  <span>{t('common.logout')}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
