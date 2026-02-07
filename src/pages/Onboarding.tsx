@@ -60,6 +60,42 @@ export default function Onboarding() {
   const [modality, setModality] = useState<PreferredModality>('visual');
   const [enableAnimations, setEnableAnimations] = useState(true);
   const [brightnessSensitivity, setBrightnessSensitivity] = useState<BrightnessSensitivity>('low');
+  const [isPlayingDemo, setIsPlayingDemo] = useState(false);
+
+  // TTS demo function using browser speechSynthesis
+  const playTTSDemo = (modalityValue: PreferredModality) => {
+    if (modalityValue === 'visual') return;
+    
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+    
+    const lang = t('onboarding.step4.title').startsWith('Modalidad') ? 'es' : 'en';
+    const demoText = lang === 'es' 
+      ? 'Esta es una demostración de texto a voz. Así se escuchará el contenido educativo cuando elijas esta modalidad.'
+      : 'This is a text-to-speech demo. This is how educational content will sound when you choose this modality.';
+    
+    const utterance = new SpeechSynthesisUtterance(demoText);
+    utterance.lang = lang === 'es' ? 'es-ES' : 'en-US';
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    
+    setIsPlayingDemo(true);
+    utterance.onend = () => setIsPlayingDemo(false);
+    utterance.onerror = () => setIsPlayingDemo(false);
+    
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Handle modality change with audio demo
+  const handleModalityChange = (value: PreferredModality) => {
+    setModality(value);
+    if (value === 'audio' || value === 'mixed') {
+      playTTSDemo(value);
+    } else {
+      window.speechSynthesis.cancel();
+      setIsPlayingDemo(false);
+    }
+  };
 
   const steps = [
     { id: 1, title: t('onboarding.step1.title'), icon: Eye },
@@ -103,6 +139,31 @@ export default function Onboarding() {
     root.style.setProperty('--animation-duration', enableAnimations ? '300ms' : '0ms');
     console.log('🎬 Preview: Animations:', enableAnimations);
   }, [enableAnimations]);
+
+  // Apply brightness sensitivity preview - CUMULATIVE across all steps
+  useEffect(() => {
+    const root = document.documentElement;
+    const brightnessMap: Record<BrightnessSensitivity, string> = {
+      'low': '1',        // No sensitivity - full brightness
+      'medium': '0.85',  // Medium sensitivity - slightly reduced
+      'high': '0.7',     // High sensitivity - significantly reduced
+    };
+    const brightnessValue = brightnessMap[brightnessSensitivity];
+    root.style.setProperty('--brightness-filter', brightnessValue);
+    root.style.filter = `brightness(${brightnessValue})`;
+    console.log('☀️ Preview: Brightness sensitivity:', brightnessSensitivity, 'filter:', brightnessValue);
+
+    return () => {
+      // Don't remove on cleanup during onboarding - let handleComplete persist it
+    };
+  }, [brightnessSensitivity]);
+
+  // Cleanup speech synthesis on unmount
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
 
   const handleNext = () => {
     if (currentStep < 5) {
@@ -467,7 +528,7 @@ export default function Onboarding() {
 
                   <RadioGroup 
                     value={modality} 
-                    onValueChange={(v) => setModality(v as PreferredModality)}
+                    onValueChange={(v) => handleModalityChange(v as PreferredModality)}
                     className="space-y-4"
                     style={{ fontSize: '1em' }}
                   >
@@ -523,6 +584,23 @@ export default function Onboarding() {
                       </label>
                     ))}
                   </RadioGroup>
+
+                  {/* Audio demo feedback */}
+                  {isPlayingDemo && (modality === 'audio' || modality === 'mixed') && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center gap-3 p-4 rounded-lg bg-primary/10 border border-primary/30"
+                      style={{ fontSize: '1em' }}
+                    >
+                      <Volume2 className="text-primary animate-pulse" style={{ width: '1.5em', height: '1.5em' }} />
+                      <span className="text-primary font-medium" style={{ fontSize: '0.95em' }}>
+                        {t('onboarding.step4.title').startsWith('Modalidad') 
+                          ? '🔊 Reproduciendo demostración de texto a voz...'
+                          : '🔊 Playing text-to-speech demo...'}
+                      </span>
+                    </motion.div>
+                  )}
                 </div>
               )}
 
