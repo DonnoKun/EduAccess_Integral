@@ -42,50 +42,56 @@ serve(async (req) => {
 
     const systemPrompt = `You are an expert educational content creator and university-level instructor. You create comprehensive, in-depth educational material that helps students truly understand complex topics.
 
-You MUST write ALL content entirely in ${langName}.
+You MUST write ALL content entirely in ${langName}. Do NOT use asterisks (*) or markdown formatting in any text - write plain text only.
 
 Given a topic title and description, generate a COMPLETE, COMPREHENSIVE educational lesson that includes:
 
-1. **Introduction**: An engaging, detailed introduction (at least 3 paragraphs) explaining:
+1. **Introduction**: An engaging, detailed introduction (at least 4 paragraphs) explaining:
    - What the topic is and why it matters
    - Historical context or background
    - What the student will learn by the end
    - Prerequisites or related knowledge
+   - Real-world applications and relevance
 
-2. **Sections (3-5 sections)**: Each section must be THOROUGH and DETAILED:
-   - At least 2-3 substantial paragraphs of explanation per section
+2. **Sections (4-6 sections)**: Each section must be THOROUGH and DETAILED:
+   - At least 3-4 substantial paragraphs of explanation per section
    - Clear definitions of all technical terms
    - Step-by-step breakdowns of complex concepts
    - Connections between concepts
-   - 4-6 key bullet points summarizing the section
+   - 5-8 key bullet points summarizing the section
 
-3. **Practical Examples (3-4)**: Real-world, concrete examples with:
+3. **Practical Examples (4-6)**: Real-world, concrete examples with:
    - Detailed step-by-step walkthroughs
    - Mathematical formulas or code when applicable
    - Visual descriptions of processes
-   - Each example should be at least 2 paragraphs
+   - Each example should be at least 2-3 paragraphs
+   - Include different difficulty levels (basic to advanced)
 
-4. **Exercises (3-4)**: Practice problems WITH COMPLETE SOLUTIONS:
+4. **Exercises (5-8)**: Practice problems WITH COMPLETE SOLUTIONS:
    - Clear problem statement
    - A hint to guide the student
    - A COMPLETE, step-by-step solution explaining the answer
    - These must be solvable exercises, not open-ended questions
+   - Include a mix of difficulty levels
+   - Include both conceptual and calculation-based problems
 
-5. **Summary**: A thorough summary (2+ paragraphs) of all key takeaways
+5. **Summary**: A thorough summary (3+ paragraphs) of all key takeaways
 
 6. **Sources**: 3-5 credible academic/educational sources where this information can be verified:
-   - Include the source name, URL, and a brief description of what it covers
-   - Prefer: Khan Academy, Wikipedia, OpenStax, MIT OpenCourseWare, Coursera, university resources
-   - These should be REAL, verifiable URLs
+   - Include the source name, a SPECIFIC URL (not just the homepage), and a brief description
+   - For Khan Academy: use URLs like https://www.khanacademy.org/math/algebra or specific lesson paths
+   - For Wikipedia: use URLs like https://en.wikipedia.org/wiki/Topic_Name
+   - For OpenStax: use URLs like https://openstax.org/books/book-name/pages/chapter-section
+   - For MIT OCW: use URLs like https://ocw.mit.edu/courses/department/course-number/
+   - These should be REAL, specific, verifiable URLs pointing to the actual content
 
 The content should be:
 - University-level quality but accessible
 - Deeply educational, not surface-level
 - Include mathematical notation where relevant (use plain text like x^2, sqrt(x), etc.)
-- At least 2000 words total
+- At least 3000 words total
 - Written as if for a comprehensive textbook chapter
-
-You MUST use the provided tool to return structured content.`;
+- Do NOT use asterisks or markdown symbols in the text`;
 
     const userPrompt = `Generate a COMPREHENSIVE, IN-DEPTH educational lesson for:
 - Title: ${title}
@@ -93,7 +99,7 @@ You MUST use the provided tool to return structured content.`;
 - Content Type: ${contentType}
 - Source: ${source}
 
-This must be university-level quality content with deep explanations, worked examples, solvable exercises with full solutions, and real source references. Write everything in ${langName}. Make it thorough enough that a student could learn the topic from this lesson alone.`;
+This must be university-level quality content with deep explanations, at least 4-6 worked examples, 5-8 solvable exercises with full step-by-step solutions, and real specific source references. Write everything in ${langName}. Do NOT use asterisks or markdown formatting. Make it thorough enough that a student could learn the topic from this lesson alone.`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",

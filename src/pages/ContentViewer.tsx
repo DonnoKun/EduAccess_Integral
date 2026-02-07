@@ -97,6 +97,12 @@ export default function ContentViewer() {
     hasCompletedOnboarding,
     readingGuideEnabled,
     toggleReadingGuide,
+    saveToLibrary,
+    removeFromLibrary,
+    markAsCompleted,
+    unmarkAsCompleted,
+    savedContent,
+    completedContent,
   } = useStore();
 
   const [fontSize, setFontSize] = useState(visualProfile?.preferences.fontSize || 20);
@@ -104,10 +110,12 @@ export default function ContentViewer() {
   const [courseContent, setCourseContent] = useState<CourseContent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingStage, setLoadingStage] = useState(0);
+  const [currentReadingChunk, setCurrentReadingChunk] = useState(-1);
 
-  // Functional state
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
+  // Derived state from store
+  const isCompleted = currentContent ? completedContent.some((c) => c.id === currentContent.id) : false;
+  const isSaved = currentContent ? savedContent.some((c) => c.id === currentContent.id) : false;
+
   const [revealedAnswers, setRevealedAnswers] = useState<Set<number>>(new Set());
 
   const lang = i18n.language?.split('-')[0] || 'es';
@@ -217,18 +225,23 @@ export default function ContentViewer() {
   };
 
   const handleMarkCompleted = () => {
-    setIsCompleted((prev) => !prev);
-    if (!isCompleted) {
+    if (!currentContent) return;
+    if (isCompleted) {
+      unmarkAsCompleted(currentContent.id);
+    } else {
+      markAsCompleted(currentContent);
       toast.success(lang === 'es' ? '✅ Marcado como completado' : '✅ Marked as completed');
     }
   };
 
   const handleSaveToLibrary = () => {
-    setIsSaved((prev) => !prev);
-    if (!isSaved) {
-      toast.success(lang === 'es' ? '📚 Guardado en tu biblioteca' : '📚 Saved to your library');
-    } else {
+    if (!currentContent) return;
+    if (isSaved) {
+      removeFromLibrary(currentContent.id);
       toast.info(lang === 'es' ? 'Eliminado de tu biblioteca' : 'Removed from your library');
+    } else {
+      saveToLibrary(currentContent);
+      toast.success(lang === 'es' ? '📚 Guardado en tu biblioteca' : '📚 Saved to your library');
     }
   };
 
@@ -405,7 +418,12 @@ export default function ContentViewer() {
                   <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
                     🔊 {lang === 'es' ? 'Reproductor de Audio' : 'Audio Player'}
                   </h3>
-                  <AudioPlayer text={buildTTSText()} lang={lang} disabled={isLoading} />
+                  <AudioPlayer
+                    text={buildTTSText()}
+                    lang={lang}
+                    disabled={isLoading}
+                    onChunkChange={(chunkIndex) => setCurrentReadingChunk(chunkIndex)}
+                  />
                 </div>
               )}
             </CardContent>
