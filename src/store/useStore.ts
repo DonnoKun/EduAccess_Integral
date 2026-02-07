@@ -304,15 +304,28 @@ export const useStore = create<GlobalState>()(
             profile.preferences.enableAnimations ? '300ms' : '0ms'
           );
           
+          // Apply brightness sensitivity
+          const brightnessMap: Record<string, string> = {
+            'low': '1',
+            'medium': '0.85',
+            'high': '0.7',
+          };
+          const brightnessValue = brightnessMap[profile.preferences.brightnessSensitivity] || '1';
+          root.style.setProperty('--brightness-filter', brightnessValue);
+          root.style.filter = `brightness(${brightnessValue})`;
+          
           console.log('✅ Visual profile applied:', {
             fontSize: `${profile.preferences.fontSize}px`,
             lineHeight: profile.preferences.lineSpacing,
             theme: theme,
-            animations: profile.preferences.enableAnimations
+            animations: profile.preferences.enableAnimations,
+            brightness: profile.preferences.brightnessSensitivity,
           });
         } else {
           // Remove data attribute when no profile
           root.removeAttribute('data-user-profile');
+          root.style.removeProperty('--brightness-filter');
+          root.style.filter = '';
         }
         
         // Apply theme from currentTheme (independent of profile contrast)
