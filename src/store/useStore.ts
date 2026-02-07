@@ -23,6 +23,7 @@ import {
   getSeverityFromLogMAR,
 } from '@/types';
 import { mockSearchResults } from '@/data/mockData';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GlobalState {
   // User and profile
@@ -178,14 +179,93 @@ export const useStore = create<GlobalState>()(
         set({ searchLoading: true, searchError: null, searchQuery: query });
         get().trackEvent({ type: 'search', details: { query } });
 
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 800));
-
         try {
           const filters = get().searchFilters;
-          let results = mockSearchResults;
+          const profile = get().visualProfile;
+          const lang = profile?.preferences ? 'es' : 'es'; // Default to Spanish
 
-          // Apply search query filter
+          // Try AI-powered search first
+          console.log('🔍 Calling AI search for:', query);
+          const { data, error } = await supabase.functions.invoke('search-content', {
+            body: { 
+              query: query || 'educational content', 
+              filters: {
+                contentType: filters.contentType,
+                educationLevel: filters.educationLevel,
+                source: filters.source,
+                language: lang,
+              },
+              language: lang,
+            },
+          });
+
+          if (error) {
+            console.warn('⚠️ AI search failed, falling back to mock data:', error);
+            // Fallback to mock data
+            let results = mockSearchResults;
+            if (query.trim()) {
+              const lowerQuery = query.toLowerCase();
+              results = results.filter(
+                (r) =>
+                  r.title.toLowerCase().includes(lowerQuery) ||
+                  r.description.toLowerCase().includes(lowerQuery) ||
+                  r.metadata.tags.some((t) => t.toLowerCase().includes(lowerQuery))
+              );
+            }
+            set({ searchResults: results, searchLoading: false });
+            return;
+          }
+
+          if (data?.success && data?.results?.length > 0) {
+            console.log('✅ AI search returned', data.results.length, 'results');
+            
+            // Map AI results to SearchResult type, adding color based on source
+            const sourceColors: Record<string, string> = {
+              youtube: '#FF0000',
+              khan: '#14BF96',
+              openstax: '#F47B20',
+              wikipedia: '#333333',
+              oer: '#2196F3',
+              arxiv: '#B31B1B',
+            };
+
+            const aiResults: SearchResult[] = data.results.map((r: any) => ({
+              ...r,
+              color: r.color || sourceColors[r.source] || '#6366F1',
+              thumbnail: r.thumbnail || `https://placehold.co/320x180/${(sourceColors[r.source] || '#6366F1').replace('#', '')}/FFFFFF?text=${encodeURIComponent(r.title.split(' ').slice(0, 2).join('+'))}`,
+            }));
+
+            // Apply local filters if needed
+            let results = aiResults;
+            if (filters.contentType?.length) {
+              results = results.filter((r) => filters.contentType!.includes(r.contentType));
+            }
+            if (filters.educationLevel?.length) {
+              results = results.filter((r) => filters.educationLevel!.includes(r.educationLevel));
+            }
+            if (filters.accessibilityStatus?.length) {
+              results = results.filter((r) => filters.accessibilityStatus!.includes(r.accessibilityStatus));
+            }
+
+            set({ searchResults: results, searchLoading: false });
+          } else {
+            console.warn('⚠️ AI search returned no results, using mock data');
+            let results = mockSearchResults;
+            if (query.trim()) {
+              const lowerQuery = query.toLowerCase();
+              results = results.filter(
+                (r) =>
+                  r.title.toLowerCase().includes(lowerQuery) ||
+                  r.description.toLowerCase().includes(lowerQuery) ||
+                  r.metadata.tags.some((t) => t.toLowerCase().includes(lowerQuery))
+              );
+            }
+            set({ searchResults: results, searchLoading: false });
+          }
+        } catch (error) {
+          console.error('Search error:', error);
+          // Fallback to mock data on any error
+          let results = mockSearchResults;
           if (query.trim()) {
             const lowerQuery = query.toLowerCase();
             results = results.filter(
@@ -195,35 +275,7 @@ export const useStore = create<GlobalState>()(
                 r.metadata.tags.some((t) => t.toLowerCase().includes(lowerQuery))
             );
           }
-
-          // Apply content type filter
-          if (filters.contentType?.length) {
-            results = results.filter((r) => filters.contentType!.includes(r.contentType));
-          }
-
-          // Apply education level filter
-          if (filters.educationLevel?.length) {
-            results = results.filter((r) => filters.educationLevel!.includes(r.educationLevel));
-          }
-
-          // Apply source filter
-          if (filters.source?.length) {
-            results = results.filter((r) => filters.source!.includes(r.source));
-          }
-
-          // Apply accessibility status filter
-          if (filters.accessibilityStatus?.length) {
-            results = results.filter((r) =>
-              filters.accessibilityStatus!.includes(r.accessibilityStatus)
-            );
-          }
-
           set({ searchResults: results, searchLoading: false });
-        } catch (error) {
-          set({
-            searchError: 'Failed to search content. Please try again.',
-            searchLoading: false,
-          });
           get().trackEvent({ type: 'error', details: { error: 'search_failed' } });
         }
       },
