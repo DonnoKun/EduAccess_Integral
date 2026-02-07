@@ -1,6 +1,7 @@
 /**
  * EduAccess - AI Course Content Generator Edge Function
- * Generates structured educational content with sections, examples, and exercises
+ * Generates deep, structured educational content with sections, examples, exercises with solutions,
+ * and source references for credibility.
  * Uses Lovable AI Gateway (Gemini)
  */
 
@@ -37,35 +38,62 @@ serve(async (req) => {
     console.log("📚 Generating course content for:", title);
     const startTime = Date.now();
 
-    const langName = language === 'es' ? 'Spanish' : 'English';
+    const langName = language === "es" ? "Spanish" : "English";
 
-    const systemPrompt = `You are an expert educational content creator. You generate high-quality, structured educational content for students.
+    const systemPrompt = `You are an expert educational content creator and university-level instructor. You create comprehensive, in-depth educational material that helps students truly understand complex topics.
 
 You MUST write ALL content entirely in ${langName}.
 
-Given a topic title and description, generate a COMPLETE educational lesson that includes:
-1. An engaging introduction that explains the topic and why it matters
-2. 2-4 concept sections with detailed, clear explanations suitable for the education level
-3. Practical, real-world examples that illustrate the concepts
-4. 2-3 practice exercises or review questions for the student to test understanding
-5. A concise summary of key takeaways
+Given a topic title and description, generate a COMPLETE, COMPREHENSIVE educational lesson that includes:
+
+1. **Introduction**: An engaging, detailed introduction (at least 3 paragraphs) explaining:
+   - What the topic is and why it matters
+   - Historical context or background
+   - What the student will learn by the end
+   - Prerequisites or related knowledge
+
+2. **Sections (3-5 sections)**: Each section must be THOROUGH and DETAILED:
+   - At least 2-3 substantial paragraphs of explanation per section
+   - Clear definitions of all technical terms
+   - Step-by-step breakdowns of complex concepts
+   - Connections between concepts
+   - 4-6 key bullet points summarizing the section
+
+3. **Practical Examples (3-4)**: Real-world, concrete examples with:
+   - Detailed step-by-step walkthroughs
+   - Mathematical formulas or code when applicable
+   - Visual descriptions of processes
+   - Each example should be at least 2 paragraphs
+
+4. **Exercises (3-4)**: Practice problems WITH COMPLETE SOLUTIONS:
+   - Clear problem statement
+   - A hint to guide the student
+   - A COMPLETE, step-by-step solution explaining the answer
+   - These must be solvable exercises, not open-ended questions
+
+5. **Summary**: A thorough summary (2+ paragraphs) of all key takeaways
+
+6. **Sources**: 3-5 credible academic/educational sources where this information can be verified:
+   - Include the source name, URL, and a brief description of what it covers
+   - Prefer: Khan Academy, Wikipedia, OpenStax, MIT OpenCourseWare, Coursera, university resources
+   - These should be REAL, verifiable URLs
 
 The content should be:
-- Educationally rigorous but accessible
-- Well-structured with clear headings
-- Engaging and student-friendly
-- Include key points/bullet points for each section
-- Appropriate for the content type (textbook-style for textbooks, lesson-style for courses, etc.)
+- University-level quality but accessible
+- Deeply educational, not surface-level
+- Include mathematical notation where relevant (use plain text like x^2, sqrt(x), etc.)
+- At least 2000 words total
+- Written as if for a comprehensive textbook chapter
 
 You MUST use the provided tool to return structured content.`;
 
-    const userPrompt = `Generate a complete educational lesson for:
+    const userPrompt = `Generate a COMPREHENSIVE, IN-DEPTH educational lesson for:
 - Title: ${title}
 - Description: ${description}
 - Content Type: ${contentType}
 - Source: ${source}
 
-Create detailed, educational content with theory, examples, and exercises. Write everything in ${langName}.`;
+This must be university-level quality content with deep explanations, worked examples, solvable exercises with full solutions, and real source references. Write everything in ${langName}. Make it thorough enough that a student could learn the topic from this lesson alone.`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -76,7 +104,7 @@ Create detailed, educational content with theory, examples, and exercises. Write
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "google/gemini-2.5-flash",
           temperature: 0.5,
           messages: [
             { role: "system", content: systemPrompt },
@@ -93,19 +121,25 @@ Create detailed, educational content with theory, examples, and exercises. Write
                   properties: {
                     introduction: {
                       type: "string",
-                      description: `Engaging introduction to the topic in ${langName}`,
+                      description: `Detailed introduction (3+ paragraphs) in ${langName}`,
                     },
                     sections: {
                       type: "array",
                       items: {
                         type: "object",
                         properties: {
-                          title: { type: "string", description: `Section title in ${langName}` },
-                          content: { type: "string", description: `Detailed explanation in ${langName}` },
+                          title: {
+                            type: "string",
+                            description: `Section title in ${langName}`,
+                          },
+                          content: {
+                            type: "string",
+                            description: `Detailed multi-paragraph explanation in ${langName}. At least 2-3 paragraphs.`,
+                          },
                           keyPoints: {
                             type: "array",
                             items: { type: "string" },
-                            description: `Key bullet points in ${langName}`,
+                            description: `4-6 key bullet points in ${langName}`,
                           },
                         },
                         required: ["title", "content", "keyPoints"],
@@ -117,8 +151,14 @@ Create detailed, educational content with theory, examples, and exercises. Write
                       items: {
                         type: "object",
                         properties: {
-                          title: { type: "string", description: `Example title in ${langName}` },
-                          description: { type: "string", description: `Example explanation in ${langName}` },
+                          title: {
+                            type: "string",
+                            description: `Example title in ${langName}`,
+                          },
+                          description: {
+                            type: "string",
+                            description: `Detailed step-by-step example (2+ paragraphs) in ${langName}`,
+                          },
                         },
                         required: ["title", "description"],
                         additionalProperties: false,
@@ -129,19 +169,58 @@ Create detailed, educational content with theory, examples, and exercises. Write
                       items: {
                         type: "object",
                         properties: {
-                          question: { type: "string", description: `Exercise question in ${langName}` },
-                          hint: { type: "string", description: `Optional hint in ${langName}` },
+                          question: {
+                            type: "string",
+                            description: `Exercise question in ${langName}`,
+                          },
+                          hint: {
+                            type: "string",
+                            description: `Hint to guide the student in ${langName}`,
+                          },
+                          answer: {
+                            type: "string",
+                            description: `Complete step-by-step solution in ${langName}`,
+                          },
                         },
-                        required: ["question"],
+                        required: ["question", "hint", "answer"],
                         additionalProperties: false,
                       },
                     },
                     summary: {
                       type: "string",
-                      description: `Brief summary of key takeaways in ${langName}`,
+                      description: `Thorough summary (2+ paragraphs) in ${langName}`,
+                    },
+                    sources: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          name: {
+                            type: "string",
+                            description: "Source name (e.g., Khan Academy, Wikipedia)",
+                          },
+                          url: {
+                            type: "string",
+                            description: "URL of the source",
+                          },
+                          description: {
+                            type: "string",
+                            description: `Brief description of what this source covers, in ${langName}`,
+                          },
+                        },
+                        required: ["name", "url", "description"],
+                        additionalProperties: false,
+                      },
                     },
                   },
-                  required: ["introduction", "sections", "examples", "exercises", "summary"],
+                  required: [
+                    "introduction",
+                    "sections",
+                    "examples",
+                    "exercises",
+                    "summary",
+                    "sources",
+                  ],
                   additionalProperties: false,
                 },
               },
@@ -159,13 +238,19 @@ Create detailed, educational content with theory, examples, and exercises. Write
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ success: false, error: "Rate limit exceeded" }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
         );
       }
       if (response.status === 402) {
         return new Response(
           JSON.stringify({ success: false, error: "AI credits exhausted" }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          {
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
         );
       }
       const errorText = await response.text();
@@ -191,14 +276,20 @@ Create detailed, educational content with theory, examples, and exercises. Write
         content: courseContent,
         processingTimeMs: totalTime,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   } catch (error) {
     console.error("Content generation error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   }
 });

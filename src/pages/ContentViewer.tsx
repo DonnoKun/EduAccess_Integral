@@ -9,8 +9,6 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
-  Volume2,
-  VolumeX,
   ZoomIn,
   ZoomOut,
   Eye,
@@ -20,6 +18,7 @@ import {
   Contrast,
   Check,
   Bookmark,
+  BookmarkCheck,
   Share2,
   Sparkles,
   GraduationCap,
@@ -27,6 +26,11 @@ import {
   PenTool,
   ListChecks,
   Loader2,
+  ExternalLink,
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -42,6 +46,8 @@ import {
 import { useStore } from '@/store/useStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import LanguageSelector from '@/components/LanguageSelector';
+import AudioPlayer from '@/components/AudioPlayer';
 import type { ThemeMode } from '@/types';
 
 interface CourseSection {
@@ -58,6 +64,13 @@ interface CourseExample {
 interface CourseExercise {
   question: string;
   hint?: string;
+  answer?: string;
+}
+
+interface CourseSource {
+  name: string;
+  url: string;
+  description: string;
 }
 
 interface CourseContent {
@@ -66,6 +79,7 @@ interface CourseContent {
   examples: CourseExample[];
   exercises: CourseExercise[];
   summary: string;
+  sources?: CourseSource[];
 }
 
 export default function ContentViewer() {
@@ -86,18 +100,17 @@ export default function ContentViewer() {
   } = useStore();
 
   const [fontSize, setFontSize] = useState(visualProfile?.preferences.fontSize || 20);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [showSimplified, setShowSimplified] = useState(false);
   const [focusedSection, setFocusedSection] = useState<number | null>(null);
   const [courseContent, setCourseContent] = useState<CourseContent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingStage, setLoadingStage] = useState(0);
-  const synthRef = useRef<SpeechSynthesis | null>(null);
+
+  // Functional state
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [revealedAnswers, setRevealedAnswers] = useState<Set<number>>(new Set());
 
   const lang = i18n.language?.split('-')[0] || 'es';
-  const isAudioEnabled =
-    visualProfile?.preferences?.preferredModality === 'audio' ||
-    visualProfile?.preferences?.preferredModality === 'mixed';
 
   useEffect(() => {
     if (!hasCompletedOnboarding) {
@@ -119,12 +132,11 @@ export default function ContentViewer() {
       setIsLoading(true);
       setLoadingStage(0);
 
-      // Animate loading stages
       const stageInterval = setInterval(() => {
         if (!cancelled) {
           setLoadingStage((prev) => Math.min(prev + 1, 4));
         }
-      }, 2000);
+      }, 2500);
 
       try {
         const { data, error } = await supabase.functions.invoke('generate-course-content', {
@@ -138,9 +150,7 @@ export default function ContentViewer() {
         });
 
         clearInterval(stageInterval);
-
         if (cancelled) return;
-
         if (error) throw new Error(error.message);
 
         if (data?.success && data?.content) {
@@ -153,7 +163,6 @@ export default function ContentViewer() {
         if (cancelled) return;
 
         console.error('Error fetching course content:', err);
-        // Fallback: create basic content from description
         setCourseContent({
           introduction: currentContent.description,
           sections: [
@@ -178,100 +187,63 @@ export default function ContentViewer() {
     };
 
     fetchCourseContent();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [currentContent, lang]);
 
-  // Apply font size
   useEffect(() => {
     document.documentElement.style.setProperty('--profile-font-size', `${fontSize}px`);
   }, [fontSize]);
 
-  // Initialize speechSynthesis
-  useEffect(() => {
-    synthRef.current = window.speechSynthesis;
-    return () => {
-      synthRef.current?.cancel();
-    };
-  }, []);
-
   const handleFontSizeChange = (delta: number) => {
     setFontSize((prev) => Math.min(48, Math.max(16, prev + delta)));
   };
-
-  const toggleSpeech = useCallback(() => {
-    const synth = synthRef.current;
-    if (!synth) return;
-
-    if (isSpeaking) {
-      synth.cancel();
-      setIsSpeaking(false);
-      return;
-    }
-
-    if (!courseContent) return;
-
-    // Build text to read
-    let textToRead = courseContent.introduction + '. ';
-    courseContent.sections.forEach((section) => {
-      textToRead += section.title + '. ' + section.content + '. ';
-    });
-    if (courseContent.summary) {
-      textToRead += courseContent.summary;
-    }
-
-    // Split into chunks (speechSynthesis has character limits on some browsers)
-    const maxChunkSize = 200;
-    const sentences = textToRead.split(/(?<=[.!?])\s+/);
-    const chunks: string[] = [];
-    let current = '';
-
-    sentences.forEach((sentence) => {
-      if ((current + sentence).length > maxChunkSize && current.length > 0) {
-        chunks.push(current.trim());
-        current = sentence + ' ';
-      } else {
-        current += sentence + ' ';
-      }
-    });
-    if (current.trim()) chunks.push(current.trim());
-
-    let chunkIndex = 0;
-    const speakNext = () => {
-      if (chunkIndex >= chunks.length) {
-        setIsSpeaking(false);
-        toast.success(
-          lang === 'es' ? 'Lectura completada' : 'Reading complete'
-        );
-        return;
-      }
-      const utterance = new SpeechSynthesisUtterance(chunks[chunkIndex]);
-      utterance.lang = lang === 'es' ? 'es-ES' : 'en-US';
-      utterance.rate = 0.9;
-      utterance.onend = () => {
-        chunkIndex++;
-        speakNext();
-      };
-      utterance.onerror = () => {
-        setIsSpeaking(false);
-      };
-      synth.speak(utterance);
-    };
-
-    setIsSpeaking(true);
-    toast.info(
-      lang === 'es' ? '🔊 Leyendo contenido en voz alta...' : '🔊 Reading content aloud...'
-    );
-    speakNext();
-  }, [isSpeaking, courseContent, lang]);
 
   const handleSectionClick = (index: number) => {
     if (focusModeEnabled) {
       setFocusedSection(focusedSection === index ? null : index);
     }
   };
+
+  const toggleAnswer = (index: number) => {
+    setRevealedAnswers((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
+  const handleMarkCompleted = () => {
+    setIsCompleted((prev) => !prev);
+    if (!isCompleted) {
+      toast.success(lang === 'es' ? '✅ Marcado como completado' : '✅ Marked as completed');
+    }
+  };
+
+  const handleSaveToLibrary = () => {
+    setIsSaved((prev) => !prev);
+    if (!isSaved) {
+      toast.success(lang === 'es' ? '📚 Guardado en tu biblioteca' : '📚 Saved to your library');
+    } else {
+      toast.info(lang === 'es' ? 'Eliminado de tu biblioteca' : 'Removed from your library');
+    }
+  };
+
+  // Build full text for TTS
+  const buildTTSText = useCallback(() => {
+    if (!courseContent) return '';
+    let text = courseContent.introduction + '. ';
+    courseContent.sections.forEach((section) => {
+      text += section.title + '. ' + section.content + '. ';
+    });
+    if (courseContent.summary) {
+      text += courseContent.summary;
+    }
+    return text;
+  }, [courseContent]);
 
   if (!currentContent) return null;
 
@@ -288,18 +260,18 @@ export default function ContentViewer() {
   const loadingMessages =
     lang === 'es'
       ? [
-          '🔍 Analizando el tema...',
-          '📖 Generando contenido educativo...',
-          '💡 Creando ejemplos prácticos...',
-          '✏️ Preparando ejercicios...',
-          '✅ Finalizando lección...',
+          '🔍 Analizando el tema en profundidad...',
+          '📖 Generando contenido educativo completo...',
+          '💡 Creando ejemplos prácticos detallados...',
+          '✏️ Preparando ejercicios con soluciones...',
+          '✅ Finalizando lección y referencias...',
         ]
       : [
-          '🔍 Analyzing the topic...',
-          '📖 Generating educational content...',
-          '💡 Creating practical examples...',
-          '✏️ Preparing exercises...',
-          '✅ Finalizing lesson...',
+          '🔍 Analyzing the topic in depth...',
+          '📖 Generating comprehensive educational content...',
+          '💡 Creating detailed practical examples...',
+          '✏️ Preparing exercises with solutions...',
+          '✅ Finalizing lesson and references...',
         ];
 
   const contentStyle = {
@@ -322,6 +294,9 @@ export default function ContentViewer() {
           </Button>
 
           <div className="flex items-center gap-2">
+            {/* Language Selector */}
+            <LanguageSelector />
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon" aria-label={t('navigation.changeTheme')}>
@@ -377,8 +352,13 @@ export default function ContentViewer() {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="icon" aria-label={lang === 'es' ? 'Guardar' : 'Bookmark'}>
-                    <Bookmark className="h-4 w-4" />
+                  <Button
+                    variant={isSaved ? 'default' : 'outline'}
+                    size="icon"
+                    onClick={handleSaveToLibrary}
+                    aria-label={lang === 'es' ? 'Guardar' : 'Bookmark'}
+                  >
+                    {isSaved ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
                   </Button>
                   <Button variant="outline" size="icon" aria-label={lang === 'es' ? 'Compartir' : 'Share'}>
                     <Share2 className="h-4 w-4" />
@@ -387,28 +367,6 @@ export default function ContentViewer() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Remediation Status (if coming from remediation flow) */}
-          {remediatedContent && (
-            <Card className="bg-green-500/10 border-green-500/20">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Check className="h-5 w-5 text-green-600" aria-hidden="true" />
-                  <span className="font-semibold text-green-600">
-                    {lang === 'es' ? 'Remediación Completada' : 'Remediation Complete'}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {lang === 'es' ? 'Servicios' : 'Services'}:{' '}
-                  {remediatedContent.metricsSummary.servicesUsed.join(', ')} ·{' '}
-                  {lang === 'es' ? 'Confianza' : 'Confidence'}:{' '}
-                  {remediatedContent.metricsSummary.averageConfidence}% ·{' '}
-                  {lang === 'es' ? 'Tiempo' : 'Time'}:{' '}
-                  {(remediatedContent.metricsSummary.totalProcessingTimeMs / 1000).toFixed(1)}s
-                </p>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Quick Adjustments */}
           <Card>
@@ -431,28 +389,6 @@ export default function ContentViewer() {
 
                 <div className="h-6 w-px bg-border" aria-hidden="true" />
 
-                {/* TTS Audio */}
-                <Button
-                  variant={isSpeaking ? 'default' : 'outline'}
-                  onClick={toggleSpeech}
-                  aria-pressed={isSpeaking}
-                  disabled={isLoading}
-                >
-                  {isSpeaking ? (
-                    <>
-                      <VolumeX className="h-4 w-4 mr-2" aria-hidden="true" />
-                      {lang === 'es' ? 'Detener Audio' : 'Stop Audio'}
-                    </>
-                  ) : (
-                    <>
-                      <Volume2 className="h-4 w-4 mr-2" aria-hidden="true" />
-                      {lang === 'es' ? 'Escuchar' : 'Listen'}
-                    </>
-                  )}
-                </Button>
-
-                <div className="h-6 w-px bg-border" aria-hidden="true" />
-
                 {/* Focus Mode */}
                 <div className="flex items-center gap-2">
                   <Switch id="focus-mode" checked={focusModeEnabled} onCheckedChange={toggleFocusMode} />
@@ -461,27 +397,16 @@ export default function ContentViewer() {
                     {lang === 'es' ? 'Modo Enfoque' : 'Focus Mode'}
                   </Label>
                 </div>
-
-                <div className="h-6 w-px bg-border" aria-hidden="true" />
-
-                {/* Simplified Toggle */}
-                <div className="flex items-center gap-2">
-                  <Switch id="simplified" checked={showSimplified} onCheckedChange={setShowSimplified} />
-                  <Label htmlFor="simplified" className="flex items-center gap-1">
-                    <BookOpen className="h-4 w-4" aria-hidden="true" />
-                    {lang === 'es' ? 'Simplificado' : 'Simplified'}
-                  </Label>
-                </div>
               </div>
 
-              {/* Audio hint for Audio/Mixed modality users */}
-              {isAudioEnabled && !isLoading && (
-                <p className="text-sm text-primary mt-3 flex items-center gap-1">
-                  <Volume2 className="h-4 w-4" />
-                  {lang === 'es'
-                    ? 'Tu modalidad incluye audio. Presiona "Escuchar" para que el contenido se lea en voz alta.'
-                    : 'Your modality includes audio. Press "Listen" to have the content read aloud.'}
-                </p>
+              {/* Audio Player */}
+              {!isLoading && courseContent && (
+                <div className="mt-4 pt-4 border-t">
+                  <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
+                    🔊 {lang === 'es' ? 'Reproductor de Audio' : 'Audio Player'}
+                  </h3>
+                  <AudioPlayer text={buildTTSText()} lang={lang} disabled={isLoading} />
+                </div>
               )}
             </CardContent>
           </Card>
@@ -504,12 +429,11 @@ export default function ContentViewer() {
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {lang === 'es'
-                        ? 'Generando contenido educativo con IA...'
-                        : 'Generating educational content with AI...'}
+                        ? 'Generando contenido educativo completo con IA...'
+                        : 'Generating comprehensive educational content with AI...'}
                     </p>
                   </div>
 
-                  {/* Loading steps */}
                   <div className="w-full max-w-sm space-y-2">
                     {loadingMessages.map((msg, i) => (
                       <div
@@ -530,15 +454,12 @@ export default function ContentViewer() {
                     ))}
                   </div>
 
-                  {/* Skeleton preview */}
                   <div className="w-full space-y-3 mt-4">
                     <Skeleton className="h-6 w-3/4" />
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-4 w-5/6" />
                     <Skeleton className="h-4 w-4/6" />
                     <Skeleton className="h-20 w-full mt-4" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
                   </div>
                 </div>
               </CardContent>
@@ -557,7 +478,7 @@ export default function ContentViewer() {
                       {lang === 'es' ? 'Introducción' : 'Introduction'}
                     </h2>
                   </div>
-                  <p style={contentStyle}>{courseContent.introduction}</p>
+                  <div style={contentStyle} className="whitespace-pre-line">{courseContent.introduction}</div>
                 </CardContent>
               </Card>
 
@@ -579,9 +500,9 @@ export default function ContentViewer() {
                   >
                     <CardContent className="p-6 md:p-8">
                       <h3 className="text-lg font-bold mb-3 text-primary">{section.title}</h3>
-                      <p style={contentStyle} className="mb-4 whitespace-pre-line">
+                      <div style={contentStyle} className="mb-4 whitespace-pre-line">
                         {section.content}
-                      </p>
+                      </div>
                       {section.keyPoints && section.keyPoints.length > 0 && (
                         <div className="bg-primary/5 rounded-lg p-4 mt-4">
                           <h4 className="font-semibold mb-2 flex items-center gap-2">
@@ -624,7 +545,7 @@ export default function ContentViewer() {
                           className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4"
                         >
                           <h4 className="font-semibold mb-2">{example.title}</h4>
-                          <p style={contentStyle}>{example.description}</p>
+                          <div style={contentStyle} className="whitespace-pre-line">{example.description}</div>
                         </div>
                       ))}
                     </div>
@@ -632,7 +553,7 @@ export default function ContentViewer() {
                 </Card>
               )}
 
-              {/* Exercises */}
+              {/* Exercises with Solutions */}
               {courseContent.exercises && courseContent.exercises.length > 0 && (
                 <Card>
                   <CardContent className="p-6 md:p-8">
@@ -656,6 +577,50 @@ export default function ContentViewer() {
                               💡 {lang === 'es' ? 'Pista' : 'Hint'}: {exercise.hint}
                             </p>
                           )}
+
+                          {/* Reveal Answer Button */}
+                          {exercise.answer && (
+                            <div className="mt-3">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => toggleAnswer(index)}
+                                className="gap-2"
+                              >
+                                {revealedAnswers.has(index) ? (
+                                  <>
+                                    <ChevronUp className="h-3.5 w-3.5" />
+                                    {lang === 'es' ? 'Ocultar Solución' : 'Hide Solution'}
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                    {lang === 'es' ? 'Ver Solución' : 'Show Solution'}
+                                  </>
+                                )}
+                              </Button>
+
+                              {revealedAnswers.has(index) && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="mt-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4"
+                                >
+                                  <p className="font-semibold text-emerald-700 dark:text-emerald-400 mb-2 flex items-center gap-2">
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    {lang === 'es' ? 'Solución:' : 'Solution:'}
+                                  </p>
+                                  <div
+                                    style={{ fontSize: `${fontSize}px` }}
+                                    className="whitespace-pre-line"
+                                  >
+                                    {exercise.answer}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -670,19 +635,66 @@ export default function ContentViewer() {
                     <Check className="h-6 w-6 text-primary" />
                     {lang === 'es' ? 'Resumen' : 'Summary'}
                   </h2>
-                  <p style={contentStyle}>{courseContent.summary}</p>
+                  <div style={contentStyle} className="whitespace-pre-line">{courseContent.summary}</div>
                 </CardContent>
               </Card>
 
-              {/* Remediated image alt-text (if available from remediation) */}
+              {/* Sources & Reliability Section */}
+              {courseContent.sources && courseContent.sources.length > 0 && (
+                <Card className="border-blue-500/20">
+                  <CardContent className="p-6 md:p-8">
+                    <div className="flex items-center gap-2 mb-4">
+                      <ShieldCheck className="h-6 w-6 text-blue-500" />
+                      <h2 className="text-xl font-bold">
+                        {lang === 'es' ? 'Fuentes y Fiabilidad' : 'Sources & Reliability'}
+                      </h2>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {lang === 'es'
+                        ? 'Este contenido fue generado por IA a partir de fuentes educativas verificadas. Te recomendamos consultar las fuentes originales para profundizar en el tema.'
+                        : 'This content was AI-generated from verified educational sources. We recommend consulting the original sources for deeper exploration.'}
+                    </p>
+                    <div className="space-y-3">
+                      {courseContent.sources.map((source, index) => (
+                        <div
+                          key={index}
+                          className="flex items-start gap-3 bg-blue-500/5 border border-blue-500/15 rounded-lg p-4"
+                        >
+                          <ExternalLink className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <a
+                              href={source.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                            >
+                              {source.name}
+                            </a>
+                            <p className="text-sm text-muted-foreground mt-1">{source.description}</p>
+                            <p className="text-xs text-muted-foreground/70 mt-1 truncate">{source.url}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                      <p className="text-xs text-muted-foreground flex items-start gap-2">
+                        <ShieldCheck className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-500" />
+                        {lang === 'es'
+                          ? 'Nota: El contenido es generado por inteligencia artificial con fines educativos. Aunque se basa en fuentes confiables, siempre verifica la información con las fuentes originales para tareas académicas o profesionales.'
+                          : 'Note: Content is AI-generated for educational purposes. While based on reliable sources, always verify information with original sources for academic or professional work.'}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Remediated image alt-text (if available) */}
               {remediatedContent?.remediatedElements?.imageDescriptions?.[0] && (
                 <Card>
                   <CardContent className="p-6">
                     <figure>
                       <div className="bg-muted rounded-lg p-8 flex items-center justify-center">
-                        <span className="text-4xl" aria-hidden="true">
-                          📊
-                        </span>
+                        <span className="text-4xl" aria-hidden="true">📊</span>
                       </div>
                       <figcaption className="mt-2 text-sm text-muted-foreground italic">
                         <strong>Alt-text:</strong>{' '}
@@ -695,20 +707,39 @@ export default function ContentViewer() {
             </div>
           )}
 
-          {/* Actions */}
+          {/* Action Buttons */}
           {!isLoading && (
             <div className="flex flex-wrap gap-4 justify-center mt-2">
               <Button variant="outline" onClick={() => navigate('/search')}>
                 <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
                 {lang === 'es' ? 'Volver a Búsqueda' : 'Back to Search'}
               </Button>
-              <Button>
-                <Check className="h-4 w-4 mr-2" aria-hidden="true" />
-                {lang === 'es' ? 'Marcar como Completado' : 'Mark as Completed'}
+              <Button
+                variant={isCompleted ? 'default' : 'outline'}
+                onClick={handleMarkCompleted}
+                className={isCompleted ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
+              >
+                {isCompleted ? (
+                  <CheckCircle2 className="h-4 w-4 mr-2" aria-hidden="true" />
+                ) : (
+                  <Check className="h-4 w-4 mr-2" aria-hidden="true" />
+                )}
+                {isCompleted
+                  ? (lang === 'es' ? 'Completado ✓' : 'Completed ✓')
+                  : (lang === 'es' ? 'Marcar como Completado' : 'Mark as Completed')}
               </Button>
-              <Button variant="secondary">
-                <Bookmark className="h-4 w-4 mr-2" aria-hidden="true" />
-                {lang === 'es' ? 'Guardar en Biblioteca' : 'Save to Library'}
+              <Button
+                variant={isSaved ? 'default' : 'secondary'}
+                onClick={handleSaveToLibrary}
+              >
+                {isSaved ? (
+                  <BookmarkCheck className="h-4 w-4 mr-2" aria-hidden="true" />
+                ) : (
+                  <Bookmark className="h-4 w-4 mr-2" aria-hidden="true" />
+                )}
+                {isSaved
+                  ? (lang === 'es' ? 'Guardado ✓' : 'Saved ✓')
+                  : (lang === 'es' ? 'Guardar en Biblioteca' : 'Save to Library')}
               </Button>
             </div>
           )}
