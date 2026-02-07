@@ -44,7 +44,7 @@ import {
 import { toast } from 'sonner';
 import { useStore } from '@/store/useStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { recentSearches, recommendedContent } from '@/data/mockData';
+import { recommendedContent } from '@/data/mockData';
 import LanguageSelector from '@/components/LanguageSelector';
 import type { ThemeMode } from '@/types';
 
@@ -72,8 +72,11 @@ export default function Dashboard() {
     setTheme,
     readingGuideEnabled,
     toggleReadingGuide,
+    recentSearches,
   } = useStore();
   const { isAuthenticated, logout, currentUser } = useAuthStore();
+  const { i18n } = useTranslation();
+  const lang = i18n.language?.split('-')[0] || 'es';
 
   const handleToggleReadingGuide = () => {
     toggleReadingGuide();
@@ -337,20 +340,37 @@ export default function Dashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2">
-                    {recentSearches.map((search, index) => (
-                      <li key={index}>
-                        <Button
-                          variant="ghost"
-                          className="w-full justify-start text-left"
-                          onClick={() => navigate(`/search?q=${encodeURIComponent(search)}`)}
-                        >
-                          <Search className="mr-2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                          {search}
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
+                  {recentSearches.length === 0 ? (
+                    <div className="text-center py-6">
+                      <Search className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        {lang === 'es' ? 'Aún no has realizado búsquedas' : 'No searches yet'}
+                      </p>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        onClick={() => navigate('/search')}
+                        className="mt-2"
+                      >
+                        {lang === 'es' ? 'Ir a buscar' : 'Start searching'}
+                      </Button>
+                    </div>
+                  ) : (
+                    <ul className="space-y-2">
+                      {recentSearches.slice(0, 5).map((search, index) => (
+                        <li key={index}>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start text-left"
+                            onClick={() => navigate(`/search?q=${encodeURIComponent(search)}`)}
+                          >
+                            <Search className="mr-2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                            {search}
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -371,7 +391,7 @@ export default function Dashboard() {
                         <Button
                           variant="ghost"
                           className="w-full justify-start text-left h-auto py-2"
-                          onClick={() => navigate(`/content/${content.id}`)}
+                          onClick={() => navigate(`/search?q=${encodeURIComponent(content.title)}`)}
                         >
                           <span className="mr-2" aria-hidden="true">
                             {getSourceIcon(content.source)}

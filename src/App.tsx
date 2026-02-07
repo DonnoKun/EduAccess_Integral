@@ -13,6 +13,7 @@ import SearchPage from "./pages/Search";
 import RemediatePage from "./pages/Remediate";
 import ContentViewer from "./pages/ContentViewer";
 import Settings from "./pages/Settings";
+import LibraryPage from "./pages/Library";
 import NotFound from "./pages/NotFound";
 import ReadingGuide from "./components/ReadingGuide";
 
@@ -97,6 +98,11 @@ function AppContent() {
       <Route path="/settings" element={
         <ProtectedRoute>
           <Settings />
+        </ProtectedRoute>
+      } />
+      <Route path="/library" element={
+        <ProtectedRoute>
+          <LibraryPage />
         </ProtectedRoute>
       } />
       <Route path="*" element={<NotFound />} />

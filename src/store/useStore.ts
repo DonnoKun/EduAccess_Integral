@@ -39,11 +39,16 @@ interface GlobalState {
   searchLoading: boolean;
   searchError: string | null;
   searchFilters: SearchFilters;
+  recentSearches: string[];
   
   // Current content
   currentContent: SearchResult | null;
   remediatedContent: RemediatedContent | null;
   remediationProgress: RemediationProgress;
+  
+  // Library
+  savedContent: SearchResult[];
+  completedContent: SearchResult[];
   
   // UI state
   sidebarOpen: boolean;
@@ -68,6 +73,10 @@ interface GlobalState {
   setRemediatedContent: (content: RemediatedContent | null) => void;
   updateRemediationProgress: (progress: Partial<RemediationProgress>) => void;
   resetRemediationProgress: () => void;
+  saveToLibrary: (content: SearchResult) => void;
+  removeFromLibrary: (contentId: string) => void;
+  markAsCompleted: (content: SearchResult) => void;
+  unmarkAsCompleted: (contentId: string) => void;
   toggleSidebar: () => void;
   toggleReadingMode: () => void;
   toggleFocusMode: () => void;
@@ -106,9 +115,12 @@ export const useStore = create<GlobalState>()(
       searchLoading: false,
       searchError: null,
       searchFilters: {},
+      recentSearches: [],
       currentContent: null,
       remediatedContent: null,
       remediationProgress: initialRemediationProgress,
+      savedContent: [],
+      completedContent: [],
       sidebarOpen: true,
       readingMode: false,
       focusModeEnabled: false,
@@ -178,6 +190,14 @@ export const useStore = create<GlobalState>()(
       performSearch: async (query) => {
         set({ searchLoading: true, searchError: null, searchQuery: query });
         get().trackEvent({ type: 'search', details: { query } });
+
+        // Track real searches in history (only non-empty queries)
+        if (query.trim()) {
+          const current = get().recentSearches;
+          const filtered = current.filter((s) => s.toLowerCase() !== query.toLowerCase());
+          const updated = [query, ...filtered].slice(0, 10);
+          set({ recentSearches: updated });
+        }
 
         try {
           const filters = get().searchFilters;
@@ -315,6 +335,34 @@ export const useStore = create<GlobalState>()(
         set({ remediationProgress: initialRemediationProgress });
       },
 
+      saveToLibrary: (content) => {
+        set((state) => {
+          const exists = state.savedContent.some((c) => c.id === content.id);
+          if (exists) return state;
+          return { savedContent: [...state.savedContent, content] };
+        });
+      },
+
+      removeFromLibrary: (contentId) => {
+        set((state) => ({
+          savedContent: state.savedContent.filter((c) => c.id !== contentId),
+        }));
+      },
+
+      markAsCompleted: (content) => {
+        set((state) => {
+          const exists = state.completedContent.some((c) => c.id === content.id);
+          if (exists) return state;
+          return { completedContent: [...state.completedContent, content] };
+        });
+      },
+
+      unmarkAsCompleted: (contentId) => {
+        set((state) => ({
+          completedContent: state.completedContent.filter((c) => c.id !== contentId),
+        }));
+      },
+
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 
       toggleReadingMode: () => set((state) => ({ readingMode: !state.readingMode })),
@@ -395,6 +443,9 @@ export const useStore = create<GlobalState>()(
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         currentTheme: state.currentTheme,
         readingGuideEnabled: state.readingGuideEnabled,
+        recentSearches: state.recentSearches,
+        savedContent: state.savedContent,
+        completedContent: state.completedContent,
       }),
     }
   )
