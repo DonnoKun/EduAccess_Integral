@@ -37,36 +37,45 @@ serve(async (req) => {
     const body: SearchRequest = await req.json();
     const { query, filters, language = "es" } = body;
 
-    console.log("🔍 AI Search for:", query);
+    console.log("🔍 AI Search for:", query, "language:", language);
 
     const filterContext = filters
       ? `\nFilters: ${JSON.stringify(filters)}`
       : "";
 
-    const systemPrompt = `You are an educational content search engine. You find real educational resources from the internet.
+    const langName = language === 'es' ? 'Spanish' : 'English';
 
-You must respond in ${language === 'es' ? 'Spanish' : 'English'}.
+    const systemPrompt = `You are an educational content search engine specialized in finding COURSES, LESSONS, and LEARNING MATERIALS - not just links or videos.
 
-Given a search query, return realistic educational content results that would be found on real educational platforms like:
-- Khan Academy (khan)
-- Wikipedia (wikipedia) 
-- OpenStax (openstax)
-- YouTube educational channels (youtube)
-- OER Commons (oer)
-- ArXiv (arxiv)
+You MUST respond entirely in ${langName}. ALL titles, descriptions, and text must be in ${langName}.
+
+Given a search query, return realistic educational content results from real educational platforms:
+- Khan Academy (khan) - Interactive courses and lessons
+- Wikipedia (wikipedia) - Encyclopedia articles and learning resources
+- OpenStax (openstax) - Free textbooks and course materials
+- YouTube educational channels (youtube) - Educational video courses and tutorials
+- OER Commons (oer) - Open educational resources, exercises, and lesson plans
+- ArXiv (arxiv) - Academic papers and research
+
+IMPORTANT: Focus on returning COMPLETE COURSES and LEARNING MATERIALS that include:
+- Structured lessons with theory and explanations
+- Practice exercises and problems
+- Examples and case studies
+- Study guides and summaries
 
 For each result, assess its accessibility status:
 - "accessible": Content has proper alt-text, captions, structured headings
 - "needs_remediation": Content lacks alt-text, captions, or has complex unstructured text
 - "partially_accessible": Some accessibility features present but incomplete
 
-Generate 6-10 realistic results based on the query. Include real-looking URLs, accurate descriptions, and proper metadata.
+Generate 8-10 realistic results. Include real-looking URLs, accurate descriptions in ${langName}, and proper metadata.
+Mix different content types (textbook, article, exercise, video, diagram) and education levels.
 
 You MUST use the provided tool to return structured results.`;
 
-    const userPrompt = `Search for educational content: "${query}"${filterContext}
+    const userPrompt = `Search for educational courses and learning materials about: "${query || 'general educational content'}"${filterContext}
 
-Return realistic educational content results with accessibility metadata.`;
+Return realistic educational content results with accessibility metadata. ALL content must be in ${langName}.`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -78,6 +87,7 @@ Return realistic educational content results with accessibility metadata.`;
         },
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
+          temperature: 0.4,
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
@@ -96,13 +106,13 @@ Return realistic educational content results with accessibility metadata.`;
                       items: {
                         type: "object",
                         properties: {
-                          title: { type: "string" },
+                          title: { type: "string", description: `Title in ${langName}` },
                           source: {
                             type: "string",
                             enum: ["youtube", "khan", "openstax", "wikipedia", "oer", "arxiv"],
                           },
                           url: { type: "string" },
-                          description: { type: "string" },
+                          description: { type: "string", description: `Description in ${langName}` },
                           contentType: {
                             type: "string",
                             enum: ["video", "article", "textbook", "exercise", "diagram"],
@@ -120,7 +130,7 @@ Return realistic educational content results with accessibility metadata.`;
                             items: { type: "string" },
                           },
                           duration: { type: "string", description: "For videos, e.g. '12:35'" },
-                          wordCount: { type: "number", description: "For articles" },
+                          wordCount: { type: "number", description: "For articles/textbooks" },
                           tags: {
                             type: "array",
                             items: { type: "string" },
@@ -181,7 +191,7 @@ Return realistic educational content results with accessibility metadata.`;
 
     const searchData = JSON.parse(toolCall.function.arguments);
 
-    // Map colors for content types
+    // Map colors for content sources
     const sourceColors: Record<string, string> = {
       youtube: "#FF0000",
       khan: "#14BF96",

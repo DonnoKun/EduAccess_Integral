@@ -182,7 +182,7 @@ export const useStore = create<GlobalState>()(
         try {
           const filters = get().searchFilters;
           const profile = get().visualProfile;
-          const lang = profile?.preferences ? 'es' : 'es'; // Default to Spanish
+          const lang = localStorage.getItem('i18nextLng')?.split('-')[0] || 'es';
 
           // Try AI-powered search first
           console.log('🔍 Calling AI search for:', query);
@@ -232,7 +232,7 @@ export const useStore = create<GlobalState>()(
             const aiResults: SearchResult[] = data.results.map((r: any) => ({
               ...r,
               color: r.color || sourceColors[r.source] || '#6366F1',
-              thumbnail: r.thumbnail || `https://placehold.co/320x180/${(sourceColors[r.source] || '#6366F1').replace('#', '')}/FFFFFF?text=${encodeURIComponent(r.title.split(' ').slice(0, 2).join('+'))}`,
+              thumbnail: r.thumbnail || `https://placehold.co/320x180/${(sourceColors[r.source] || '#6366F1').replace('#', '')}/FFFFFF?text=${encodeURIComponent(r.title.split(' ').slice(0, 3).join(' '))}`,
             }));
 
             // Apply local filters if needed
