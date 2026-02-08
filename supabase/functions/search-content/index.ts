@@ -68,7 +68,7 @@ For each result, assess its accessibility status:
 - "needs_remediation": Content lacks alt-text, captions, or has complex unstructured text
 - "partially_accessible": Some accessibility features present but incomplete
 
-Generate 8-10 realistic results. Include real-looking URLs, accurate descriptions in ${langName}, and proper metadata.
+Generate 6 realistic results. Include real-looking URLs, accurate descriptions in ${langName}, and proper metadata.
 Mix different content types (textbook, article, exercise, video, diagram) and education levels.
 
 You MUST use the provided tool to return structured results.`;
@@ -86,8 +86,8 @@ Return realistic educational content results with accessibility metadata. ALL co
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          temperature: 0.4,
+          model: "google/gemini-2.5-flash-lite",
+          temperature: 0.3,
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },

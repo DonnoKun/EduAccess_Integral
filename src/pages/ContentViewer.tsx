@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useLibrarySync } from '@/hooks/useLibrarySync';
 import { useSessionTracker } from '@/hooks/useSessionTracker';
 import { useTranslation } from 'react-i18next';
@@ -89,8 +89,10 @@ interface CourseContent {
 
 export default function ContentViewer() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t, i18n } = useTranslation();
   const { contentId } = useParams<{ contentId: string }>();
+  const searchState = location.state as { fromSearch?: boolean; searchQuery?: string } | null;
   const {
     currentContent,
     remediatedContent,
@@ -217,24 +219,46 @@ export default function ContentViewer() {
     });
   };
 
-  // Check student's answer against the solution
+  // Check student's answer against the solution with improved matching
   const checkAnswer = (index: number) => {
     const exercise = courseContent?.exercises[index];
     if (!exercise?.answer || !userAnswers[index]?.trim()) return;
 
-    const userAns = userAnswers[index].toLowerCase().trim();
-    const correctAns = exercise.answer.toLowerCase().trim();
+    // Normalize: remove accents, lowercase, remove special chars
+    const normalize = (s: string) =>
+      s.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, '')
+        .trim();
 
-    // Simple matching: check if key words from the answer are present
-    const answerWords = correctAns.split(/\s+/).filter(w => w.length > 3);
-    const matchCount = answerWords.filter(w => userAns.includes(w)).length;
-    const matchRatio = answerWords.length > 0 ? matchCount / answerWords.length : 0;
+    const userAns = normalize(userAnswers[index]);
+    const correctAns = normalize(exercise.answer);
 
-    if (matchRatio >= 0.6) {
+    const userWords = userAns.split(/\s+/).filter(w => w.length > 2);
+    const correctWords = correctAns.split(/\s+/).filter(w => w.length > 3);
+
+    // Check if user's words appear in correct answer (user → correct)
+    const userInCorrect = userWords.filter(w => correctAns.includes(w)).length;
+    const userMatchRatio = userWords.length > 0 ? userInCorrect / userWords.length : 0;
+
+    // Check if correct answer words appear in user answer (correct → user)
+    const correctInUser = correctWords.filter(w => userAns.includes(w)).length;
+    const correctMatchRatio = correctWords.length > 0 ? correctInUser / correctWords.length : 0;
+
+    // For short answers (≤5 words): prioritize that user's keywords are found in the solution
+    // For longer answers: blend both directions
+    let matchScore: number;
+    if (userWords.length <= 5) {
+      matchScore = userMatchRatio;
+    } else {
+      matchScore = Math.max(userMatchRatio * 0.6 + correctMatchRatio * 0.4, correctMatchRatio);
+    }
+
+    if (matchScore >= 0.5) {
       setCheckedAnswers(prev => ({ ...prev, [index]: 'correct' }));
       toast.success(lang === 'es' ? '✅ ¡Correcto! Muy bien.' : '✅ Correct! Well done.');
       incrementTasksCompleted();
-    } else if (matchRatio >= 0.3) {
+    } else if (matchScore >= 0.2) {
       setCheckedAnswers(prev => ({ ...prev, [index]: 'partial' }));
       toast.info(lang === 'es' ? '🤔 Parcialmente correcto. Revisa la solución.' : '🤔 Partially correct. Check the solution.');
     } else {
@@ -244,7 +268,7 @@ export default function ContentViewer() {
 
     // Update progress in DB
     if (currentContent) {
-      const completedCount = Object.values({ ...checkedAnswers, [index]: matchRatio >= 0.6 ? 'correct' : checkedAnswers[index] })
+      const completedCount = Object.values({ ...checkedAnswers, [index]: matchScore >= 0.5 ? 'correct' : checkedAnswers[index] })
         .filter(v => v === 'correct').length;
       const totalExercises = courseContent?.exercises?.length || 0;
       const progressPct = totalExercises > 0 ? Math.round((completedCount / totalExercises) * 100) : 0;
@@ -327,7 +351,13 @@ export default function ContentViewer() {
       {/* Header */}
       <header className="sticky top-0 z-50 glass-card border-b">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate('/search', { replace: true })}>
+          <Button variant="ghost" onClick={() => {
+            if (searchState?.fromSearch && searchState?.searchQuery) {
+              navigate(`/search?q=${encodeURIComponent(searchState.searchQuery)}`);
+            } else {
+              navigate('/search');
+            }
+          }}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             {lang === 'es' ? 'Volver' : 'Back'}
           </Button>
@@ -702,7 +732,13 @@ export default function ContentViewer() {
           {/* Action Buttons */}
           {!isLoading && (
             <div className="flex flex-wrap gap-4 justify-center mt-2">
-              <Button variant="outline" onClick={() => navigate('/search')}>
+              <Button variant="outline" onClick={() => {
+                if (searchState?.fromSearch && searchState?.searchQuery) {
+                  navigate(`/search?q=${encodeURIComponent(searchState.searchQuery)}`);
+                } else {
+                  navigate('/search');
+                }
+              }}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 {lang === 'es' ? 'Volver a Búsqueda' : 'Back to Search'}
               </Button>

@@ -210,12 +210,12 @@ export default function Login() {
                 >
                   <div className="text-center">
                     <h1 className="text-2xl font-bold mb-2">
-                      {lang === 'es' ? 'Ingresa tu Código' : 'Enter your Code'}
+                      {lang === 'es' ? 'Verifica tu Identidad' : 'Verify your Identity'}
                     </h1>
                     <p className="text-muted-foreground">
                       {lang === 'es'
-                        ? 'Revisa tu correo electrónico'
-                        : 'Check your email'}
+                        ? 'Te enviamos un correo. Puedes hacer clic en el enlace del correo para iniciar sesión automáticamente, o ingresar el código de 6 dígitos aquí:'
+                        : 'We sent you an email. Click the link to sign in automatically, or enter the 6-digit code below:'}
                     </p>
                     <p className="font-medium text-primary mt-1">{email}</p>
                   </div>
