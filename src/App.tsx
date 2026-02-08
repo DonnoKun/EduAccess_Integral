@@ -48,15 +48,27 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 
 function AppContent() {
   const { applyProfileStyles, visualProfile, currentTheme } = useStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, initialize, initialized } = useAuthStore();
   const { hasCompletedOnboarding } = useStore();
+
+  // Initialize auth on app load
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
 
   // Apply visual profile on app load and when profile changes
   useEffect(() => {
-    // Apply profile styles (includes theme)
     applyProfileStyles();
-    console.log('🚀 App initialized - Profile applied:', !!visualProfile);
   }, [applyProfileStyles, visualProfile, currentTheme]);
+
+  // Show nothing until auth is initialized
+  if (!initialized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <Routes>

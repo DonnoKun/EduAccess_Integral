@@ -1,234 +1,214 @@
 /**
  * EduAccess - Authentication Store
- * OTP-based authentication without passwords
+ * Real Supabase Auth with email OTP (magic link)
+ * Each student gets their own persistent profile
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { resetVisualSettingsToDefault, clearAllUserData } from '@/lib/resetVisualSettings';
-import { useStore } from '@/store/useStore';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface User {
   id: string;
-  email?: string;
-  phone?: string;
+  email: string;
   name: string;
-  createdAt: Date;
-  lastLogin: Date;
-}
-
-export interface OTPSession {
-  identifier: string;
-  code: string;
-  expiresAt: Date;
-  attempts: number;
 }
 
 interface AuthState {
   currentUser: User | null;
   isAuthenticated: boolean;
-  otpSession: OTPSession | null;
   isLoading: boolean;
   error: string | null;
+  initialized: boolean;
+  pendingEmail: string | null;
 
   // Actions
-  sendOTP: (identifier: string, type: 'email' | 'phone') => Promise<boolean>;
+  initialize: () => Promise<void>;
+  sendOTP: (email: string) => Promise<boolean>;
   verifyOTP: (code: string) => Promise<{ success: boolean; isNewUser: boolean }>;
-  resendOTP: () => Promise<boolean>;
   logout: () => void;
   clearError: () => void;
-  updateUserName: (name: string) => void;
+  updateUserName: (name: string) => Promise<void>;
 }
 
-function generateOTP(): string {
-  return Math.floor(1000 + Math.random() * 9000).toString();
-}
+export const useAuthStore = create<AuthState>()((set, get) => ({
+  currentUser: null,
+  isAuthenticated: false,
+  isLoading: false,
+  error: null,
+  initialized: false,
+  pendingEmail: null,
 
-function getStoredUser(identifier: string): User | null {
-  const stored = localStorage.getItem(`user:${identifier}`);
-  if (stored) {
+  initialize: async () => {
     try {
-      const user = JSON.parse(stored);
-      return {
-        ...user,
-        createdAt: new Date(user.createdAt),
-        lastLogin: new Date(user.lastLogin),
-      };
-    } catch {
-      return null;
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // Load profile from database
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single();
+
+        set({
+          currentUser: {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: (profile as any)?.user_name || '',
+          },
+          isAuthenticated: true,
+          initialized: true,
+        });
+      } else {
+        set({ initialized: true });
+      }
+
+      // Listen for auth state changes
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('🔐 Auth state change:', event);
+        if (event === 'SIGNED_IN' && session?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .single();
+
+          set({
+            currentUser: {
+              id: session.user.id,
+              email: session.user.email || '',
+              name: (profile as any)?.user_name || '',
+            },
+            isAuthenticated: true,
+          });
+        } else if (event === 'SIGNED_OUT') {
+          set({
+            currentUser: null,
+            isAuthenticated: false,
+          });
+        }
+      });
+    } catch (err) {
+      console.error('Auth init error:', err);
+      set({ initialized: true });
     }
-  }
-  return null;
-}
+  },
 
-function saveUser(user: User) {
-  const identifier = user.email || user.phone;
-  if (identifier) {
-    localStorage.setItem(`user:${identifier}`, JSON.stringify(user));
-  }
-}
+  sendOTP: async (email: string) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: true,
+        },
+      });
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
+      if (error) {
+        console.error('OTP send error:', error);
+        set({ error: error.message, isLoading: false });
+        return false;
+      }
+
+      console.log('═══════════════════════════════════════════');
+      console.log('📧 OTP enviado a:', email);
+      console.log('💡 Revisa tu correo electrónico para el código');
+      console.log('💡 Para pruebas: revisa los logs del backend');
+      console.log('═══════════════════════════════════════════');
+
+      set({ pendingEmail: email, isLoading: false });
+      return true;
+    } catch (err) {
+      console.error('OTP error:', err);
+      set({ error: 'Error sending OTP', isLoading: false });
+      return false;
+    }
+  },
+
+  verifyOTP: async (code: string) => {
+    const { pendingEmail } = get();
+    if (!pendingEmail) {
+      set({ error: 'No pending email', isLoading: false });
+      return { success: false, isNewUser: false };
+    }
+
+    set({ isLoading: true, error: null });
+
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: pendingEmail,
+        token: code,
+        type: 'email',
+      });
+
+      if (error) {
+        console.error('OTP verify error:', error);
+        set({ error: error.message, isLoading: false });
+        return { success: false, isNewUser: false };
+      }
+
+      if (data.user) {
+        // Check if profile has completed onboarding
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', data.user.id)
+          .single();
+
+        const isNewUser = !(profile as any)?.has_completed_onboarding;
+
+        set({
+          currentUser: {
+            id: data.user.id,
+            email: data.user.email || '',
+            name: (profile as any)?.user_name || '',
+          },
+          isAuthenticated: true,
+          isLoading: false,
+          pendingEmail: null,
+        });
+
+        return { success: true, isNewUser };
+      }
+
+      set({ isLoading: false });
+      return { success: false, isNewUser: false };
+    } catch (err) {
+      console.error('Verify error:', err);
+      set({ error: 'Verification failed', isLoading: false });
+      return { success: false, isNewUser: false };
+    }
+  },
+
+  logout: () => {
+    console.log('🚪 Logging out user...');
+    supabase.auth.signOut();
+    set({
       currentUser: null,
       isAuthenticated: false,
-      otpSession: null,
-      isLoading: false,
+      pendingEmail: null,
       error: null,
+    });
+    // Force navigation to login
+    setTimeout(() => {
+      window.location.replace('/login');
+    }, 100);
+  },
 
-      sendOTP: async (identifier: string, type: 'email' | 'phone') => {
-        set({ isLoading: true, error: null });
+  clearError: () => set({ error: null }),
 
-        // Simulate network delay
-        await new Promise((resolve) => setTimeout(resolve, 500));
+  updateUserName: async (name: string) => {
+    const { currentUser } = get();
+    if (!currentUser) return;
 
-        const code = generateOTP();
-        const otpSession: OTPSession = {
-          identifier,
-          code,
-          expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
-          attempts: 0,
-        };
+    const { error } = await supabase
+      .from('profiles')
+      .update({ user_name: name } as any)
+      .eq('user_id', currentUser.id);
 
-        // Log OTP to console for testing
-        console.log('═══════════════════════════════════════════');
-        console.log('🔐 OTP CODE for ' + identifier + ': ' + code);
-        console.log('⏰ Valid for 5 minutes');
-        console.log('💡 For testing, you can also use "0000"');
-        console.log('═══════════════════════════════════════════');
-
-        set({ otpSession, isLoading: false });
-        return true;
-      },
-
-      verifyOTP: async (inputCode: string) => {
-        const { otpSession } = get();
-        set({ isLoading: true, error: null });
-
-        // Simulate network delay
-        await new Promise((resolve) => setTimeout(resolve, 300));
-
-        if (!otpSession) {
-          set({ error: 'No OTP session found', isLoading: false });
-          return { success: false, isNewUser: false };
-        }
-
-        // Check if expired
-        if (new Date() > otpSession.expiresAt) {
-          set({ error: 'Code has expired', otpSession: null, isLoading: false });
-          return { success: false, isNewUser: false };
-        }
-
-        // Check attempts
-        if (otpSession.attempts >= 3) {
-          set({ error: 'Too many attempts', otpSession: null, isLoading: false });
-          return { success: false, isNewUser: false };
-        }
-
-        // Update attempts
-        const updatedSession = { ...otpSession, attempts: otpSession.attempts + 1 };
-        set({ otpSession: updatedSession });
-
-        // Check code (allow "0000" as magic code for testing)
-        if (inputCode === otpSession.code || inputCode === '0000') {
-          // Check if returning user
-          const existingUser = getStoredUser(otpSession.identifier);
-          
-          if (existingUser) {
-            // Returning user
-            const updatedUser = {
-              ...existingUser,
-              lastLogin: new Date(),
-            };
-            saveUser(updatedUser);
-            set({
-              currentUser: updatedUser,
-              isAuthenticated: true,
-              otpSession: null,
-              isLoading: false,
-            });
-            return { success: true, isNewUser: false };
-          } else {
-            // New user - create basic profile
-            const isEmail = otpSession.identifier.includes('@');
-            const newUser: User = {
-              id: crypto.randomUUID(),
-              email: isEmail ? otpSession.identifier : undefined,
-              phone: !isEmail ? otpSession.identifier : undefined,
-              name: '',
-              createdAt: new Date(),
-              lastLogin: new Date(),
-            };
-            saveUser(newUser);
-            set({
-              currentUser: newUser,
-              isAuthenticated: true,
-              otpSession: null,
-              isLoading: false,
-            });
-            return { success: true, isNewUser: true };
-          }
-        }
-
-        set({ error: 'Invalid code', isLoading: false });
-        return { success: false, isNewUser: false };
-      },
-
-      resendOTP: async () => {
-        const { otpSession } = get();
-        if (!otpSession) return false;
-
-        const isEmail = otpSession.identifier.includes('@');
-        return get().sendOTP(otpSession.identifier, isEmail ? 'email' : 'phone');
-      },
-
-      logout: () => {
-        console.log('🚪 Logging out user...');
-        
-        // 1. Clear Zustand auth state
-        set({
-          currentUser: null,
-          isAuthenticated: false,
-          otpSession: null,
-          error: null,
-        });
-        
-        // 2. Reset reading guide state in global store
-        useStore.getState().resetReadingGuide();
-        
-        // 3. Reset visual settings to defaults (privacy)
-        resetVisualSettingsToDefault();
-        
-        // 4. Clear all user data from localStorage
-        clearAllUserData();
-        
-        console.log('✅ Logout complete - all user data cleared, reading guide disabled');
-        
-        // 5. CRITICAL: Force navigation to login page using window.location.replace
-        // This ensures a full page reload to clear any stale React state
-        setTimeout(() => {
-          window.location.replace('/login');
-        }, 50);
-      },
-
-      clearError: () => set({ error: null }),
-
-      updateUserName: (name: string) => {
-        const { currentUser } = get();
-        if (currentUser) {
-          const updatedUser = { ...currentUser, name };
-          saveUser(updatedUser);
-          set({ currentUser: updatedUser });
-        }
-      },
-    }),
-    {
-      name: 'eduaccess-auth',
-      partialize: (state) => ({
-        currentUser: state.currentUser,
-        isAuthenticated: state.isAuthenticated,
-      }),
+    if (!error) {
+      set({ currentUser: { ...currentUser, name } });
     }
-  )
-);
+  },
+}));

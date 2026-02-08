@@ -611,12 +611,24 @@ export const sampleProfiles: VisualProfile[] = [
   },
 ];
 
-export const recentSearches = [
-  'Linear Algebra',
-  'Photosynthesis',
-  'Python programming',
-  'World History',
-  'Chemistry basics',
+export const recentSearches: string[] = [];
+
+// Bilingual recommended content
+export const recommendedContentES = [
+  { id: 'rec-1', title: 'Álgebra Lineal: Vectores y Matrices', source: 'khan', query: 'álgebra lineal vectores matrices' },
+  { id: 'rec-2', title: 'Fotosíntesis y Respiración Celular', source: 'wikipedia', query: 'fotosíntesis respiración celular' },
+  { id: 'rec-3', title: 'Ecuaciones Cuadráticas Resueltas', source: 'khan', query: 'ecuaciones cuadráticas práctica' },
+  { id: 'rec-4', title: 'Programación Python desde Cero', source: 'youtube', query: 'programación python principiantes' },
+  { id: 'rec-5', title: 'Biología Celular: Organelos', source: 'openstax', query: 'biología celular organelos' },
 ];
 
+export const recommendedContentEN = [
+  { id: 'rec-1', title: 'Linear Algebra: Vectors and Matrices', source: 'khan', query: 'linear algebra vectors matrices' },
+  { id: 'rec-2', title: 'Photosynthesis and Cell Respiration', source: 'wikipedia', query: 'photosynthesis cell respiration' },
+  { id: 'rec-3', title: 'Quadratic Equations Practice', source: 'khan', query: 'quadratic equations practice' },
+  { id: 'rec-4', title: 'Python Programming for Beginners', source: 'youtube', query: 'python programming beginners' },
+  { id: 'rec-5', title: 'Cell Biology: Organelles', source: 'openstax', query: 'cell biology organelles' },
+];
+
+// Legacy export
 export const recommendedContent = mockSearchResults.slice(0, 5);

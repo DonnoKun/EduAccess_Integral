@@ -177,7 +177,7 @@ export default function Onboarding() {
     }
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     const finalName = userName || 'User';
     const profile = createVisualProfile(finalName, snellen, {
       fontSize,
@@ -203,13 +203,22 @@ export default function Onboarding() {
     setTheme(themeMode);
     
     completeOnboarding();
-    
-    console.log('✅ Onboarding complete - Profile saved:', {
-      fontSize: profile.preferences.fontSize,
-      lineSpacing: profile.preferences.lineSpacing,
-      contrast: profile.preferences.contrast,
-      animations: profile.preferences.enableAnimations
-    });
+
+    // Save profile to database
+    if (currentUser) {
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        await supabase.from('profiles').update({
+          user_name: finalName,
+          visual_preferences: profile.preferences as any,
+          has_completed_onboarding: true,
+          current_theme: themeMode,
+        } as any).eq('user_id', currentUser.id);
+        console.log('✅ Profile saved to database');
+      } catch (err) {
+        console.warn('Could not save profile to DB:', err);
+      }
+    }
     
     navigate('/dashboard');
   };
