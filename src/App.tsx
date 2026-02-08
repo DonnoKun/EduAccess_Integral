@@ -51,9 +51,8 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppContent() {
-  const { applyProfileStyles, visualProfile, currentTheme } = useStore();
+  const { applyProfileStyles, visualProfile, currentTheme, hasCompletedOnboarding } = useStore();
   const { isAuthenticated, initialize, initialized } = useAuthStore();
-  const { hasCompletedOnboarding } = useStore();
   
   // Start session tracking & library sync
   useSessionTracker();
