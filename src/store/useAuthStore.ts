@@ -229,6 +229,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           .eq('user_id', data.user.id)
           .single();
 
+        // Restore profile/onboarding BEFORE setting isAuthenticated
+        // so routing sees hasCompletedOnboarding=true on the first render
+        restoreProfileFromDB(profile);
+
         set({
           currentUser: {
             id: data.user.id,
@@ -238,9 +242,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           isAuthenticated: true,
           isLoading: false,
         });
-
-        // Restore profile/onboarding from DB after login (non-blocking)
-        restoreProfileFromDB(profile);
 
         return true;
       }
