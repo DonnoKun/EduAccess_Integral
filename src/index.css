@@ -1134,3 +1134,29 @@
     }
   }
 }
+
+/* Tutorial dialog custom scrollbar */
+.tutorial-dialog-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--primary) / 0.4) transparent;
+}
+
+.tutorial-dialog-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tutorial-dialog-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+  margin: 8px 0;
+}
+
+.tutorial-dialog-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.35);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.tutorial-dialog-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.6);
+}

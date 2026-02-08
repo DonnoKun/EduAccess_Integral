@@ -1,24 +1,21 @@
 /**
  * EduAccess - Platform Tutorial
  * Interactive step-by-step guide for new users showing all platform features
+ * with automatic TTS narration for each step
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   BookOpen,
-  Settings,
   Sparkles,
-  Eye,
   Volume2,
-  FileText,
-  BarChart3,
+  VolumeX,
   CheckCircle2,
   ChevronRight,
   ChevronLeft,
-  X,
   GraduationCap,
   Palette,
   Headphones,
@@ -90,12 +87,12 @@ const tutorialSteps: TutorialStep[] = [
     descriptionEN:
       'Each course section has its own audio button. You can listen to the content, examples, exercises, and summary independently.',
     tipsES: [
-      'Presiona el botón 🔊 en cada sección para escuchar el contenido',
+      'Presiona el botón de audio en cada sección para escuchar el contenido',
       'Las descripciones de las imágenes también se leen en voz alta',
       'Los ejemplos, ejercicios y resumen tienen audio independiente',
     ],
     tipsEN: [
-      'Press the 🔊 button on each section to hear the content',
+      'Press the audio button on each section to hear the content',
       'Image descriptions are also read aloud',
       'Examples, exercises, and summary have independent audio',
     ],
@@ -130,12 +127,12 @@ const tutorialSteps: TutorialStep[] = [
     tipsES: [
       'Presiona "Guardar en Biblioteca" al final de cada curso',
       'Tus cursos en progreso aparecen en la sección "En Progreso"',
-      'Los cursos completados se marcan con ✅',
+      'Los cursos completados se marcan con una palomita',
     ],
     tipsEN: [
       'Press "Save to Library" at the end of each course',
       'Your in-progress courses appear in the "In Progress" section',
-      'Completed courses are marked with ✅',
+      'Completed courses are marked with a checkmark',
     ],
   },
   {
@@ -147,17 +144,38 @@ const tutorialSteps: TutorialStep[] = [
     descriptionEN:
       'Adjust font size, contrast, theme, and more from Settings. You can switch between light, dark, or high contrast themes at any time.',
     tipsES: [
-      'Cambia el tema con el botón ☀️/🌙 en la barra superior',
-      'Activa la guía de lectura con el botón 👁️ para seguir el texto',
+      'Cambia el tema con el botón de sol o luna en la barra superior',
+      'Activa la guía de lectura con el botón de ojo para seguir el texto',
       'Ve a Configuración para ajustar todos los parámetros visuales',
     ],
     tipsEN: [
-      'Switch themes with the ☀️/🌙 button in the top bar',
-      'Enable the reading guide with the 👁️ button to follow text',
+      'Switch themes with the sun or moon button in the top bar',
+      'Enable the reading guide with the eye button to follow text',
       'Go to Settings to adjust all visual parameters',
     ],
   },
 ];
+
+/** Build the narration text for a given step */
+function buildNarrationText(step: TutorialStep, stepIndex: number, totalSteps: number, isES: boolean): string {
+  const title = (isES ? step.titleES : step.titleEN).replace(/[🔍📚🔊🖼️📖🎨]/g, '').trim();
+  const description = isES ? step.descriptionES : step.descriptionEN;
+  const tips = (isES ? step.tipsES : step.tipsEN).join('. ');
+  const isLast = stepIndex === totalSteps - 1;
+
+  let closing: string;
+  if (isLast) {
+    closing = isES
+      ? 'Cuando estés listo, da clic al botón ¡Empezar! para comenzar a explorar la plataforma.'
+      : 'When you\'re ready, click the Let\'s go button to start exploring the platform.';
+  } else {
+    closing = isES
+      ? 'Recuerda darle clic al botón de Siguiente para continuar con la guía.'
+      : 'Remember to click the Next button to continue with the guide.';
+  }
+
+  return `${title}. ${description}. ${tips}. ${closing}`;
+}
 
 interface PlatformTutorialProps {
   open: boolean;
@@ -166,15 +184,55 @@ interface PlatformTutorialProps {
 
 export default function PlatformTutorial({ open, onClose }: PlatformTutorialProps) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
   const { i18n } = useTranslation();
   const lang = i18n.language?.split('-')[0] || 'es';
   const isES = lang === 'es';
+
+  const synthRef = useRef<SpeechSynthesis | null>(null);
+  const isMutedRef = useRef(isMuted);
+
+  useEffect(() => {
+    synthRef.current = window.speechSynthesis;
+    return () => { synthRef.current?.cancel(); };
+  }, []);
+
+  useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
 
   const step = tutorialSteps[currentStep];
   const isFirst = currentStep === 0;
   const isLast = currentStep === tutorialSteps.length - 1;
 
+  /** Speak narration for the current step */
+  const speakStep = useCallback((stepIdx: number) => {
+    const synth = synthRef.current;
+    if (!synth || isMutedRef.current) return;
+
+    synth.cancel();
+
+    const stepData = tutorialSteps[stepIdx];
+    const narration = buildNarrationText(stepData, stepIdx, tutorialSteps.length, isES);
+
+    const utterance = new SpeechSynthesisUtterance(narration);
+    utterance.lang = isES ? 'es-ES' : 'en-US';
+    utterance.rate = 0.95;
+
+    synth.speak(utterance);
+  }, [isES]);
+
+  /** Auto-narrate when step changes or dialog opens */
+  useEffect(() => {
+    if (open) {
+      // Small delay to let animation finish
+      const timer = setTimeout(() => speakStep(currentStep), 400);
+      return () => clearTimeout(timer);
+    } else {
+      synthRef.current?.cancel();
+    }
+  }, [currentStep, open, speakStep]);
+
   const handleNext = () => {
+    synthRef.current?.cancel();
     if (isLast) {
       handleFinish();
     } else {
@@ -183,29 +241,55 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
   };
 
   const handlePrev = () => {
+    synthRef.current?.cancel();
     if (!isFirst) setCurrentStep((s) => s - 1);
   };
 
   const handleFinish = () => {
+    synthRef.current?.cancel();
     localStorage.setItem('tutorial_seen', 'true');
     setCurrentStep(0);
     onClose();
   };
 
+  const toggleMute = () => {
+    const next = !isMuted;
+    setIsMuted(next);
+    if (next) {
+      synthRef.current?.cancel();
+    } else {
+      // Re-speak current step when unmuting
+      setTimeout(() => speakStep(currentStep), 100);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleFinish()}>
       <DialogContent
-        className="sm:max-w-lg max-h-[90vh] overflow-y-auto"
+        className="sm:max-w-lg max-h-[90vh] overflow-x-hidden tutorial-dialog-scrollbar"
         style={{
           fontSize: '16px',
           lineHeight: '1.5',
+          overflowY: 'auto',
         }}
       >
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2" style={{ fontSize: '18px', lineHeight: '1.4' }}>
-            <Sparkles className="h-5 w-5 text-primary flex-shrink-0" />
-            {isES ? 'Guía de la Plataforma' : 'Platform Guide'}
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2" style={{ fontSize: '18px', lineHeight: '1.4' }}>
+              <Sparkles className="h-5 w-5 text-primary flex-shrink-0" />
+              {isES ? 'Guía de la Plataforma' : 'Platform Guide'}
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleMute}
+              className="h-8 w-8 flex-shrink-0"
+              aria-label={isMuted ? (isES ? 'Activar narración' : 'Enable narration') : (isES ? 'Silenciar narración' : 'Mute narration')}
+              style={{ fontSize: '14px' }}
+            >
+              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </Button>
+          </div>
         </DialogHeader>
 
         {/* Step indicator */}
@@ -213,7 +297,10 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
           {tutorialSteps.map((_, i) => (
             <button
               key={i}
-              onClick={() => setCurrentStep(i)}
+              onClick={() => {
+                synthRef.current?.cancel();
+                setCurrentStep(i);
+              }}
               className={`h-2 rounded-full transition-all ${
                 i === currentStep
                   ? 'w-8 bg-primary'
@@ -244,7 +331,7 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
             </div>
 
             {/* Description */}
-            <p className="text-muted-foreground text-center leading-relaxed" style={{ fontSize: '14px', lineHeight: '1.6' }}>
+            <p className="text-muted-foreground text-center" style={{ fontSize: '14px', lineHeight: '1.6' }}>
               {isES ? step.descriptionES : step.descriptionEN}
             </p>
 
