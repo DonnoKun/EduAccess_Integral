@@ -22,7 +22,7 @@ import {
   snellenToLogMAR,
   getSeverityFromLogMAR,
 } from '@/types';
-import { mockSearchResults } from '@/data/mockData';
+import { mockSearchResults, mockSearchResultsES } from '@/data/mockData';
 import { supabase } from '@/integrations/supabase/client';
 
 interface GlobalState {
@@ -205,12 +205,13 @@ export const useStore = create<GlobalState>()(
           const lang = localStorage.getItem('i18nextLng')?.split('-')[0] || 'es';
 
           // Try AI-powered search with a timeout
-          console.log('🔍 Calling AI search for:', query);
+          const defaultQuery = lang === 'es' ? 'contenido educativo general' : 'educational content';
+          console.log('🔍 Calling AI search for:', query || defaultQuery, 'lang:', lang);
           
           // Create a promise race between the search call and a timeout
           const searchPromise = supabase.functions.invoke('search-content', {
             body: { 
-              query: query || 'educational content', 
+              query: query || defaultQuery, 
               filters: {
                 contentType: filters.contentType,
                 educationLevel: filters.educationLevel,
@@ -229,7 +230,8 @@ export const useStore = create<GlobalState>()(
 
           if (error) {
             console.warn('⚠️ AI search failed, falling back to mock data:', error);
-            let results = mockSearchResults;
+            const mockData = lang === 'es' ? mockSearchResultsES : mockSearchResults;
+            let results = mockData;
             if (query.trim()) {
               const lowerQuery = query.toLowerCase();
               results = results.filter(
@@ -239,8 +241,7 @@ export const useStore = create<GlobalState>()(
                   r.metadata.tags.some((t) => t.toLowerCase().includes(lowerQuery))
               );
             }
-            // If no query or no match, show first 6
-            if (results.length === 0) results = mockSearchResults.slice(0, 6);
+            if (results.length === 0) results = mockData.slice(0, 6);
             set({ searchResults: results, searchLoading: false });
             return;
           }
@@ -279,7 +280,8 @@ export const useStore = create<GlobalState>()(
             set({ searchResults: results, searchLoading: false });
           } else {
             console.warn('⚠️ AI search returned no results, using mock data');
-            let results = mockSearchResults;
+            const mockData = lang === 'es' ? mockSearchResultsES : mockSearchResults;
+            let results = mockData;
             if (query.trim()) {
               const lowerQuery = query.toLowerCase();
               results = results.filter(
@@ -289,13 +291,14 @@ export const useStore = create<GlobalState>()(
                   r.metadata.tags.some((t) => t.toLowerCase().includes(lowerQuery))
               );
             }
-            if (results.length === 0) results = mockSearchResults.slice(0, 6);
+            if (results.length === 0) results = mockData.slice(0, 6);
             set({ searchResults: results, searchLoading: false });
           }
         } catch (error) {
           console.error('Search error:', error);
-          // Fallback to mock data on any error
-          let results = mockSearchResults;
+          const lang = localStorage.getItem('i18nextLng')?.split('-')[0] || 'es';
+          const mockData = lang === 'es' ? mockSearchResultsES : mockSearchResults;
+          let results = mockData;
           if (query.trim()) {
             const lowerQuery = query.toLowerCase();
             results = results.filter(
@@ -305,6 +308,7 @@ export const useStore = create<GlobalState>()(
                 r.metadata.tags.some((t) => t.toLowerCase().includes(lowerQuery))
             );
           }
+          if (results.length === 0) results = mockData.slice(0, 6);
           set({ searchResults: results, searchLoading: false });
           get().trackEvent({ type: 'error', details: { error: 'search_failed' } });
         }

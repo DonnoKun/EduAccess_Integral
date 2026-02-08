@@ -4,7 +4,7 @@
  */
 
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
@@ -417,7 +417,7 @@ export default function Dashboard() {
               </Card>
             </motion.div>
 
-            {/* Recommended Content */}
+            {/* Recommended Content - Dynamic based on search history */}
             <motion.div variants={item}>
               <Card>
                 <CardHeader>
@@ -428,7 +428,25 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {(lang === 'es' ? recommendedContentES : recommendedContentEN).map((content) => (
+                    {(() => {
+                      const staticRecs = lang === 'es' ? recommendedContentES : recommendedContentEN;
+                      // Build dynamic recommendations from recent searches
+                      if (recentSearches.length > 0) {
+                        // Use recent searches as recommendations, then fill with static
+                        const dynamicRecs = recentSearches.slice(0, 3).map((search, i) => ({
+                          id: `dynamic-${i}`,
+                          title: search,
+                          source: 'search' as string,
+                          query: search,
+                        }));
+                        // Fill remaining slots with static recs not already covered
+                        const remaining = staticRecs.filter(
+                          (sr) => !recentSearches.some((rs) => rs.toLowerCase().includes(sr.query.split(' ')[0].toLowerCase()))
+                        ).slice(0, 5 - dynamicRecs.length);
+                        return [...dynamicRecs, ...remaining];
+                      }
+                      return staticRecs;
+                    })().map((content) => (
                       <li key={content.id}>
                         <Button
                           variant="ghost"
