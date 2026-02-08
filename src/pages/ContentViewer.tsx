@@ -349,13 +349,19 @@ export default function ContentViewer() {
     }
   };
 
-  const handleMarkCompleted = () => {
+  const handleMarkCompleted = async () => {
     if (!currentContent) return;
     if (isCompleted) {
       unmarkAsCompleted(currentContent.id);
+      // Revert to saved status in DB
+      await saveContentToDB(currentContent, 'saved');
     } else {
       markAsCompleted(currentContent);
-      saveContentToDB(currentContent, 'completed');
+      // Also save to library if not already saved
+      if (!isSaved) {
+        saveToLibrary(currentContent);
+      }
+      await saveContentToDB(currentContent, 'completed');
       toast.success(lang === 'es' ? '✅ Marcado como completado' : '✅ Marked as completed');
     }
   };

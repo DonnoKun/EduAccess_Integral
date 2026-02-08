@@ -153,32 +153,68 @@ export function useLibrarySync() {
   }, [isAuthenticated, currentUser?.id, loadLibraryFromDB, reloadLibrary]);
 
   const saveContentToDB = useCallback(async (content: SearchResult, status: string = 'saved') => {
-    if (!currentUser?.id) return;
+    if (!currentUser?.id) {
+      console.warn('⚠️ No user ID, cannot save to library');
+      return;
+    }
 
     try {
-      const { data: existing } = await supabase
+      // Search for existing entry by content ID inside JSONB
+      const { data: existing, error: searchError } = await supabase
         .from('user_library')
-        .select('id')
+        .select('id, status')
         .eq('user_id', currentUser.id)
         .eq('content_data->>id', content.id)
         .maybeSingle();
 
+      if (searchError) {
+        console.error('❌ Error searching library:', searchError);
+      }
+
       if (existing) {
-        await supabase
+        // Update existing entry
+        const updatePayload: Record<string, any> = {
+          status,
+          updated_at: new Date().toISOString(),
+        };
+        // When marking as completed, also set progress to 100%
+        if (status === 'completed') {
+          updatePayload.progress_percentage = 100;
+        }
+
+        const { error: updateError } = await supabase
           .from('user_library')
-          .update({ status, updated_at: new Date().toISOString() } as any)
+          .update(updatePayload as any)
           .eq('id', existing.id);
+
+        if (updateError) {
+          console.error('❌ Error updating library item:', updateError);
+        } else {
+          console.log(`✅ Library item updated: ${content.title} → ${status}`);
+        }
       } else {
-        await supabase
+        // Insert new entry
+        const insertPayload: Record<string, any> = {
+          user_id: currentUser.id,
+          content_data: content as any,
+          status,
+        };
+        if (status === 'completed') {
+          insertPayload.progress_percentage = 100;
+        }
+
+        const { error: insertError } = await supabase
           .from('user_library')
-          .insert({
-            user_id: currentUser.id,
-            content_data: content as any,
-            status,
-          } as any);
+          .insert(insertPayload as any);
+
+        if (insertError) {
+          console.error('❌ Error inserting library item:', insertError);
+        } else {
+          console.log(`✅ Library item inserted: ${content.title} (${status})`);
+        }
       }
     } catch (err) {
-      console.error('Error saving to library:', err);
+      console.error('❌ Library save error:', err);
     }
   }, [currentUser?.id]);
 
