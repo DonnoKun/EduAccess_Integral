@@ -8,6 +8,8 @@ import { useStore } from "@/store/useStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
 import { useLibrarySync } from "@/hooks/useLibrarySync";
+import InstallAppBanner from "@/components/InstallAppBanner";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
@@ -136,10 +138,12 @@ function AppWrapper() {
   const showReadingGuide = readingGuideEnabled && isAuthenticated;
   
   return (
-    <>
+    <div className="pb-14 md:pb-0">
+      <InstallAppBanner />
       <AppContent />
+      {isAuthenticated && <MobileBottomNav />}
       <ReadingGuide enabled={showReadingGuide} />
-    </>
+    </div>
   );
 }
 
