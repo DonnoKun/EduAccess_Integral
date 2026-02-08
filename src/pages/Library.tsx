@@ -337,7 +337,7 @@ export default function LibraryPage() {
                     >
                       <CardContent className="p-4">
                         <h3 className="font-semibold mb-2 line-clamp-2">
-                          {item.contentData?.title || lang === 'es' ? 'Sin título' : 'Untitled'}
+                          {item.contentData?.title || (lang === 'es' ? 'Sin título' : 'Untitled')}
                         </h3>
                         <p className="text-xs text-muted-foreground mb-3">
                           {item.contentData?.source
