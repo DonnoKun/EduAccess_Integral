@@ -171,6 +171,17 @@ export default function ContentViewer() {
   useEffect(() => {
     viewStartRef.current = Date.now();
     incrementContentViewed();
+
+    // Save time spent when leaving the content viewer
+    return () => {
+      if (currentContent?.id) {
+        const elapsedSeconds = Math.floor((Date.now() - viewStartRef.current) / 1000);
+        if (elapsedSeconds > 2) {
+          console.log(`⏱️ Saving ${elapsedSeconds}s spent on course ${currentContent.id}`);
+          updateProgressInDB(currentContent.id, { time_spent_seconds: elapsedSeconds });
+        }
+      }
+    };
   }, []);
 
   // Auto-scroll to loading section on mount and as steps progress

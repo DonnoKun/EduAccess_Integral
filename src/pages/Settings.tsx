@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
 import {
   User,
@@ -64,10 +65,35 @@ export default function Settings() {
     events,
     sessionMetrics,
   } = useStore();
-  const { isAuthenticated, logout } = useAuthStore();
+  const { isAuthenticated, logout, currentUser } = useAuthStore();
   
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [dbStats, setDbStats] = useState({ totalContent: 0, totalTasks: 0, totalTime: 0 });
+
+  // Load real aggregate stats from DB
+  useEffect(() => {
+    const loadStats = async () => {
+      if (!currentUser?.id) return;
+      try {
+        const { data: sessions } = await supabase
+          .from('session_analytics')
+          .select('total_time_seconds, content_viewed, tasks_completed')
+          .eq('user_id', currentUser.id);
+        
+        if (sessions) {
+          setDbStats({
+            totalContent: sessions.reduce((acc, s) => acc + (s.content_viewed || 0), 0),
+            totalTasks: sessions.reduce((acc, s) => acc + (s.tasks_completed || 0), 0),
+            totalTime: sessions.reduce((acc, s) => acc + (s.total_time_seconds || 0), 0),
+          });
+        }
+      } catch (err) {
+        console.error('Settings stats load error:', err);
+      }
+    };
+    loadStats();
+  }, [currentUser?.id]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -439,15 +465,15 @@ export default function Settings() {
                     <ul className="settings-stats-list">
                       <li>
                         <span>{t('settings.data.contentViewed')}:</span>
-                        <strong>{sessionMetrics.contentViewed}</strong>
+                        <strong>{dbStats.totalContent + sessionMetrics.contentViewed}</strong>
                       </li>
                       <li>
                         <span>{t('settings.data.tasksCompleted')}:</span>
-                        <strong>{sessionMetrics.tasksCompleted}</strong>
+                        <strong>{dbStats.totalTasks + sessionMetrics.tasksCompleted}</strong>
                       </li>
                       <li>
                         <span>{t('settings.data.eventsTracked')}:</span>
-                        <strong>{events.length}</strong>
+                        <strong>{dbStats.totalTime > 0 ? `${Math.floor(dbStats.totalTime / 60)}m` : `${events.length}`}</strong>
                       </li>
                     </ul>
                   </div>

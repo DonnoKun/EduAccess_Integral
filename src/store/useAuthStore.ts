@@ -42,53 +42,47 @@ function restoreProfileFromDB(profileData: any) {
   try {
     if (!profileData) return;
 
-    // Use setTimeout to defer store access and avoid circular Zustand issues
-    setTimeout(() => {
-      try {
-        const store = useStore.getState();
+    const store = useStore.getState();
 
-        // Restore onboarding completion status
-        if (profileData.has_completed_onboarding && !store.hasCompletedOnboarding) {
-          console.log('🔄 Restoring onboarding status from database');
-          store.completeOnboarding();
-        }
+    // Restore onboarding completion status SYNCHRONOUSLY
+    // This MUST happen before initialized=true so routing doesn't redirect to onboarding
+    if (profileData.has_completed_onboarding && !store.hasCompletedOnboarding) {
+      console.log('🔄 Restoring onboarding status from database');
+      store.completeOnboarding();
+    }
 
-        // Restore visual preferences if available and not already set
-        const visualPrefs = profileData.visual_preferences;
-        if (visualPrefs && !store.visualProfile) {
-          console.log('🔄 Restoring visual profile from database');
-          const prefs = {
-            fontSize: visualPrefs.fontSize || 20,
-            contrast: (visualPrefs.contrast || 'normal') as ContrastMode,
-            lineSpacing: visualPrefs.lineSpacing || 1.75,
-            preferredModality: (visualPrefs.preferredModality || 'mixed') as PreferredModality,
-            enableAnimations: visualPrefs.enableAnimations !== false,
-            brightnessSensitivity: (visualPrefs.brightnessSensitivity || 'low') as BrightnessSensitivity,
-          };
+    // Restore visual preferences if available and not already set
+    const visualPrefs = profileData.visual_preferences;
+    if (visualPrefs && !store.visualProfile) {
+      console.log('🔄 Restoring visual profile from database');
+      const prefs = {
+        fontSize: visualPrefs.fontSize || 20,
+        contrast: (visualPrefs.contrast || 'normal') as ContrastMode,
+        lineSpacing: visualPrefs.lineSpacing || 1.75,
+        preferredModality: (visualPrefs.preferredModality || 'mixed') as PreferredModality,
+        enableAnimations: visualPrefs.enableAnimations !== false,
+        brightnessSensitivity: (visualPrefs.brightnessSensitivity || 'low') as BrightnessSensitivity,
+      };
 
-          const restoredProfile = createVisualProfile(
-            profileData.user_name || 'User',
-            '6/12' as SnellenNotation,
-            prefs
-          );
-          store.setVisualProfile(restoredProfile);
-        }
+      const restoredProfile = createVisualProfile(
+        profileData.user_name || 'User',
+        '6/12' as SnellenNotation,
+        prefs
+      );
+      store.setVisualProfile(restoredProfile);
+    }
 
-        // Restore theme
-        const savedTheme = profileData.current_theme as ThemeMode;
-        if (savedTheme && savedTheme !== store.currentTheme) {
-          console.log('🔄 Restoring theme from database:', savedTheme);
-          store.setTheme(savedTheme);
-        }
+    // Restore theme
+    const savedTheme = profileData.current_theme as ThemeMode;
+    if (savedTheme && savedTheme !== store.currentTheme) {
+      console.log('🔄 Restoring theme from database:', savedTheme);
+      store.setTheme(savedTheme);
+    }
 
-        // Restore reading guide setting
-        if (profileData.reading_guide_enabled && !store.readingGuideEnabled) {
-          store.toggleReadingGuide();
-        }
-      } catch (err) {
-        console.warn('Error applying profile from DB:', err);
-      }
-    }, 0);
+    // Restore reading guide setting
+    if (profileData.reading_guide_enabled && !store.readingGuideEnabled) {
+      store.toggleReadingGuide();
+    }
   } catch (err) {
     console.warn('Could not restore profile from DB:', err);
   }

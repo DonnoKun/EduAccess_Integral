@@ -241,19 +241,28 @@ export function useLibrarySync() {
     try {
       const { data: existing } = await supabase
         .from('user_library')
-        .select('id')
+        .select('id, time_spent_seconds')
         .eq('user_id', currentUser.id)
         .eq('content_data->>id', contentId)
         .maybeSingle();
 
       if (existing) {
+        const updatePayload: Record<string, any> = {
+          ...progress,
+          updated_at: new Date().toISOString(),
+        };
+
+        // Accumulate time_spent_seconds instead of overwriting
+        if (progress.time_spent_seconds) {
+          updatePayload.time_spent_seconds = (existing.time_spent_seconds || 0) + progress.time_spent_seconds;
+        }
+
         await supabase
           .from('user_library')
-          .update({
-            ...progress,
-            updated_at: new Date().toISOString(),
-          } as any)
+          .update(updatePayload as any)
           .eq('id', existing.id);
+        
+        console.log(`✅ Progress updated for ${contentId}`, updatePayload);
       }
     } catch (err) {
       console.error('Error updating progress:', err);
