@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Search,
   BookOpen,
@@ -258,6 +259,27 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
     localStorage.setItem('tutorial_seen', 'true');
     setCurrentStep(0);
     onClose();
+
+    // Persist tutorial_seen to DB so it survives incognito/new devices
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase
+        .from('profiles')
+        .select('visual_preferences')
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data }) => {
+          const existing = (data?.visual_preferences as Record<string, any>) || {};
+          supabase
+            .from('profiles')
+            .update({ visual_preferences: { ...existing, tutorial_seen: true } } as any)
+            .eq('user_id', user.id)
+            .then(({ error }) => {
+              if (error) console.warn('Could not persist tutorial_seen:', error);
+              else console.log('✅ tutorial_seen persisted to database');
+            });
+        });
+    });
   };
 
   const toggleMute = () => {
