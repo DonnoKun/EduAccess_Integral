@@ -194,10 +194,16 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleFinish()}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="sm:max-w-lg max-h-[90vh] overflow-y-auto"
+        style={{
+          fontSize: '16px',
+          lineHeight: '1.5',
+        }}
+      >
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <Sparkles className="h-5 w-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2" style={{ fontSize: '18px', lineHeight: '1.4' }}>
+            <Sparkles className="h-5 w-5 text-primary flex-shrink-0" />
             {isES ? 'Guía de la Plataforma' : 'Platform Guide'}
           </DialogTitle>
         </DialogHeader>
@@ -232,27 +238,27 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
             {/* Icon + Title */}
             <div className="flex flex-col items-center text-center gap-3 py-2">
               <div className="text-primary">{step.icon}</div>
-              <h3 className="text-xl font-bold">
+              <h3 className="font-bold" style={{ fontSize: '20px', lineHeight: '1.3' }}>
                 {isES ? step.titleES : step.titleEN}
               </h3>
             </div>
 
             {/* Description */}
-            <p className="text-muted-foreground text-center leading-relaxed">
+            <p className="text-muted-foreground text-center leading-relaxed" style={{ fontSize: '14px', lineHeight: '1.6' }}>
               {isES ? step.descriptionES : step.descriptionEN}
             </p>
 
             {/* Tips */}
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-semibold flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-primary" />
+              <p className="font-semibold flex items-center gap-1.5" style={{ fontSize: '14px' }}>
+                <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
                 {isES ? 'Cómo usarlo:' : 'How to use it:'}
               </p>
               <ul className="space-y-1.5">
                 {(isES ? step.tipsES : step.tipsEN).map((tip, i) => (
-                  <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                  <li key={i} className="text-muted-foreground flex items-start gap-2" style={{ fontSize: '13px', lineHeight: '1.5' }}>
                     <ChevronRight className="h-3.5 w-3.5 mt-0.5 text-primary flex-shrink-0" />
-                    {tip}
+                    <span>{tip}</span>
                   </li>
                 ))}
               </ul>
@@ -267,16 +273,17 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
             onClick={handlePrev}
             disabled={isFirst}
             size="sm"
+            style={{ fontSize: '14px' }}
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
             {isES ? 'Anterior' : 'Previous'}
           </Button>
 
-          <span className="text-xs text-muted-foreground">
+          <span className="text-muted-foreground" style={{ fontSize: '12px' }}>
             {currentStep + 1} / {tutorialSteps.length}
           </span>
 
-          <Button onClick={handleNext} size="sm">
+          <Button onClick={handleNext} size="sm" style={{ fontSize: '14px' }}>
             {isLast
               ? isES
                 ? '¡Empezar!'
@@ -291,7 +298,7 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
         {/* Skip button */}
         {!isLast && (
           <div className="text-center">
-            <Button variant="link" size="sm" onClick={handleFinish} className="text-muted-foreground">
+            <Button variant="link" size="sm" onClick={handleFinish} className="text-muted-foreground" style={{ fontSize: '13px' }}>
               {isES ? 'Omitir tutorial' : 'Skip tutorial'}
             </Button>
           </div>
