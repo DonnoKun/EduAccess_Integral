@@ -167,8 +167,11 @@
       "needsRemediation": "🔴 Needs Remediation"
     },
     "results": "{{count}} results",
-    "noResults": "No results found",
+    "noResults": "No educational results found",
     "noResultsHint": "Try adjusting your search or filters",
+    "noResultsForQuery": "No verifiable educational content was found for this search.",
+    "suggestionsTitle": "Did you mean to search for?",
+    "trySearchingFor": "Try searching for educational topics like:",
     "gridView": "Grid view",
     "listView": "List view",
     "badges": {

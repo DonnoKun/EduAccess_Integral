@@ -64,6 +64,8 @@ export default function SearchPage() {
     searchResults,
     searchLoading,
     searchFilters,
+    searchSuggestions,
+    searchNoResultsReason,
     performSearch,
     setSearchFilters,
     clearFilters,
@@ -526,10 +528,39 @@ export default function SearchPage() {
               ))}
             </div>
           ) : searchResults.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center py-12 max-w-lg mx-auto">
               <SearchIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" aria-hidden="true" />
               <h2 className="text-xl font-semibold mb-2">{t('search.noResults')}</h2>
-              <p className="text-muted-foreground">{t('search.noResultsHint')}</p>
+              <p className="text-muted-foreground mb-6">
+                {searchNoResultsReason || t('search.noResultsHint')}
+              </p>
+              
+              {/* Show AI-generated search suggestions */}
+              {searchSuggestions && searchSuggestions.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-muted-foreground mb-3">
+                    {t('search.suggestionsTitle')}
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {searchSuggestions.map((suggestion, idx) => (
+                      <Button
+                        key={idx}
+                        variant="outline"
+                        size="sm"
+                        className="rounded-full"
+                        onClick={() => {
+                          setLocalQuery(suggestion);
+                          setSearchParams({ q: suggestion });
+                          performSearch(suggestion);
+                        }}
+                      >
+                        <SearchIcon className="h-3 w-3 mr-1.5" aria-hidden="true" />
+                        {suggestion}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <AnimatePresence mode="wait">
