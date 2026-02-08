@@ -23,8 +23,8 @@ interface AuthState {
   // Actions
   initialize: () => Promise<void>;
   login: (email: string, token: string) => Promise<boolean>;
-  register: (email: string) => Promise<{ success: boolean; token?: string; emailSent?: boolean; error?: string }>;
-  resetToken: (email: string) => Promise<{ success: boolean; token?: string; emailSent?: boolean; error?: string }>;
+  register: (email: string) => Promise<{ success: boolean; token?: string; error?: string }>;
+  resetToken: (email: string) => Promise<{ success: boolean; token?: string; error?: string }>;
   logout: () => void;
   clearError: () => void;
   updateUserName: (name: string) => Promise<void>;
@@ -160,7 +160,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       console.log('✅ User registered, token generated');
       set({ isLoading: false });
-      return { success: true, token: data.token, emailSent: data.emailSent };
+      return { success: true, token: data.token };
     } catch (err) {
       console.error('Register exception:', err);
       const msg = 'Error al crear la cuenta';
@@ -190,7 +190,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       console.log('✅ Token reset successful');
       set({ isLoading: false });
-      return { success: true, token: data.token, emailSent: data.emailSent };
+      return { success: true, token: data.token };
     } catch (err) {
       console.error('Reset token exception:', err);
       const msg = 'Error al restablecer el token';

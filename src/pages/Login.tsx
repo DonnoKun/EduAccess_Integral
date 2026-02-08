@@ -99,9 +99,7 @@ export default function Login() {
     if (result.success && result.token) {
       setGeneratedToken(result.token);
       setStep('register-success');
-      if (result.emailSent) {
-        toast.success(lang === 'es' ? 'Token enviado a tu correo' : 'Token sent to your email');
-      }
+      toast.success(lang === 'es' ? '¡Cuenta creada exitosamente!' : 'Account created successfully!');
     } else {
       toast.error(result.error || 'Error');
     }
@@ -117,9 +115,7 @@ export default function Login() {
     if (result.success && result.token) {
       setGeneratedToken(result.token);
       setStep('forgot-success');
-      if (result.emailSent) {
-        toast.success(lang === 'es' ? 'Nuevo token enviado a tu correo' : 'New token sent to your email');
-      }
+      toast.success(lang === 'es' ? '¡Token actualizado!' : 'Token updated!');
     } else {
       toast.error(result.error || 'Error');
     }
