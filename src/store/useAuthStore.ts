@@ -38,57 +38,57 @@ interface AuthState {
  * Restores visual profile, theme, onboarding status from the DB profile
  * into the global Zustand store so the user skips onboarding on re-login.
  */
-async function restoreProfileFromDB(userId: string) {
+function restoreProfileFromDB(profileData: any) {
   try {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+    if (!profileData) return;
 
-    if (!profile) return;
+    // Use setTimeout to defer store access and avoid circular Zustand issues
+    setTimeout(() => {
+      try {
+        const store = useStore.getState();
 
-    const store = useStore.getState();
+        // Restore onboarding completion status
+        if (profileData.has_completed_onboarding && !store.hasCompletedOnboarding) {
+          console.log('🔄 Restoring onboarding status from database');
+          store.completeOnboarding();
+        }
 
-    // Restore onboarding completion status
-    if ((profile as any).has_completed_onboarding && !store.hasCompletedOnboarding) {
-      console.log('🔄 Restoring onboarding status from database');
-      store.completeOnboarding();
-    }
+        // Restore visual preferences if available and not already set
+        const visualPrefs = profileData.visual_preferences;
+        if (visualPrefs && !store.visualProfile) {
+          console.log('🔄 Restoring visual profile from database');
+          const prefs = {
+            fontSize: visualPrefs.fontSize || 20,
+            contrast: (visualPrefs.contrast || 'normal') as ContrastMode,
+            lineSpacing: visualPrefs.lineSpacing || 1.75,
+            preferredModality: (visualPrefs.preferredModality || 'mixed') as PreferredModality,
+            enableAnimations: visualPrefs.enableAnimations !== false,
+            brightnessSensitivity: (visualPrefs.brightnessSensitivity || 'low') as BrightnessSensitivity,
+          };
 
-    // Restore visual preferences if available and not already set
-    const visualPrefs = (profile as any).visual_preferences;
-    if (visualPrefs && !store.visualProfile) {
-      console.log('🔄 Restoring visual profile from database');
-      const prefs = {
-        fontSize: visualPrefs.fontSize || 20,
-        contrast: (visualPrefs.contrast || 'normal') as ContrastMode,
-        lineSpacing: visualPrefs.lineSpacing || 1.75,
-        preferredModality: (visualPrefs.preferredModality || 'mixed') as PreferredModality,
-        enableAnimations: visualPrefs.enableAnimations !== false,
-        brightnessSensitivity: (visualPrefs.brightnessSensitivity || 'low') as BrightnessSensitivity,
-      };
+          const restoredProfile = createVisualProfile(
+            profileData.user_name || 'User',
+            '6/12' as SnellenNotation,
+            prefs
+          );
+          store.setVisualProfile(restoredProfile);
+        }
 
-      // Reconstruct VisualProfile using the stored preferences
-      const restoredProfile = createVisualProfile(
-        (profile as any).user_name || 'User',
-        '6/12' as SnellenNotation, // Default snellen - actual acuity isn't stored separately
-        prefs
-      );
-      store.setVisualProfile(restoredProfile);
-    }
+        // Restore theme
+        const savedTheme = profileData.current_theme as ThemeMode;
+        if (savedTheme && savedTheme !== store.currentTheme) {
+          console.log('🔄 Restoring theme from database:', savedTheme);
+          store.setTheme(savedTheme);
+        }
 
-    // Restore theme
-    const savedTheme = (profile as any).current_theme as ThemeMode;
-    if (savedTheme && savedTheme !== store.currentTheme) {
-      console.log('🔄 Restoring theme from database:', savedTheme);
-      store.setTheme(savedTheme);
-    }
-
-    // Restore reading guide setting
-    if ((profile as any).reading_guide_enabled && !store.readingGuideEnabled) {
-      store.toggleReadingGuide();
-    }
+        // Restore reading guide setting
+        if (profileData.reading_guide_enabled && !store.readingGuideEnabled) {
+          store.toggleReadingGuide();
+        }
+      } catch (err) {
+        console.warn('Error applying profile from DB:', err);
+      }
+    }, 0);
   } catch (err) {
     console.warn('Could not restore profile from DB:', err);
   }
@@ -123,7 +123,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           });
 
           // Restore profile data from DB (fire and forget for ongoing changes)
-          restoreProfileFromDB(session.user.id);
+          restoreProfileFromDB(profile);
         } else if (event === 'SIGNED_OUT') {
           set({
             currentUser: null,
@@ -132,7 +132,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         }
       });
 
-      // INITIAL load: check existing session and AWAIT profile restore before setting initialized
+      // INITIAL load: check existing session
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session?.user) {
@@ -149,12 +149,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             name: (profile as any)?.user_name || '',
           },
           isAuthenticated: true,
+          initialized: true,
         });
 
-        // AWAIT profile restoration before marking as initialized
-        await restoreProfileFromDB(session.user.id);
-
-        set({ initialized: true });
+        // Restore profile data from DB (non-blocking)
+        restoreProfileFromDB(profile);
       } else {
         set({ initialized: true });
       }
@@ -199,8 +198,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           isLoading: false,
         });
 
-        // Restore profile/onboarding from DB after login
-        await restoreProfileFromDB(data.user.id);
+        // Restore profile/onboarding from DB after login (non-blocking)
+        restoreProfileFromDB(profile);
 
         return true;
       }
