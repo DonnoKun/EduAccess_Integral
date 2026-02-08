@@ -6,6 +6,8 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useLibrarySync } from '@/hooks/useLibrarySync';
+import { useSessionTracker } from '@/hooks/useSessionTracker';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
@@ -121,6 +123,10 @@ export default function ContentViewer() {
   // Track content view time
   const viewStartRef = useRef<number>(Date.now());
 
+  // DB sync hooks
+  const { saveContentToDB, removeContentFromDB, updateProgressInDB } = useLibrarySync();
+  const { incrementTasksCompleted } = useSessionTracker();
+
   const isCompleted = currentContent ? completedContent.some((c) => c.id === currentContent.id) : false;
   const isSaved = currentContent ? savedContent.some((c) => c.id === currentContent.id) : false;
   const lang = i18n.language?.split('-')[0] || 'es';
@@ -227,12 +233,28 @@ export default function ContentViewer() {
     if (matchRatio >= 0.6) {
       setCheckedAnswers(prev => ({ ...prev, [index]: 'correct' }));
       toast.success(lang === 'es' ? '✅ ¡Correcto! Muy bien.' : '✅ Correct! Well done.');
+      incrementTasksCompleted();
     } else if (matchRatio >= 0.3) {
       setCheckedAnswers(prev => ({ ...prev, [index]: 'partial' }));
       toast.info(lang === 'es' ? '🤔 Parcialmente correcto. Revisa la solución.' : '🤔 Partially correct. Check the solution.');
     } else {
       setCheckedAnswers(prev => ({ ...prev, [index]: 'incorrect' }));
       toast.error(lang === 'es' ? '❌ Incorrecto. Intenta de nuevo o ve la solución.' : '❌ Incorrect. Try again or see the solution.');
+    }
+
+    // Update progress in DB
+    if (currentContent) {
+      const completedCount = Object.values({ ...checkedAnswers, [index]: matchRatio >= 0.6 ? 'correct' : checkedAnswers[index] })
+        .filter(v => v === 'correct').length;
+      const totalExercises = courseContent?.exercises?.length || 0;
+      const progressPct = totalExercises > 0 ? Math.round((completedCount / totalExercises) * 100) : 0;
+
+      updateProgressInDB(currentContent.id, {
+        exercises_completed: completedCount,
+        exercises_total: totalExercises,
+        progress_percentage: progressPct,
+        time_spent_seconds: Math.floor((Date.now() - viewStartRef.current) / 1000),
+      });
     }
   };
 
@@ -242,6 +264,7 @@ export default function ContentViewer() {
       unmarkAsCompleted(currentContent.id);
     } else {
       markAsCompleted(currentContent);
+      saveContentToDB(currentContent, 'completed');
       toast.success(lang === 'es' ? '✅ Marcado como completado' : '✅ Marked as completed');
     }
   };
@@ -250,9 +273,11 @@ export default function ContentViewer() {
     if (!currentContent) return;
     if (isSaved) {
       removeFromLibrary(currentContent.id);
+      removeContentFromDB(currentContent.id);
       toast.info(lang === 'es' ? 'Eliminado de tu biblioteca' : 'Removed from library');
     } else {
       saveToLibrary(currentContent);
+      saveContentToDB(currentContent, 'saved');
       toast.success(lang === 'es' ? '📚 Guardado en tu biblioteca' : '📚 Saved to library');
     }
   };

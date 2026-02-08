@@ -4,7 +4,7 @@
  */
 
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
@@ -44,6 +44,7 @@ import {
 import { toast } from 'sonner';
 import { useStore } from '@/store/useStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { supabase } from '@/integrations/supabase/client';
 import { recommendedContentES, recommendedContentEN } from '@/data/mockData';
 import LanguageSelector from '@/components/LanguageSelector';
 import type { ThemeMode } from '@/types';
@@ -77,6 +78,41 @@ export default function Dashboard() {
   const { isAuthenticated, logout, currentUser } = useAuthStore();
   const { i18n } = useTranslation();
   const lang = i18n.language?.split('-')[0] || 'es';
+
+  // Load real aggregate analytics from DB
+  const [dbAnalytics, setDbAnalytics] = useState({ totalTime: 0, totalContent: 0, totalTasks: 0, totalCourses: 0 });
+  
+  useEffect(() => {
+    const loadAnalytics = async () => {
+      if (!currentUser?.id) return;
+      
+      try {
+        // Load session analytics
+        const { data: sessions } = await supabase
+          .from('session_analytics')
+          .select('total_time_seconds, content_viewed, tasks_completed')
+          .eq('user_id', currentUser.id);
+        
+        // Load library stats
+        const { data: library } = await supabase
+          .from('user_library')
+          .select('status')
+          .eq('user_id', currentUser.id);
+        
+        if (sessions) {
+          const totalTime = sessions.reduce((acc, s) => acc + (s.total_time_seconds || 0), 0);
+          const totalContent = sessions.reduce((acc, s) => acc + (s.content_viewed || 0), 0);
+          const totalTasks = sessions.reduce((acc, s) => acc + (s.tasks_completed || 0), 0);
+          const totalCourses = library?.length || 0;
+          setDbAnalytics({ totalTime, totalContent, totalTasks, totalCourses });
+        }
+      } catch (err) {
+        console.error('Analytics load error:', err);
+      }
+    };
+    
+    loadAnalytics();
+  }, [currentUser?.id]);
 
   const handleToggleReadingGuide = () => {
     toggleReadingGuide();
@@ -424,34 +460,36 @@ export default function Dashboard() {
                     <div className="flex items-center justify-center mb-2">
                       <BookOpen className="h-6 w-6 text-primary" aria-hidden="true" />
                     </div>
-                    <p className="text-2xl font-bold">{sessionMetrics.contentViewed}</p>
+                    <p className="text-2xl font-bold">{dbAnalytics.totalContent + sessionMetrics.contentViewed}</p>
                     <p className="text-sm text-muted-foreground">{t('dashboard.contentViewed')}</p>
                   </div>
                   
                   <div className="p-4 rounded-lg bg-secondary/50 text-center">
                     <div className="flex items-center justify-center mb-2">
-                      <Clock className="h-6 w-6 text-info" aria-hidden="true" />
+                      <Clock className="h-6 w-6 text-primary" aria-hidden="true" />
                     </div>
                     <p className="text-2xl font-bold">
-                      {Math.floor(sessionMetrics.totalTimeSpent / 60)}m
+                      {Math.floor((dbAnalytics.totalTime + sessionMetrics.totalTimeSpent) / 60)}m
                     </p>
                     <p className="text-sm text-muted-foreground">{t('dashboard.timeSpent')}</p>
                   </div>
                   
                   <div className="p-4 rounded-lg bg-secondary/50 text-center">
                     <div className="flex items-center justify-center mb-2">
-                      <CheckCircle2 className="h-6 w-6 text-success" aria-hidden="true" />
+                      <CheckCircle2 className="h-6 w-6 text-primary" aria-hidden="true" />
                     </div>
-                    <p className="text-2xl font-bold">{sessionMetrics.tasksCompleted}</p>
+                    <p className="text-2xl font-bold">{dbAnalytics.totalTasks + sessionMetrics.tasksCompleted}</p>
                     <p className="text-sm text-muted-foreground">{t('dashboard.tasksCompleted')}</p>
                   </div>
                   
                   <div className="p-4 rounded-lg bg-secondary/50 text-center">
                     <div className="flex items-center justify-center mb-2">
-                      <Target className="h-6 w-6 text-warning" aria-hidden="true" />
+                      <Target className="h-6 w-6 text-primary" aria-hidden="true" />
                     </div>
-                    <p className="text-2xl font-bold">87%</p>
-                    <p className="text-sm text-muted-foreground">{t('dashboard.successRate')}</p>
+                    <p className="text-2xl font-bold">{dbAnalytics.totalCourses}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {lang === 'es' ? 'Cursos guardados' : 'Saved courses'}
+                    </p>
                   </div>
                 </div>
               </CardContent>

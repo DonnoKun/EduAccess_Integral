@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useStore } from "@/store/useStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useSessionTracker } from "@/hooks/useSessionTracker";
+import { useLibrarySync } from "@/hooks/useLibrarySync";
 import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
@@ -50,6 +52,10 @@ function AppContent() {
   const { applyProfileStyles, visualProfile, currentTheme } = useStore();
   const { isAuthenticated, initialize, initialized } = useAuthStore();
   const { hasCompletedOnboarding } = useStore();
+  
+  // Start session tracking & library sync
+  useSessionTracker();
+  useLibrarySync();
 
   // Initialize auth on app load
   useEffect(() => {
