@@ -14,6 +14,7 @@ import {
   List,
   Mic,
   X,
+  Check,
   CheckCircle2,
   AlertCircle,
   AlertTriangle,
@@ -324,18 +325,20 @@ export default function SearchPage() {
                 style={{ fontSize: `${currentFontSize}px` }}
               >
                 {themeOptions.map((option) => (
-                  <DropdownMenuCheckboxItem 
+                  <DropdownMenuItem 
                     key={option.value} 
-                    checked={currentTheme === option.value} 
-                    onCheckedChange={() => setTheme(option.value)} 
-                    className="flex items-center gap-2"
+                    onClick={() => setTheme(option.value)} 
+                    className="flex items-center gap-3 cursor-pointer"
                     style={{ fontSize: '1em', padding: '0.75em 1em' }}
                   >
                     <span style={{ width: '1.25em', height: '1.25em', display: 'flex', alignItems: 'center' }}>
                       {option.icon}
                     </span>
-                    <span>{option.label}</span>
-                  </DropdownMenuCheckboxItem>
+                    <span className="flex-1">{option.label}</span>
+                    {currentTheme === option.value && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>

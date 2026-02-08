@@ -70,6 +70,8 @@ interface CourseExercise {
   question: string;
   hint?: string;
   answer?: string;
+  answer_keywords?: string;
+  solution?: string;
 }
 
 interface CourseSource {
@@ -219,10 +221,14 @@ export default function ContentViewer() {
     });
   };
 
-  // Check student's answer against the solution with improved matching
+  // Check student's answer against the expected answer keywords
   const checkAnswer = (index: number) => {
     const exercise = courseContent?.exercises[index];
-    if (!exercise?.answer || !userAnswers[index]?.trim()) return;
+    if (!userAnswers[index]?.trim()) return;
+
+    // Use answer_keywords (short key answer) if available, otherwise fall back to answer
+    const answerKey = exercise?.answer_keywords || exercise?.answer || '';
+    if (!answerKey) return;
 
     // Normalize: remove accents, lowercase, remove special chars
     const normalize = (s: string) =>
@@ -232,43 +238,47 @@ export default function ContentViewer() {
         .trim();
 
     const userAns = normalize(userAnswers[index]);
-    const correctAns = normalize(exercise.answer);
+    const correctAns = normalize(answerKey);
 
     const userWords = userAns.split(/\s+/).filter(w => w.length > 2);
-    const correctWords = correctAns.split(/\s+/).filter(w => w.length > 3);
+    const correctWords = correctAns.split(/\s+/).filter(w => w.length > 2);
 
-    // Check if user's words appear in correct answer (user → correct)
-    const userInCorrect = userWords.filter(w => correctAns.includes(w)).length;
-    const userMatchRatio = userWords.length > 0 ? userInCorrect / userWords.length : 0;
-
-    // Check if correct answer words appear in user answer (correct → user)
-    const correctInUser = correctWords.filter(w => userAns.includes(w)).length;
-    const correctMatchRatio = correctWords.length > 0 ? correctInUser / correctWords.length : 0;
-
-    // For short answers (≤5 words): prioritize that user's keywords are found in the solution
-    // For longer answers: blend both directions
-    let matchScore: number;
-    if (userWords.length <= 5) {
-      matchScore = userMatchRatio;
-    } else {
-      matchScore = Math.max(userMatchRatio * 0.6 + correctMatchRatio * 0.4, correctMatchRatio);
+    if (userWords.length === 0 || correctWords.length === 0) {
+      setCheckedAnswers(prev => ({ ...prev, [index]: 'incorrect' }));
+      toast.error(lang === 'es' ? '❌ Respuesta muy corta. Intenta ser más específico.' : '❌ Answer too short. Try to be more specific.');
+      return;
     }
 
-    if (matchScore >= 0.5) {
+    // Bidirectional matching
+    const userInCorrect = userWords.filter(w => correctAns.includes(w)).length;
+    const correctInUser = correctWords.filter(w => userAns.includes(w)).length;
+
+    // Precision: how much of what the user wrote is relevant
+    const precision = userInCorrect / userWords.length;
+    // Recall: how much of the expected answer is covered by the user
+    const recall = correctInUser / correctWords.length;
+
+    // BOTH directions must be satisfied for correctness
+    // Recall is more important - the student must cover the key concepts
+    let result: 'correct' | 'partial' | 'incorrect';
+    if (recall >= 0.4 && precision >= 0.3) {
+      result = 'correct';
       setCheckedAnswers(prev => ({ ...prev, [index]: 'correct' }));
       toast.success(lang === 'es' ? '✅ ¡Correcto! Muy bien.' : '✅ Correct! Well done.');
       incrementTasksCompleted();
-    } else if (matchScore >= 0.2) {
+    } else if (recall >= 0.2 || (precision >= 0.4 && recall >= 0.15)) {
+      result = 'partial';
       setCheckedAnswers(prev => ({ ...prev, [index]: 'partial' }));
       toast.info(lang === 'es' ? '🤔 Parcialmente correcto. Revisa la solución.' : '🤔 Partially correct. Check the solution.');
     } else {
+      result = 'incorrect';
       setCheckedAnswers(prev => ({ ...prev, [index]: 'incorrect' }));
       toast.error(lang === 'es' ? '❌ Incorrecto. Intenta de nuevo o ve la solución.' : '❌ Incorrect. Try again or see the solution.');
     }
 
     // Update progress in DB
     if (currentContent) {
-      const completedCount = Object.values({ ...checkedAnswers, [index]: matchScore >= 0.5 ? 'correct' : checkedAnswers[index] })
+      const completedCount = Object.values({ ...checkedAnswers, [index]: result })
         .filter(v => v === 'correct').length;
       const totalExercises = courseContent?.exercises?.length || 0;
       const progressPct = totalExercises > 0 ? Math.round((completedCount / totalExercises) * 100) : 0;
@@ -648,7 +658,7 @@ export default function ContentViewer() {
                           </div>
 
                           {/* Solution Toggle */}
-                          {exercise.answer && (
+                          {(exercise.solution || exercise.answer) && (
                             <div>
                               <Button variant="outline" size="sm" onClick={() => toggleAnswer(index)} className="gap-2">
                                 {revealedAnswers.has(index) ? (
@@ -664,7 +674,7 @@ export default function ContentViewer() {
                                     {lang === 'es' ? 'Solución:' : 'Solution:'}
                                   </p>
                                   <div style={{ fontSize: `${fontSize}px` }} className="whitespace-pre-line">
-                                    {exercise.answer}
+                                    {exercise.solution || exercise.answer}
                                   </div>
                                 </motion.div>
                               )}

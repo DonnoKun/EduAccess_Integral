@@ -45,37 +45,29 @@ serve(async (req) => {
 
     const langName = language === 'es' ? 'Spanish' : 'English';
 
-    const systemPrompt = `You are an educational content search engine specialized in finding COURSES, LESSONS, and LEARNING MATERIALS - not just links or videos.
+    const systemPrompt = `You are an educational content search engine that ALWAYS returns exactly 6 relevant educational content results.
 
 You MUST respond entirely in ${langName}. ALL titles, descriptions, and text must be in ${langName}.
 
-Given a search query, return realistic educational content results from real educational platforms:
+ALWAYS return exactly 6 results from these platforms:
 - Khan Academy (khan) - Interactive courses and lessons
-- Wikipedia (wikipedia) - Encyclopedia articles and learning resources
-- OpenStax (openstax) - Free textbooks and course materials
-- YouTube educational channels (youtube) - Educational video courses and tutorials
-- OER Commons (oer) - Open educational resources, exercises, and lesson plans
-- ArXiv (arxiv) - Academic papers and research
+- Wikipedia (wikipedia) - Encyclopedia articles
+- OpenStax (openstax) - Free textbooks
+- YouTube educational (youtube) - Video tutorials
+- OER Commons (oer) - Open educational resources
+- ArXiv (arxiv) - Academic papers
 
-IMPORTANT: Focus on returning COMPLETE COURSES and LEARNING MATERIALS that include:
-- Structured lessons with theory and explanations
-- Practice exercises and problems
-- Examples and case studies
-- Study guides and summaries
+For each result provide: title, source, url, description, contentType (video/article/textbook/exercise/diagram), educationLevel (elementary/middle/high/college), accessibilityStatus (accessible/needs_remediation/partially_accessible), tags, and language.
 
-For each result, assess its accessibility status:
-- "accessible": Content has proper alt-text, captions, structured headings
-- "needs_remediation": Content lacks alt-text, captions, or has complex unstructured text
-- "partially_accessible": Some accessibility features present but incomplete
+IMPORTANT: You MUST return exactly 6 results in the results array. Never return an empty array.`;
 
-Generate 6 realistic results. Include real-looking URLs, accurate descriptions in ${langName}, and proper metadata.
-Mix different content types (textbook, article, exercise, video, diagram) and education levels.
+    const userPrompt = `Find 6 educational resources about: "${query || 'general educational content'}"${filterContext}
 
-You MUST use the provided tool to return structured results.`;
+You MUST return exactly 6 results. Use the search_results tool.`;
 
-    const userPrompt = `Search for educational courses and learning materials about: "${query || 'general educational content'}"${filterContext}
-
-Return realistic educational content results with accessibility metadata. ALL content must be in ${langName}.`;
+    // Add 30-second timeout to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -85,9 +77,10 @@ Return realistic educational content results with accessibility metadata. ALL co
           Authorization: `Bearer ${LOVABLE_API_KEY}`,
           "Content-Type": "application/json",
         },
+        signal: controller.signal,
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash-lite",
-          temperature: 0.3,
+          model: "google/gemini-2.5-flash",
+          temperature: 0.4,
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
@@ -106,13 +99,13 @@ Return realistic educational content results with accessibility metadata. ALL co
                       items: {
                         type: "object",
                         properties: {
-                          title: { type: "string", description: `Title in ${langName}` },
+                          title: { type: "string" },
                           source: {
                             type: "string",
                             enum: ["youtube", "khan", "openstax", "wikipedia", "oer", "arxiv"],
                           },
                           url: { type: "string" },
-                          description: { type: "string", description: `Description in ${langName}` },
+                          description: { type: "string" },
                           contentType: {
                             type: "string",
                             enum: ["video", "article", "textbook", "exercise", "diagram"],
@@ -129,8 +122,8 @@ Return realistic educational content results with accessibility metadata. ALL co
                             type: "array",
                             items: { type: "string" },
                           },
-                          duration: { type: "string", description: "For videos, e.g. '12:35'" },
-                          wordCount: { type: "number", description: "For articles/textbooks" },
+                          duration: { type: "string" },
+                          wordCount: { type: "number" },
                           tags: {
                             type: "array",
                             items: { type: "string" },
@@ -147,7 +140,6 @@ Return realistic educational content results with accessibility metadata. ALL co
                     },
                     totalEstimated: {
                       type: "number",
-                      description: "Estimated total results available",
                     },
                   },
                   required: ["results", "totalEstimated"],
@@ -163,6 +155,8 @@ Return realistic educational content results with accessibility metadata. ALL co
         }),
       }
     );
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -183,15 +177,17 @@ Return realistic educational content results with accessibility metadata. ALL co
     }
 
     const aiResponse = await response.json();
+    const aiResponse = await response.json();
     const toolCall = aiResponse.choices?.[0]?.message?.tool_calls?.[0];
 
     if (!toolCall?.function?.arguments) {
+      console.error("No tool call in response:", JSON.stringify(aiResponse.choices?.[0]?.message).slice(0, 300));
       throw new Error("AI did not return structured search results");
     }
 
-    const searchData = JSON.parse(toolCall.function.arguments);
+    const rawArgs = toolCall.function.arguments;
+    const searchData = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs;
 
-    // Map colors for content sources
     const sourceColors: Record<string, string> = {
       youtube: "#FF0000",
       khan: "#14BF96",
@@ -201,7 +197,6 @@ Return realistic educational content results with accessibility metadata. ALL co
       arxiv: "#B31B1B",
     };
 
-    // Transform results to match SearchResult type
     const results = searchData.results.map((r: any, index: number) => ({
       id: `ai-${Date.now()}-${index}`,
       title: r.title,
@@ -237,6 +232,15 @@ Return realistic educational content results with accessibility metadata. ALL co
   } catch (error) {
     console.error("Search error:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    
+    // If it was an abort/timeout, return a specific message
+    if (error instanceof DOMException && error.name === "AbortError") {
+      return new Response(
+        JSON.stringify({ success: false, error: "Search timed out. Please try again." }),
+        { status: 504, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
