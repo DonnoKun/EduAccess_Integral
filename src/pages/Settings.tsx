@@ -41,6 +41,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useStore } from '@/store/useStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useProfileSync } from '@/hooks/useProfileSync';
 import LanguageSelector from '@/components/LanguageSelector';
 import type { ThemeMode, ContrastMode } from '@/types';
 
@@ -70,6 +71,9 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [dbStats, setDbStats] = useState({ totalContent: 0, totalTasks: 0, totalTime: 0 });
+
+  // Auto-sync all settings changes to the database
+  useProfileSync();
 
   // Load real aggregate stats from DB
   useEffect(() => {
