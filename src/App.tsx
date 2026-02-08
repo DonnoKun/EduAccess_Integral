@@ -3,13 +3,14 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useStore } from "@/store/useStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
 import { useLibrarySync } from "@/hooks/useLibrarySync";
 import InstallAppBanner from "@/components/InstallAppBanner";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import SplashScreen from "@/components/SplashScreen";
 import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
@@ -53,6 +54,7 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 function AppContent() {
   const { applyProfileStyles, visualProfile, currentTheme, hasCompletedOnboarding } = useStore();
   const { isAuthenticated, initialize, initialized } = useAuthStore();
+  const [showSplash, setShowSplash] = useState(true);
   
   // Start session tracking & library sync
   useSessionTracker();
@@ -68,13 +70,17 @@ function AppContent() {
     applyProfileStyles();
   }, [applyProfileStyles, visualProfile, currentTheme]);
 
-  // Show nothing until auth is initialized
-  if (!initialized) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
+  // Dismiss splash after auth initializes (minimum 2s for the animation)
+  useEffect(() => {
+    if (initialized) {
+      const timer = setTimeout(() => setShowSplash(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [initialized]);
+
+  // Show splash screen while loading
+  if (!initialized || showSplash) {
+    return <SplashScreen visible={true} />;
   }
 
   return (
