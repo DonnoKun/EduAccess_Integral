@@ -102,65 +102,112 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   initialized: false,
 
   initialize: async () => {
-    try {
-      // Set up auth state listener for ONGOING changes (does NOT control isLoading)
-      supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log('🔐 Auth state change:', event);
-        if (event === 'SIGNED_IN' && session?.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .single();
+    let isMounted = true;
 
+    // Helper to fetch profile (non-throwing)
+    const fetchProfile = async (userId: string) => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+        return data;
+      } catch {
+        return null;
+      }
+    };
+
+    // ONGOING auth changes listener — fire-and-forget, does NOT control initialized
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (!isMounted) return;
+        console.log('🔐 Auth state change (ongoing):', event);
+
+        // Skip INITIAL_SESSION — handled by initializeAuth below
+        if (event === 'INITIAL_SESSION') return;
+
+        if (event === 'SIGNED_IN' && session?.user) {
           set({
             currentUser: {
               id: session.user.id,
               email: session.user.email || '',
-              name: (profile as any)?.user_name || '',
+              name: '',
             },
             isAuthenticated: true,
           });
-
-          // Restore profile data from DB (fire and forget for ongoing changes)
-          restoreProfileFromDB(profile);
-        } else if (event === 'SIGNED_OUT') {
-          set({
-            currentUser: null,
-            isAuthenticated: false,
+          // Fire-and-forget profile restoration (no await!)
+          fetchProfile(session.user.id).then((profile) => {
+            if (!isMounted || !profile) return;
+            set((s) => ({
+              currentUser: {
+                ...s.currentUser!,
+                name: (profile as any)?.user_name || '',
+              },
+            }));
+            restoreProfileFromDB(profile);
           });
+        } else if (event === 'SIGNED_OUT') {
+          set({ currentUser: null, isAuthenticated: false });
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          // Just update session, no heavy operations
+          set((s) => ({
+            currentUser: s.currentUser ?? {
+              id: session.user.id,
+              email: session.user.email || '',
+              name: '',
+            },
+            isAuthenticated: true,
+          }));
         }
-      });
+      }
+    );
 
-      // INITIAL load: check existing session
+    // INITIAL load — controls initialized flag
+    try {
       const { data: { session } } = await supabase.auth.getSession();
 
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single();
+      if (!isMounted) return;
 
+      if (session?.user) {
+        // Set user immediately so the app doesn't flash to login
         set({
           currentUser: {
             id: session.user.id,
             email: session.user.email || '',
-            name: (profile as any)?.user_name || '',
+            name: '',
           },
           isAuthenticated: true,
-          initialized: true,
         });
 
-        // Restore profile data from DB (non-blocking)
-        restoreProfileFromDB(profile);
-      } else {
-        set({ initialized: true });
+        // Fetch profile BEFORE marking initialized to restore onboarding status
+        const profile = await fetchProfile(session.user.id);
+        if (isMounted && profile) {
+          set((s) => ({
+            currentUser: {
+              ...s.currentUser!,
+              name: (profile as any)?.user_name || '',
+            },
+          }));
+          restoreProfileFromDB(profile);
+        }
       }
     } catch (err) {
       console.error('Auth init error:', err);
-      set({ initialized: true });
+    } finally {
+      if (isMounted) {
+        set({ initialized: true });
+      }
     }
+
+    // Safety timeout — ensure app NEVER gets permanently stuck on splash
+    setTimeout(() => {
+      const state = get();
+      if (!state.initialized) {
+        console.warn('⚠️ Auth init safety timeout triggered — forcing initialized');
+        set({ initialized: true });
+      }
+    }, 5000);
   },
 
   login: async (email: string, token: string) => {
