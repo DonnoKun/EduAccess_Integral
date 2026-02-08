@@ -8,9 +8,11 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useLibrarySync } from '@/hooks/useLibrarySync';
 import { useSessionTracker } from '@/hooks/useSessionTracker';
+import { useCourseCache } from '@/hooks/useCourseCache';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import CourseImage from '@/components/CourseImage';
+import { ImageIcon } from 'lucide-react';
 import {
   ArrowLeft,
   ZoomIn,
@@ -121,6 +123,11 @@ export default function ContentViewer() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadingStage, setLoadingStage] = useState(0);
   const [currentReadingText, setCurrentReadingText] = useState('');
+  const [fromCache, setFromCache] = useState(false);
+
+  // Image generation progress
+  const [totalImages, setTotalImages] = useState(0);
+  const [imagesCompleted, setImagesCompleted] = useState(0);
 
   // Interactive exercise state
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
@@ -137,10 +144,18 @@ export default function ContentViewer() {
   // DB sync hooks
   const { saveContentToDB, removeContentFromDB, updateProgressInDB } = useLibrarySync();
   const { incrementTasksCompleted } = useSessionTracker();
+  const { getCachedCourse, saveCourseToCache } = useCourseCache();
 
   const isCompleted = currentContent ? completedContent.some((c) => c.id === currentContent.id) : false;
   const isSaved = currentContent ? savedContent.some((c) => c.id === currentContent.id) : false;
   const lang = i18n.language?.split('-')[0] || 'es';
+
+  // Track image progress
+  const handleImageStatusChange = useCallback((status: 'loading' | 'done' | 'error') => {
+    if (status === 'done' || status === 'error') {
+      setImagesCompleted(prev => prev + 1);
+    }
+  }, []);
 
   useEffect(() => {
     if (!hasCompletedOnboarding) {
@@ -173,7 +188,7 @@ export default function ContentViewer() {
     }
   }, [loadingStage, isLoading]);
 
-  // Fetch course content from AI
+  // Fetch course content: check cache first, then AI
   useEffect(() => {
     if (!currentContent) return;
     let cancelled = false;
@@ -181,7 +196,23 @@ export default function ContentViewer() {
     const fetchCourseContent = async () => {
       setIsLoading(true);
       setLoadingStage(0);
+      setFromCache(false);
+      setImagesCompleted(0);
 
+      // 1. Check cache first
+      const cached = await getCachedCourse(currentContent.title, lang);
+      if (cached && !cancelled) {
+        setCourseContent(cached);
+        setFromCache(true);
+        // Count images for progress
+        const imgCount = cached.sections?.filter((s: any) => s.image_prompt).length || 0;
+        setTotalImages(imgCount);
+        setIsLoading(false);
+        toast.success(lang === 'es' ? '⚡ Curso cargado desde caché' : '⚡ Course loaded from cache');
+        return;
+      }
+
+      // 2. Generate with AI
       const stageInterval = setInterval(() => {
         if (!cancelled) setLoadingStage((prev) => Math.min(prev + 1, 4));
       }, 2500);
@@ -203,6 +234,11 @@ export default function ContentViewer() {
 
         if (data?.success && data?.content) {
           setCourseContent(data.content);
+          // Count images for progress
+          const imgCount = data.content.sections?.filter((s: any) => s.image_prompt).length || 0;
+          setTotalImages(imgCount);
+          // Save to cache in background
+          saveCourseToCache(currentContent.title, lang, data.content);
         } else {
           throw new Error(data?.error || 'No content returned');
         }
@@ -539,6 +575,39 @@ export default function ContentViewer() {
           {/* Course Content */}
           {!isLoading && courseContent && (
             <div className="space-y-6">
+              {/* Image Generation Progress Indicator */}
+              {totalImages > 0 && imagesCompleted < totalImages && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20"
+                >
+                  <ImageIcon className="h-5 w-5 text-primary animate-pulse flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">
+                      {lang === 'es'
+                        ? `Generando imágenes: ${imagesCompleted} de ${totalImages}`
+                        : `Generating images: ${imagesCompleted} of ${totalImages}`}
+                    </p>
+                    <div className="w-full bg-muted rounded-full h-1.5 mt-1">
+                      <div
+                        className="bg-primary h-1.5 rounded-full transition-all duration-500"
+                        style={{ width: `${(imagesCompleted / totalImages) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {Math.round((imagesCompleted / totalImages) * 100)}%
+                  </span>
+                </motion.div>
+              )}
+
+              {/* Cache indicator */}
+              {fromCache && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-muted-foreground">
+                  ⚡ {lang === 'es' ? 'Contenido cargado instantáneamente desde caché' : 'Content loaded instantly from cache'}
+                </div>
+              )}
               {/* Introduction */}
               <Card>
                 <CardContent className="p-6 md:p-8">
@@ -589,6 +658,8 @@ export default function ContentViewer() {
                           prompt={section.image_prompt}
                           alt={section.image_alt || section.title}
                           className="mt-4"
+                          lang={lang}
+                          onStatusChange={handleImageStatusChange}
                         />
                       )}
                     </CardContent>

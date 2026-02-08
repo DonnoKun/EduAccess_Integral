@@ -1,5 +1,6 @@
 /**
  * CourseImage - Lazily generates and displays AI images for course sections
+ * Reports progress back to parent via onStatusChange callback
  */
 
 import { useState, useEffect } from 'react';
@@ -11,15 +12,19 @@ interface CourseImageProps {
   prompt: string;
   alt: string;
   className?: string;
+  lang?: string;
+  /** Called when image finishes loading or errors */
+  onStatusChange?: (status: 'loading' | 'done' | 'error') => void;
 }
 
-export default function CourseImage({ prompt, alt, className }: CourseImageProps) {
+export default function CourseImage({ prompt, alt, className, lang = 'es', onStatusChange }: CourseImageProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    onStatusChange?.('loading');
 
     const generateImage = async () => {
       try {
@@ -31,14 +36,17 @@ export default function CourseImage({ prompt, alt, className }: CourseImageProps
         if (fnError || !data?.success || !data?.imageUrl) {
           console.warn('Image generation failed:', fnError || data?.error);
           setError(true);
+          onStatusChange?.('error');
           return;
         }
 
         setImageUrl(data.imageUrl);
+        onStatusChange?.('done');
       } catch (err) {
         if (!cancelled) {
           console.warn('Image generation error:', err);
           setError(true);
+          onStatusChange?.('error');
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -57,7 +65,9 @@ export default function CourseImage({ prompt, alt, className }: CourseImageProps
         <Skeleton className="w-full h-48 flex items-center justify-center">
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
             <ImageIcon className="h-8 w-8 animate-pulse" />
-            <span className="text-xs">Generando imagen...</span>
+            <span className="text-xs">
+              {lang === 'es' ? 'Generando imagen...' : 'Generating image...'}
+            </span>
           </div>
         </Skeleton>
       </div>

@@ -239,6 +239,8 @@ export const useStore = create<GlobalState>()(
                   r.metadata.tags.some((t) => t.toLowerCase().includes(lowerQuery))
               );
             }
+            // If no query or no match, show first 6
+            if (results.length === 0) results = mockSearchResults.slice(0, 6);
             set({ searchResults: results, searchLoading: false });
             return;
           }
@@ -287,6 +289,7 @@ export const useStore = create<GlobalState>()(
                   r.metadata.tags.some((t) => t.toLowerCase().includes(lowerQuery))
               );
             }
+            if (results.length === 0) results = mockSearchResults.slice(0, 6);
             set({ searchResults: results, searchLoading: false });
           }
         } catch (error) {

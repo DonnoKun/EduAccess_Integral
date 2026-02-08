@@ -177,7 +177,6 @@ You MUST return exactly 6 results. Use the search_results tool.`;
     }
 
     const aiResponse = await response.json();
-    const aiResponse = await response.json();
     const toolCall = aiResponse.choices?.[0]?.message?.tool_calls?.[0];
 
     if (!toolCall?.function?.arguments) {
