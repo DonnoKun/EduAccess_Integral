@@ -13,11 +13,15 @@ interface CourseImageProps {
   alt: string;
   className?: string;
   lang?: string;
+  /** Section title for context-aware generation */
+  sectionTitle?: string;
+  /** Section content snippet for context-aware generation */
+  sectionContext?: string;
   /** Called when image finishes loading or errors */
   onStatusChange?: (status: 'loading' | 'done' | 'error') => void;
 }
 
-export default function CourseImage({ prompt, alt, className, lang = 'es', onStatusChange }: CourseImageProps) {
+export default function CourseImage({ prompt, alt, className, lang = 'es', sectionTitle, sectionContext, onStatusChange }: CourseImageProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -29,7 +33,7 @@ export default function CourseImage({ prompt, alt, className, lang = 'es', onSta
     const generateImage = async () => {
       try {
         const { data, error: fnError } = await supabase.functions.invoke('generate-course-image', {
-          body: { prompt, alt },
+          body: { prompt, alt, sectionTitle, sectionContext },
         });
 
         if (cancelled) return;

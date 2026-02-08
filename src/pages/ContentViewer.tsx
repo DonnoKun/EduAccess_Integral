@@ -373,16 +373,50 @@ export default function ContentViewer() {
     }
   };
 
-  // Build full text for TTS
+  // Build full text for TTS (includes image descriptions for accessibility)
   const buildTTSText = useCallback(() => {
     if (!courseContent) return '';
     let text = courseContent.introduction + '. ';
     courseContent.sections.forEach((section) => {
       text += section.title + '. ' + section.content + '. ';
+      if (section.image_alt) {
+        const imageLabel = lang === 'es' ? 'Descripción de la imagen' : 'Image description';
+        text += imageLabel + ': ' + section.image_alt + '. ';
+      }
     });
     if (courseContent.summary) text += courseContent.summary;
     return text;
-  }, [courseContent]);
+  }, [courseContent, lang]);
+
+  // Build text for examples section TTS
+  const buildExamplesTTSText = useCallback(() => {
+    if (!courseContent?.examples?.length) return '';
+    const header = lang === 'es' ? 'Ejemplos Prácticos. ' : 'Practical Examples. ';
+    let text = header;
+    courseContent.examples.forEach((example, i) => {
+      text += `${lang === 'es' ? 'Ejemplo' : 'Example'} ${i + 1}: ${example.title}. ${example.description}. `;
+    });
+    return text;
+  }, [courseContent, lang]);
+
+  // Build text for exercises section TTS
+  const buildExercisesTTSText = useCallback(() => {
+    if (!courseContent?.exercises?.length) return '';
+    const header = lang === 'es' ? 'Ejercicios de Práctica. ' : 'Practice Exercises. ';
+    let text = header;
+    courseContent.exercises.forEach((exercise, i) => {
+      text += `${lang === 'es' ? 'Ejercicio' : 'Exercise'} ${i + 1}: ${exercise.question}. `;
+      if (exercise.hint) text += `${lang === 'es' ? 'Pista' : 'Hint'}: ${exercise.hint}. `;
+    });
+    return text;
+  }, [courseContent, lang]);
+
+  // Build text for summary section TTS
+  const buildSummaryTTSText = useCallback(() => {
+    if (!courseContent?.summary) return '';
+    const header = lang === 'es' ? 'Resumen. ' : 'Summary. ';
+    return header + courseContent.summary;
+  }, [courseContent, lang]);
 
   // Check if text chunk matches current reading
   const isTextBeingRead = (text: string): boolean => {
@@ -657,6 +691,8 @@ export default function ContentViewer() {
                         <CourseImage
                           prompt={section.image_prompt}
                           alt={section.image_alt || section.title}
+                          sectionTitle={section.title}
+                          sectionContext={section.content?.slice(0, 400)}
                           className="mt-4"
                           lang={lang}
                           onStatusChange={handleImageStatusChange}
@@ -674,6 +710,12 @@ export default function ContentViewer() {
                     <div className="flex items-center gap-2 mb-4">
                       <Lightbulb className="h-6 w-6 text-amber-500" />
                       <h2 className="text-xl font-bold">{lang === 'es' ? 'Ejemplos Prácticos' : 'Practical Examples'}</h2>
+                    </div>
+                    <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+                      <AudioPlayer
+                        text={buildExamplesTTSText()}
+                        lang={lang}
+                      />
                     </div>
                     <div className="space-y-4">
                       {courseContent.examples.map((example, index) => (
@@ -700,6 +742,12 @@ export default function ContentViewer() {
                         ? 'Escribe tu respuesta y verifica si es correcta, o consulta la solución directamente.'
                         : 'Write your answer and verify, or check the solution directly.'}
                     </p>
+                    <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+                      <AudioPlayer
+                        text={buildExercisesTTSText()}
+                        lang={lang}
+                      />
+                    </div>
                     <div className="space-y-6">
                       {courseContent.exercises.map((exercise, index) => (
                         <div
@@ -798,6 +846,12 @@ export default function ContentViewer() {
                     <Check className="h-6 w-6 text-primary" />
                     {lang === 'es' ? 'Resumen' : 'Summary'}
                   </h2>
+                  <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+                    <AudioPlayer
+                      text={buildSummaryTTSText()}
+                      lang={lang}
+                    />
+                  </div>
                   <div style={contentStyle} className="whitespace-pre-line">{courseContent.summary}</div>
                 </CardContent>
               </Card>
