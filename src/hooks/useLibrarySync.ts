@@ -1,6 +1,7 @@
 /**
  * EduAccess - Library Sync Hook
  * Persists saved/completed courses to Supabase user_library table
+ * Includes Realtime subscription for live cross-device sync
  */
 
 import { useEffect, useCallback, useRef } from 'react';
@@ -20,9 +21,26 @@ interface LibraryItem {
   time_spent_seconds: number;
 }
 
+function mapItemToSearchResult(item: any): SearchResult {
+  const contentData = item.content_data as any;
+  return {
+    id: contentData?.id || item.id,
+    title: contentData?.title || '',
+    description: contentData?.description || '',
+    contentType: contentData?.contentType || 'article',
+    source: contentData?.source || 'wikipedia',
+    url: contentData?.url || '',
+    accessibilityStatus: contentData?.accessibilityStatus || 'accessible',
+    educationLevel: contentData?.educationLevel || 'intermediate',
+    metadata: contentData?.metadata || { tags: [], language: 'es' },
+    thumbnail: contentData?.thumbnail || '',
+  };
+}
+
 export function useLibrarySync() {
   const { currentUser, isAuthenticated } = useAuthStore();
   const loadedRef = useRef(false);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const loadLibraryFromDB = useCallback(async () => {
     if (!currentUser?.id || loadedRef.current) return;
@@ -43,21 +61,8 @@ export function useLibrarySync() {
         const completed: SearchResult[] = [];
 
         data.forEach((item: any) => {
-          const contentData = item.content_data as any;
-          if (contentData) {
-            const searchResult: SearchResult = {
-              id: contentData.id || item.id,
-              title: contentData.title || '',
-              description: contentData.description || '',
-              contentType: contentData.contentType || 'article',
-              source: contentData.source || 'wikipedia',
-              url: contentData.url || '',
-              accessibilityStatus: contentData.accessibilityStatus || 'accessible',
-              educationLevel: contentData.educationLevel || 'intermediate',
-              metadata: contentData.metadata || { tags: [], language: 'es' },
-              thumbnail: contentData.thumbnail || '',
-            };
-
+          if (item.content_data) {
+            const searchResult = mapItemToSearchResult(item);
             if (item.status === 'completed') {
               completed.push(searchResult);
             }
@@ -65,7 +70,6 @@ export function useLibrarySync() {
           }
         });
 
-        // Set into store without triggering re-saves
         useStore.setState({ savedContent: saved, completedContent: completed });
         loadedRef.current = true;
         console.log(`📚 Loaded ${saved.length} saved, ${completed.length} completed from DB`);
@@ -77,20 +81,81 @@ export function useLibrarySync() {
     }
   }, [currentUser?.id]);
 
-  // Load library on auth
-  useEffect(() => {
-    if (isAuthenticated && currentUser?.id) {
-      loadLibraryFromDB();
-    } else {
-      loadedRef.current = false;
+  // Full reload helper for realtime events
+  const reloadLibrary = useCallback(async () => {
+    if (!currentUser?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_library')
+        .select('*')
+        .eq('user_id', currentUser.id);
+
+      if (error) {
+        console.error('Error reloading library:', error);
+        return;
+      }
+
+      const saved: SearchResult[] = [];
+      const completed: SearchResult[] = [];
+
+      (data || []).forEach((item: any) => {
+        if (item.content_data) {
+          const searchResult = mapItemToSearchResult(item);
+          if (item.status === 'completed') {
+            completed.push(searchResult);
+          }
+          saved.push(searchResult);
+        }
+      });
+
+      useStore.setState({ savedContent: saved, completedContent: completed });
+      console.log(`🔄 Realtime sync: ${saved.length} saved, ${completed.length} completed`);
+    } catch (err) {
+      console.error('Realtime reload error:', err);
     }
-  }, [isAuthenticated, currentUser?.id, loadLibraryFromDB]);
+  }, [currentUser?.id]);
+
+  // Subscribe to Realtime changes on user_library
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser?.id) return;
+
+    // Load initial data
+    loadLibraryFromDB();
+
+    // Subscribe to realtime changes for this user's library
+    const channel = supabase
+      .channel(`user_library_${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_library',
+          filter: `user_id=eq.${currentUser.id}`,
+        },
+        (payload) => {
+          console.log('📡 Realtime library update:', payload.eventType);
+          reloadLibrary();
+        }
+      )
+      .subscribe();
+
+    channelRef.current = channel;
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      loadedRef.current = false;
+    };
+  }, [isAuthenticated, currentUser?.id, loadLibraryFromDB, reloadLibrary]);
 
   const saveContentToDB = useCallback(async (content: SearchResult, status: string = 'saved') => {
     if (!currentUser?.id) return;
 
     try {
-      // Check if already exists
       const { data: existing } = await supabase
         .from('user_library')
         .select('id')
@@ -99,13 +164,11 @@ export function useLibrarySync() {
         .maybeSingle();
 
       if (existing) {
-        // Update status
         await supabase
           .from('user_library')
           .update({ status, updated_at: new Date().toISOString() } as any)
           .eq('id', existing.id);
       } else {
-        // Insert new
         await supabase
           .from('user_library')
           .insert({
