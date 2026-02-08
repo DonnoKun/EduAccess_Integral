@@ -22,7 +22,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const { prompt, alt } = await req.json();
+    const { prompt, alt, sectionTitle, sectionContext } = await req.json();
 
     if (!prompt) {
       return new Response(
@@ -32,6 +32,26 @@ serve(async (req) => {
     }
 
     console.log("🎨 Generating course image:", prompt.slice(0, 80));
+
+    // Build a highly specific prompt using section context
+    const contextClue = sectionTitle
+      ? `The image is for a section titled "${sectionTitle}".`
+      : "";
+    const contentClue = sectionContext
+      ? `The section covers: ${sectionContext.slice(0, 300)}.`
+      : "";
+
+    const fullPrompt = [
+      "Generate a precise, educational illustration for a textbook.",
+      "Style: modern flat illustration with clear colors, labeled diagrams where relevant, educational and accessible.",
+      "IMPORTANT: The illustration must accurately depict the specific topic described below. Do NOT add unrelated elements.",
+      "Do NOT include any text overlays or watermarks.",
+      contextClue,
+      contentClue,
+      `Specific subject to illustrate: ${prompt}`,
+    ]
+      .filter(Boolean)
+      .join(" ");
 
     // 45-second timeout for image generation
     const controller = new AbortController();
@@ -51,7 +71,7 @@ serve(async (req) => {
           messages: [
             {
               role: "user",
-              content: `Generate a clean, professional educational illustration for a textbook. Style: modern flat illustration, clear colors, labeled diagrams where appropriate, educational and accessible. No text overlays. Subject: ${prompt}`,
+              content: fullPrompt,
             },
           ],
           modalities: ["image", "text"],
