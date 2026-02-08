@@ -122,24 +122,27 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         if (event === 'INITIAL_SESSION') return;
 
         if (event === 'SIGNED_IN' && session?.user) {
-          set({
-            currentUser: {
-              id: session.user.id,
-              email: session.user.email || '',
-              name: '',
-            },
-            isAuthenticated: true,
-          });
-          // Fire-and-forget profile restoration (no await!)
+          // If login() is actively running (isLoading=true), skip —
+          // login() handles profile restoration + auth state to avoid
+          // race condition where isAuthenticated=true before hasCompletedOnboarding
+          if (get().isLoading) {
+            console.log('🔐 Skipping SIGNED_IN listener — login() is handling it');
+            return;
+          }
+          // For other SIGNED_IN triggers (e.g. re-auth)
           fetchProfile(session.user.id).then((profile) => {
-            if (!isMounted || !profile) return;
-            set((s) => ({
+            if (!isMounted) return;
+            if (profile) {
+              restoreProfileFromDB(profile);
+            }
+            set({
               currentUser: {
-                ...s.currentUser!,
+                id: session.user.id,
+                email: session.user.email || '',
                 name: (profile as any)?.user_name || '',
               },
-            }));
-            restoreProfileFromDB(profile);
+              isAuthenticated: true,
+            });
           });
         } else if (event === 'SIGNED_OUT') {
           set({ currentUser: null, isAuthenticated: false });
