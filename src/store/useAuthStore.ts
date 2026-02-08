@@ -1,7 +1,7 @@
 /**
  * EduAccess - Authentication Store
- * Real Supabase Auth with email OTP (magic link)
- * Each student gets their own persistent profile
+ * Token-based auth: each user gets a permanent numeric token as password.
+ * Registration and token reset handled via edge function.
  */
 
 import { create } from 'zustand';
@@ -19,12 +19,12 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   initialized: boolean;
-  pendingEmail: string | null;
 
   // Actions
   initialize: () => Promise<void>;
-  sendOTP: (email: string) => Promise<boolean>;
-  verifyOTP: (code: string) => Promise<{ success: boolean; isNewUser: boolean }>;
+  login: (email: string, token: string) => Promise<boolean>;
+  register: (email: string) => Promise<{ success: boolean; token?: string; emailSent?: boolean; error?: string }>;
+  resetToken: (email: string) => Promise<{ success: boolean; token?: string; emailSent?: boolean; error?: string }>;
   logout: () => void;
   clearError: () => void;
   updateUserName: (name: string) => Promise<void>;
@@ -36,34 +36,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   isLoading: false,
   error: null,
   initialized: false,
-  pendingEmail: null,
 
   initialize: async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        // Load profile from database
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single();
-
-        set({
-          currentUser: {
-            id: session.user.id,
-            email: session.user.email || '',
-            name: (profile as any)?.user_name || '',
-          },
-          isAuthenticated: true,
-          initialized: true,
-        });
-      } else {
-        set({ initialized: true });
-      }
-
-      // Listen for auth state changes
+      // Set up auth state listener FIRST
       supabase.auth.onAuthStateChange(async (event, session) => {
         console.log('🔐 Auth state change:', event);
         if (event === 'SIGNED_IN' && session?.user) {
@@ -88,76 +64,59 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           });
         }
       });
+
+      // Then check existing session
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single();
+
+        set({
+          currentUser: {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: (profile as any)?.user_name || '',
+          },
+          isAuthenticated: true,
+          initialized: true,
+        });
+      } else {
+        set({ initialized: true });
+      }
     } catch (err) {
       console.error('Auth init error:', err);
       set({ initialized: true });
     }
   },
 
-  sendOTP: async (email: string) => {
+  login: async (email: string, token: string) => {
     set({ isLoading: true, error: null });
-    
+
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        options: {
-          shouldCreateUser: true,
-          emailRedirectTo: window.location.origin,
-        },
+        password: token,
       });
 
       if (error) {
-        console.error('OTP send error:', error);
-        set({ error: error.message, isLoading: false });
+        console.error('Login error:', error);
+        const msg = error.message === 'Invalid login credentials'
+          ? 'Correo o token incorrecto'
+          : error.message;
+        set({ error: msg, isLoading: false });
         return false;
       }
 
-      console.log('═══════════════════════════════════════════');
-      console.log('📧 OTP enviado a:', email);
-      console.log('💡 Revisa tu correo electrónico para el código');
-      console.log('💡 Para pruebas: revisa los logs del backend');
-      console.log('═══════════════════════════════════════════');
-
-      set({ pendingEmail: email, isLoading: false });
-      return true;
-    } catch (err) {
-      console.error('OTP error:', err);
-      set({ error: 'Error sending OTP', isLoading: false });
-      return false;
-    }
-  },
-
-  verifyOTP: async (code: string) => {
-    const { pendingEmail } = get();
-    if (!pendingEmail) {
-      set({ error: 'No pending email', isLoading: false });
-      return { success: false, isNewUser: false };
-    }
-
-    set({ isLoading: true, error: null });
-
-    try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: pendingEmail,
-        token: code,
-        type: 'email',
-      });
-
-      if (error) {
-        console.error('OTP verify error:', error);
-        set({ error: error.message, isLoading: false });
-        return { success: false, isNewUser: false };
-      }
-
       if (data.user) {
-        // Check if profile has completed onboarding
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
           .eq('user_id', data.user.id)
           .single();
-
-        const isNewUser = !(profile as any)?.has_completed_onboarding;
 
         set({
           currentUser: {
@@ -167,18 +126,76 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           },
           isAuthenticated: true,
           isLoading: false,
-          pendingEmail: null,
         });
-
-        return { success: true, isNewUser };
+        return true;
       }
 
       set({ isLoading: false });
-      return { success: false, isNewUser: false };
+      return false;
     } catch (err) {
-      console.error('Verify error:', err);
-      set({ error: 'Verification failed', isLoading: false });
-      return { success: false, isNewUser: false };
+      console.error('Login exception:', err);
+      set({ error: 'Error al iniciar sesión', isLoading: false });
+      return false;
+    }
+  },
+
+  register: async (email: string) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-auth-token', {
+        body: { action: 'register', email },
+      });
+
+      if (error) {
+        const msg = data?.error || error.message || 'Error al registrar';
+        set({ error: msg, isLoading: false });
+        return { success: false, error: msg };
+      }
+
+      if (data?.error) {
+        set({ error: data.error, isLoading: false });
+        return { success: false, error: data.error };
+      }
+
+      console.log('✅ User registered, token generated');
+      set({ isLoading: false });
+      return { success: true, token: data.token, emailSent: data.emailSent };
+    } catch (err) {
+      console.error('Register exception:', err);
+      const msg = 'Error al crear la cuenta';
+      set({ error: msg, isLoading: false });
+      return { success: false, error: msg };
+    }
+  },
+
+  resetToken: async (email: string) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-auth-token', {
+        body: { action: 'reset-token', email },
+      });
+
+      if (error) {
+        const msg = data?.error || error.message || 'Error al restablecer token';
+        set({ error: msg, isLoading: false });
+        return { success: false, error: msg };
+      }
+
+      if (data?.error) {
+        set({ error: data.error, isLoading: false });
+        return { success: false, error: data.error };
+      }
+
+      console.log('✅ Token reset successful');
+      set({ isLoading: false });
+      return { success: true, token: data.token, emailSent: data.emailSent };
+    } catch (err) {
+      console.error('Reset token exception:', err);
+      const msg = 'Error al restablecer el token';
+      set({ error: msg, isLoading: false });
+      return { success: false, error: msg };
     }
   },
 
@@ -188,10 +205,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     set({
       currentUser: null,
       isAuthenticated: false,
-      pendingEmail: null,
       error: null,
     });
-    // Force navigation to login
     setTimeout(() => {
       window.location.replace('/login');
     }, 100);
