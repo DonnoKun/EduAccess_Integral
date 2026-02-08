@@ -1,52 +1,52 @@
 /**
  * EduAccess - Login Page
- * Email OTP authentication via Supabase
+ * Email magic link authentication via Supabase
  */
 
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Mail, ArrowRight, Loader2, ArrowLeft } from 'lucide-react';
+import { Sparkles, Mail, ArrowRight, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from '@/components/ui/input-otp';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useStore } from '@/store/useStore';
 import LanguageSelector from '@/components/LanguageSelector';
 
-type Step = 'email' | 'otp';
+type Step = 'email' | 'waiting';
 
 export default function Login() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const { sendOTP, verifyOTP, isLoading, error, clearError, isAuthenticated } = useAuthStore();
+  const { sendOTP, isLoading, error, clearError, isAuthenticated } = useAuthStore();
   const { hasCompletedOnboarding } = useStore();
   const lang = i18n.language?.split('-')[0] || 'es';
 
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
-  const [otpValue, setOtpValue] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
+  const [authDetected, setAuthDetected] = useState(false);
 
   const emailInputRef = useRef<HTMLInputElement>(null);
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      if (hasCompletedOnboarding) {
-        navigate('/dashboard');
-      } else {
-        navigate('/onboarding');
-      }
+      setAuthDetected(true);
+      // Small delay to show success message
+      const timer = setTimeout(() => {
+        if (hasCompletedOnboarding) {
+          navigate('/dashboard');
+        } else {
+          navigate('/onboarding');
+        }
+      }, step === 'waiting' ? 1500 : 0);
+      return () => clearTimeout(timer);
     }
-  }, [isAuthenticated, hasCompletedOnboarding, navigate]);
+  }, [isAuthenticated, hasCompletedOnboarding, navigate, step]);
 
   // Focus input on step change
   useEffect(() => {
@@ -64,7 +64,7 @@ export default function Login() {
   // Clear error on input
   useEffect(() => {
     if (error) clearError();
-  }, [email, otpValue]);
+  }, [email]);
 
   const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
@@ -76,33 +76,15 @@ export default function Login() {
 
     const success = await sendOTP(email);
     if (success) {
-      setStep('otp');
+      setStep('waiting');
       setResendTimer(60);
       toast.success(
         lang === 'es'
-          ? `Código enviado a ${email}`
-          : `Code sent to ${email}`
+          ? `Enlace de acceso enviado a ${email}`
+          : `Access link sent to ${email}`
       );
     } else if (error) {
       toast.error(error);
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (otpValue.length !== 6) return;
-
-    const result = await verifyOTP(otpValue);
-    if (result.success) {
-      toast.success(lang === 'es' ? '¡Bienvenido!' : 'Welcome!');
-      if (result.isNewUser || !hasCompletedOnboarding) {
-        navigate('/onboarding');
-      } else {
-        navigate('/dashboard');
-      }
-    } else if (error) {
-      toast.error(
-        lang === 'es' ? 'Código inválido o expirado' : 'Invalid or expired code'
-      );
     }
   };
 
@@ -111,17 +93,9 @@ export default function Login() {
     const success = await sendOTP(email);
     if (success) {
       setResendTimer(60);
-      setOtpValue('');
-      toast.success(lang === 'es' ? 'Código reenviado' : 'Code resent');
+      toast.success(lang === 'es' ? 'Enlace reenviado' : 'Link resent');
     }
   };
-
-  // Auto-verify when OTP complete
-  useEffect(() => {
-    if (otpValue.length === 6 && step === 'otp') {
-      handleVerifyOTP();
-    }
-  }, [otpValue]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -157,8 +131,8 @@ export default function Login() {
                     </h1>
                     <p className="text-muted-foreground">
                       {lang === 'es'
-                        ? 'Ingresa tu correo electrónico para recibir un código de acceso'
-                        : 'Enter your email to receive an access code'}
+                        ? 'Ingresa tu correo electrónico para recibir un enlace de acceso'
+                        : 'Enter your email to receive an access link'}
                     </p>
                   </div>
 
@@ -188,7 +162,7 @@ export default function Login() {
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
                       <>
-                        {lang === 'es' ? 'Enviar Código' : 'Send Code'}
+                        {lang === 'es' ? 'Enviar Enlace' : 'Send Link'}
                         <ArrowRight className="ml-2 h-5 w-5" />
                       </>
                     )}
@@ -202,93 +176,104 @@ export default function Login() {
                 </motion.div>
               ) : (
                 <motion.div
-                  key="otp"
+                  key="waiting"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-6"
                 >
-                  <div className="text-center">
-                    <h1 className="text-2xl font-bold mb-2">
-                      {lang === 'es' ? 'Verifica tu Identidad' : 'Verify your Identity'}
-                    </h1>
-                    <p className="text-muted-foreground">
-                      {lang === 'es'
-                        ? 'Te enviamos un correo. Puedes hacer clic en el enlace del correo para iniciar sesión automáticamente, o ingresar el código de 6 dígitos aquí:'
-                        : 'We sent you an email. Click the link to sign in automatically, or enter the 6-digit code below:'}
-                    </p>
-                    <p className="font-medium text-primary mt-1">{email}</p>
-                  </div>
-
-                  <div className="space-y-4">
-                    <Label className="text-center block">
-                      {lang === 'es' ? 'Código de 6 dígitos' : '6-digit code'}
-                    </Label>
-                    <div className="flex justify-center">
-                      <InputOTP
-                        value={otpValue}
-                        onChange={setOtpValue}
-                        maxLength={6}
-                        disabled={isLoading}
+                  {authDetected ? (
+                    /* Auth Success State */
+                    <div className="text-center py-8">
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 200, damping: 10 }}
                       >
-                        <InputOTPGroup>
-                          <InputOTPSlot index={0} className="w-12 h-14 text-2xl" />
-                          <InputOTPSlot index={1} className="w-12 h-14 text-2xl" />
-                          <InputOTPSlot index={2} className="w-12 h-14 text-2xl" />
-                          <InputOTPSlot index={3} className="w-12 h-14 text-2xl" />
-                          <InputOTPSlot index={4} className="w-12 h-14 text-2xl" />
-                          <InputOTPSlot index={5} className="w-12 h-14 text-2xl" />
-                        </InputOTPGroup>
-                      </InputOTP>
+                        <CheckCircle2 className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
+                      </motion.div>
+                      <h1 className="text-2xl font-bold mb-2">
+                        {lang === 'es' ? '¡Bienvenido!' : 'Welcome!'}
+                      </h1>
+                      <p className="text-muted-foreground">
+                        {lang === 'es'
+                          ? 'Sesión iniciada correctamente. Redirigiendo...'
+                          : 'Successfully signed in. Redirecting...'}
+                      </p>
+                      <Loader2 className="h-5 w-5 animate-spin mx-auto mt-4 text-primary" />
                     </div>
-                  </div>
+                  ) : (
+                    /* Waiting for Magic Link State */
+                    <>
+                      <div className="text-center">
+                        <h1 className="text-2xl font-bold mb-2">
+                          {lang === 'es' ? 'Revisa tu Correo' : 'Check your Email'}
+                        </h1>
+                        <p className="text-muted-foreground">
+                          {lang === 'es'
+                            ? 'Te enviamos un enlace de acceso a:'
+                            : 'We sent an access link to:'}
+                        </p>
+                        <p className="font-medium text-primary mt-1">{email}</p>
+                      </div>
 
-                  {error && (
-                    <p className="text-destructive text-center text-sm" role="alert">
-                      {lang === 'es' ? 'Código inválido o expirado' : 'Invalid or expired code'}
-                    </p>
+                      <div className="flex flex-col items-center gap-4 py-6">
+                        <motion.div
+                          animate={{ scale: [1, 1.15, 1] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                          <Mail className="h-14 w-14 text-primary" />
+                        </motion.div>
+
+                        <div className="text-center space-y-2">
+                          <p className="text-sm text-muted-foreground">
+                            {lang === 'es'
+                              ? 'Haz clic en el enlace "Log In" en el correo para iniciar sesión.'
+                              : 'Click the "Log In" link in the email to sign in.'}
+                          </p>
+                          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground/70">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            {lang === 'es'
+                              ? 'Esta página se actualizará automáticamente'
+                              : 'This page will update automatically'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground text-center">
+                          💡 {lang === 'es'
+                            ? 'Si no encuentras el correo, revisa tu carpeta de spam o correo no deseado.'
+                            : 'If you can\'t find the email, check your spam folder.'}
+                        </p>
+                      </div>
+
+                      <div className="text-center">
+                        <Button
+                          variant="link"
+                          onClick={handleResend}
+                          disabled={resendTimer > 0 || isLoading}
+                          className="text-sm"
+                        >
+                          {resendTimer > 0
+                            ? `${lang === 'es' ? 'Reenviar en' : 'Resend in'} ${resendTimer}s`
+                            : (lang === 'es' ? 'Reenviar enlace' : 'Resend link')}
+                        </Button>
+                      </div>
+
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setStep('email');
+                          clearError();
+                        }}
+                        className="w-full"
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        {lang === 'es' ? 'Cambiar correo' : 'Change email'}
+                      </Button>
+                    </>
                   )}
-
-                  <div className="text-center">
-                    <Button
-                      variant="link"
-                      onClick={handleResend}
-                      disabled={resendTimer > 0 || isLoading}
-                      className="text-sm"
-                    >
-                      {resendTimer > 0
-                        ? `${lang === 'es' ? 'Reenviar en' : 'Resend in'} ${resendTimer}s`
-                        : (lang === 'es' ? 'Reenviar código' : 'Resend code')}
-                    </Button>
-                  </div>
-
-                  <Button
-                    onClick={handleVerifyOTP}
-                    disabled={isLoading || otpValue.length !== 6}
-                    className="w-full h-12 text-lg"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <>
-                        {lang === 'es' ? 'Verificar' : 'Verify'}
-                        <ArrowRight className="ml-2 h-5 w-5" />
-                      </>
-                    )}
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setStep('email');
-                      setOtpValue('');
-                      clearError();
-                    }}
-                    className="w-full"
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    {lang === 'es' ? 'Cambiar correo' : 'Change email'}
-                  </Button>
                 </motion.div>
               )}
             </AnimatePresence>
