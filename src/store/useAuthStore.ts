@@ -91,6 +91,11 @@ async function restoreProfileFromDB(profileData: any, userId: string) {
       store.toggleReadingGuide();
     }
 
+    // Restore tutorial_seen flag to localStorage so the modal doesn't reopen
+    if (visualPrefs?.tutorial_seen) {
+      localStorage.setItem('tutorial_seen', 'true');
+    }
+
     // Restore recent searches from DB
     try {
       const { data: searches } = await supabase
