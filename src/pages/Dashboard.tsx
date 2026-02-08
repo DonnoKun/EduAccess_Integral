@@ -44,7 +44,7 @@ import {
 import { toast } from 'sonner';
 import { useStore } from '@/store/useStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { recommendedContent } from '@/data/mockData';
+import { recommendedContentES, recommendedContentEN } from '@/data/mockData';
 import LanguageSelector from '@/components/LanguageSelector';
 import type { ThemeMode } from '@/types';
 
@@ -386,12 +386,12 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {recommendedContent.slice(0, 5).map((content) => (
+                    {(lang === 'es' ? recommendedContentES : recommendedContentEN).map((content) => (
                       <li key={content.id}>
                         <Button
                           variant="ghost"
                           className="w-full justify-start text-left h-auto py-2"
-                          onClick={() => navigate(`/search?q=${encodeURIComponent(content.title)}`)}
+                          onClick={() => navigate(`/search?q=${encodeURIComponent(content.query)}`)}
                         >
                           <span className="mr-2" aria-hidden="true">
                             {getSourceIcon(content.source)}

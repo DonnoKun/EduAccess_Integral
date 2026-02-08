@@ -14,7 +14,135 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          current_theme: string
+          has_completed_onboarding: boolean
+          id: string
+          reading_guide_enabled: boolean
+          updated_at: string
+          user_id: string
+          user_name: string
+          visual_preferences: Json
+        }
+        Insert: {
+          created_at?: string
+          current_theme?: string
+          has_completed_onboarding?: boolean
+          id?: string
+          reading_guide_enabled?: boolean
+          updated_at?: string
+          user_id: string
+          user_name?: string
+          visual_preferences?: Json
+        }
+        Update: {
+          created_at?: string
+          current_theme?: string
+          has_completed_onboarding?: boolean
+          id?: string
+          reading_guide_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+          user_name?: string
+          visual_preferences?: Json
+        }
+        Relationships: []
+      }
+      session_analytics: {
+        Row: {
+          content_viewed: number
+          created_at: string
+          id: string
+          session_end: string | null
+          session_start: string
+          tasks_completed: number
+          total_time_seconds: number
+          user_id: string
+        }
+        Insert: {
+          content_viewed?: number
+          created_at?: string
+          id?: string
+          session_end?: string | null
+          session_start?: string
+          tasks_completed?: number
+          total_time_seconds?: number
+          user_id: string
+        }
+        Update: {
+          content_viewed?: number
+          created_at?: string
+          id?: string
+          session_end?: string | null
+          session_start?: string
+          tasks_completed?: number
+          total_time_seconds?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_library: {
+        Row: {
+          content_data: Json
+          created_at: string
+          exercises_completed: number
+          exercises_total: number
+          id: string
+          progress_percentage: number
+          status: string
+          time_spent_seconds: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content_data: Json
+          created_at?: string
+          exercises_completed?: number
+          exercises_total?: number
+          id?: string
+          progress_percentage?: number
+          status?: string
+          time_spent_seconds?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content_data?: Json
+          created_at?: string
+          exercises_completed?: number
+          exercises_total?: number
+          id?: string
+          progress_percentage?: number
+          status?: string
+          time_spent_seconds?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_searches: {
+        Row: {
+          created_at: string
+          id: string
+          query: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          query: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          query?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
