@@ -167,8 +167,11 @@
       "needsRemediation": "🔴 Necesita Remediación"
     },
     "results": "{{count}} resultados",
-    "noResults": "No se encontraron resultados",
+    "noResults": "No se encontraron resultados educativos",
     "noResultsHint": "Intenta ajustar tu búsqueda o filtros",
+    "noResultsForQuery": "No se encontró contenido educativo verificable para esta búsqueda.",
+    "suggestionsTitle": "¿Quizás quisiste buscar?",
+    "trySearchingFor": "Prueba buscando temas educativos como:",
     "gridView": "Vista de cuadrícula",
     "listView": "Vista de lista",
     "badges": {

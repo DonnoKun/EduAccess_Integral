@@ -40,6 +40,9 @@ interface GlobalState {
   searchError: string | null;
   searchFilters: SearchFilters;
   recentSearches: string[];
+  searchSuggestions: string[];
+  searchNoResultsReason: string | null;
+  searchQueryClassification: string | null;
   
   // Current content
   currentContent: SearchResult | null;
@@ -116,6 +119,9 @@ export const useStore = create<GlobalState>()(
       searchError: null,
       searchFilters: {},
       recentSearches: [],
+      searchSuggestions: [],
+      searchNoResultsReason: null,
+      searchQueryClassification: null,
       currentContent: null,
       remediatedContent: null,
       remediationProgress: initialRemediationProgress,
@@ -188,7 +194,7 @@ export const useStore = create<GlobalState>()(
       setSearchQuery: (query) => set({ searchQuery: query }),
 
       performSearch: async (query) => {
-        set({ searchLoading: true, searchError: null, searchQuery: query });
+        set({ searchLoading: true, searchError: null, searchQuery: query, searchSuggestions: [], searchNoResultsReason: null, searchQueryClassification: null });
         get().trackEvent({ type: 'search', details: { query } });
 
         // Track real searches in history (only non-empty queries)
@@ -201,14 +207,12 @@ export const useStore = create<GlobalState>()(
 
         try {
           const filters = get().searchFilters;
-          const profile = get().visualProfile;
           const lang = localStorage.getItem('i18nextLng')?.split('-')[0] || 'es';
 
           // Try AI-powered search with a timeout
           const defaultQuery = lang === 'es' ? 'contenido educativo general' : 'educational content';
           console.log('🔍 Calling AI search for:', query || defaultQuery, 'lang:', lang);
           
-          // Create a promise race between the search call and a timeout
           const searchPromise = supabase.functions.invoke('search-content', {
             body: { 
               query: query || defaultQuery, 
@@ -246,40 +250,63 @@ export const useStore = create<GlobalState>()(
             return;
           }
 
-          if (data?.success && data?.results?.length > 0) {
-            console.log('✅ AI search returned', data.results.length, 'results');
-            
-            // Map AI results to SearchResult type, adding color based on source
-            const sourceColors: Record<string, string> = {
-              youtube: '#FF0000',
-              khan: '#14BF96',
-              openstax: '#F47B20',
-              wikipedia: '#333333',
-              oer: '#2196F3',
-              arxiv: '#B31B1B',
-            };
+          if (data?.success) {
+            // Store classification metadata
+            const classification = data.queryClassification || null;
+            const suggestions = data.suggestions || [];
+            const noResultsReason = data.noResultsReason || null;
 
-            const aiResults: SearchResult[] = data.results.map((r: any) => ({
-              ...r,
-              color: r.color || sourceColors[r.source] || '#6366F1',
-              thumbnail: r.thumbnail || `https://placehold.co/320x180/${(sourceColors[r.source] || '#6366F1').replace('#', '')}/FFFFFF?text=${encodeURIComponent(r.title.split(' ').slice(0, 3).join(' '))}`,
-            }));
+            console.log('📊 Classification:', classification, '| Results:', data.results?.length || 0, '| Suggestions:', suggestions.length);
 
-            // Apply local filters if needed
-            let results = aiResults;
-            if (filters.contentType?.length) {
-              results = results.filter((r) => filters.contentType!.includes(r.contentType));
-            }
-            if (filters.educationLevel?.length) {
-              results = results.filter((r) => filters.educationLevel!.includes(r.educationLevel));
-            }
-            if (filters.accessibilityStatus?.length) {
-              results = results.filter((r) => filters.accessibilityStatus!.includes(r.accessibilityStatus));
-            }
+            if (data.results?.length > 0) {
+              const sourceColors: Record<string, string> = {
+                youtube: '#FF0000',
+                khan: '#14BF96',
+                openstax: '#F47B20',
+                wikipedia: '#333333',
+                oer: '#2196F3',
+                arxiv: '#B31B1B',
+              };
 
-            set({ searchResults: results, searchLoading: false });
+              const aiResults: SearchResult[] = data.results.map((r: any) => ({
+                ...r,
+                color: r.color || sourceColors[r.source] || '#6366F1',
+                thumbnail: r.thumbnail || `https://placehold.co/320x180/${(sourceColors[r.source] || '#6366F1').replace('#', '')}/FFFFFF?text=${encodeURIComponent(r.title.split(' ').slice(0, 3).join(' '))}`,
+              }));
+
+              // Apply local filters
+              let results = aiResults;
+              if (filters.contentType?.length) {
+                results = results.filter((r) => filters.contentType!.includes(r.contentType));
+              }
+              if (filters.educationLevel?.length) {
+                results = results.filter((r) => filters.educationLevel!.includes(r.educationLevel));
+              }
+              if (filters.accessibilityStatus?.length) {
+                results = results.filter((r) => filters.accessibilityStatus!.includes(r.accessibilityStatus));
+              }
+
+              set({ 
+                searchResults: results, 
+                searchLoading: false,
+                searchQueryClassification: classification,
+                searchSuggestions: suggestions,
+                searchNoResultsReason: null,
+              });
+            } else {
+              // AI intentionally returned 0 results (unknown entity, nonsense, etc.)
+              console.log('ℹ️ AI returned 0 results intentionally:', noResultsReason);
+              set({ 
+                searchResults: [], 
+                searchLoading: false,
+                searchQueryClassification: classification,
+                searchSuggestions: suggestions,
+                searchNoResultsReason: noResultsReason,
+              });
+            }
           } else {
-            console.warn('⚠️ AI search returned no results, using mock data');
+            // API error, fall back to mock data
+            console.warn('⚠️ AI search returned failure, using mock data');
             const mockData = lang === 'es' ? mockSearchResultsES : mockSearchResults;
             let results = mockData;
             if (query.trim()) {
