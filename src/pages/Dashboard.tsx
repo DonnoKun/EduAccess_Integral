@@ -4,11 +4,12 @@
  */
 
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import PendingCoursesNotification from '@/components/PendingCoursesNotification';
+import PlatformTutorial from '@/components/PlatformTutorial';
 import {
   Search,
   BookOpen,
@@ -18,6 +19,7 @@ import {
   CheckCircle2,
   Target,
   Sparkles,
+  HelpCircle,
   TrendingUp,
   Eye,
   Menu,
@@ -82,6 +84,17 @@ export default function Dashboard() {
 
   // Load real aggregate analytics from DB
   const [dbAnalytics, setDbAnalytics] = useState({ totalTime: 0, totalContent: 0, totalTasks: 0, totalCourses: 0 });
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // Show tutorial automatically for new users (first time after onboarding)
+  useEffect(() => {
+    const tutorialSeen = localStorage.getItem('tutorial_seen');
+    if (!tutorialSeen && hasCompletedOnboarding && isAuthenticated) {
+      // Small delay so dashboard renders first
+      const timer = setTimeout(() => setShowTutorial(true), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [hasCompletedOnboarding, isAuthenticated]);
   
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -359,11 +372,16 @@ export default function Dashboard() {
                       <Settings className="mr-2 h-4 w-4" aria-hidden="true" />
                       {t('dashboard.quickActions.settings')}
                     </Button>
+                    <Button variant="outline" onClick={() => setShowTutorial(true)} className="touch-target">
+                      <HelpCircle className="mr-2 h-4 w-4" aria-hidden="true" />
+                      {lang === 'es' ? 'Tutorial' : 'Tutorial'}
+                    </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
+
 
           {/* Pending Courses Notification */}
           <motion.div variants={item}>
@@ -539,6 +557,9 @@ export default function Dashboard() {
           </motion.div>
         </motion.div>
       </main>
+
+      {/* Platform Tutorial Dialog */}
+      <PlatformTutorial open={showTutorial} onClose={() => setShowTutorial(false)} />
     </div>
   );
 }
