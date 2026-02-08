@@ -10,6 +10,7 @@ import { useLibrarySync } from '@/hooks/useLibrarySync';
 import { useSessionTracker } from '@/hooks/useSessionTracker';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import CourseImage from '@/components/CourseImage';
 import {
   ArrowLeft,
   ZoomIn,
@@ -59,6 +60,8 @@ interface CourseSection {
   title: string;
   content: string;
   keyPoints?: string[];
+  image_prompt?: string;
+  image_alt?: string;
 }
 
 interface CourseExample {
@@ -126,6 +129,10 @@ export default function ContentViewer() {
 
   // Track content view time
   const viewStartRef = useRef<number>(Date.now());
+  
+  // Auto-scroll refs for loading progress
+  const loadingCardRef = useRef<HTMLDivElement>(null);
+  const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // DB sync hooks
   const { saveContentToDB, removeContentFromDB, updateProgressInDB } = useLibrarySync();
@@ -150,6 +157,21 @@ export default function ContentViewer() {
     viewStartRef.current = Date.now();
     incrementContentViewed();
   }, []);
+
+  // Auto-scroll to loading section on mount and as steps progress
+  useEffect(() => {
+    if (isLoading && loadingCardRef.current) {
+      setTimeout(() => {
+        loadingCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 400);
+    }
+  }, [isLoading]);
+
+  useEffect(() => {
+    if (isLoading && stepRefs.current[loadingStage]) {
+      stepRefs.current[loadingStage]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [loadingStage, isLoading]);
 
   // Fetch course content from AI
   useEffect(() => {
@@ -258,15 +280,14 @@ export default function ContentViewer() {
     // Recall: how much of the expected answer is covered by the user
     const recall = correctInUser / correctWords.length;
 
-    // BOTH directions must be satisfied for correctness
-    // Recall is more important - the student must cover the key concepts
+    // STRICTER thresholds - student must cover most key concepts
     let result: 'correct' | 'partial' | 'incorrect';
-    if (recall >= 0.4 && precision >= 0.3) {
+    if (recall >= 0.75 && precision >= 0.5) {
       result = 'correct';
       setCheckedAnswers(prev => ({ ...prev, [index]: 'correct' }));
       toast.success(lang === 'es' ? '✅ ¡Correcto! Muy bien.' : '✅ Correct! Well done.');
       incrementTasksCompleted();
-    } else if (recall >= 0.2 || (precision >= 0.4 && recall >= 0.15)) {
+    } else if (recall >= 0.35 || (precision >= 0.5 && recall >= 0.25)) {
       result = 'partial';
       setCheckedAnswers(prev => ({ ...prev, [index]: 'partial' }));
       toast.info(lang === 'es' ? '🤔 Parcialmente correcto. Revisa la solución.' : '🤔 Partially correct. Check the solution.');
@@ -478,7 +499,7 @@ export default function ContentViewer() {
 
           {/* Loading State */}
           {isLoading && (
-            <Card>
+            <Card ref={loadingCardRef}>
               <CardContent className="p-8">
                 <div className="flex flex-col items-center justify-center py-8 gap-6">
                   <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>
@@ -494,7 +515,11 @@ export default function ContentViewer() {
                   </div>
                   <div className="w-full max-w-sm space-y-2">
                     {loadingMessages.map((msg, i) => (
-                      <div key={i} className={`flex items-center gap-2 text-sm transition-opacity ${i <= loadingStage ? 'opacity-100' : 'opacity-30'}`}>
+                      <div
+                        key={i}
+                        ref={el => stepRefs.current[i] = el}
+                        className={`flex items-center gap-2 text-sm transition-opacity ${i <= loadingStage ? 'opacity-100' : 'opacity-30'}`}
+                      >
                         {i < loadingStage ? <Check className="h-4 w-4 text-green-500 flex-shrink-0" /> : i === loadingStage ? <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" /> : <div className="h-4 w-4 rounded-full border border-muted-foreground/30 flex-shrink-0" />}
                         <span>{msg}</span>
                       </div>
@@ -549,7 +574,7 @@ export default function ContentViewer() {
                             {lang === 'es' ? 'Puntos Clave' : 'Key Points'}
                           </h4>
                           <ul className="space-y-2">
-                            {section.keyPoints.map((point, i) => (
+                      {section.keyPoints.map((point, i) => (
                               <li key={i} className="flex items-start gap-2" style={{ fontSize: `${fontSize}px` }}>
                                 <span className="text-primary mt-1 flex-shrink-0">•</span>
                                 <span>{point}</span>
@@ -557,6 +582,14 @@ export default function ContentViewer() {
                             ))}
                           </ul>
                         </div>
+                      )}
+                      {/* AI-generated image for this section */}
+                      {section.image_prompt && (
+                        <CourseImage
+                          prompt={section.image_prompt}
+                          alt={section.image_alt || section.title}
+                          className="mt-4"
+                        />
                       )}
                     </CardContent>
                   </Card>

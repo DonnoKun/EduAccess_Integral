@@ -122,16 +122,9 @@ export default function SearchPage() {
     college: t('search.educationLevels.college'),
   };
 
+  // ProtectedRoute already handles auth/onboarding redirects
+  // This effect only handles search execution
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-    if (!hasCompletedOnboarding) {
-      navigate('/onboarding');
-      return;
-    }
-    
     const queryParam = searchParams.get('q');
     if (queryParam) {
       setLocalQuery(queryParam);
@@ -139,7 +132,7 @@ export default function SearchPage() {
     } else {
       performSearch('');
     }
-  }, [searchParams, isAuthenticated, hasCompletedOnboarding, navigate, performSearch]);
+  }, [searchParams, performSearch]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
