@@ -204,9 +204,11 @@ export const useStore = create<GlobalState>()(
           const profile = get().visualProfile;
           const lang = localStorage.getItem('i18nextLng')?.split('-')[0] || 'es';
 
-          // Try AI-powered search first
+          // Try AI-powered search with a timeout
           console.log('🔍 Calling AI search for:', query);
-          const { data, error } = await supabase.functions.invoke('search-content', {
+          
+          // Create a promise race between the search call and a timeout
+          const searchPromise = supabase.functions.invoke('search-content', {
             body: { 
               query: query || 'educational content', 
               filters: {
@@ -219,9 +221,14 @@ export const useStore = create<GlobalState>()(
             },
           });
 
+          const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) => {
+            setTimeout(() => resolve({ data: null, error: new Error('Search timed out after 35 seconds') }), 35000);
+          });
+
+          const { data, error } = await Promise.race([searchPromise, timeoutPromise]);
+
           if (error) {
             console.warn('⚠️ AI search failed, falling back to mock data:', error);
-            // Fallback to mock data
             let results = mockSearchResults;
             if (query.trim()) {
               const lowerQuery = query.toLowerCase();
