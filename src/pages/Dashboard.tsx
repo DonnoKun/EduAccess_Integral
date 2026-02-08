@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import PendingCoursesNotification from '@/components/PendingCoursesNotification';
 import {
   Search,
   BookOpen,
@@ -362,6 +363,11 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+          </motion.div>
+
+          {/* Pending Courses Notification */}
+          <motion.div variants={item}>
+            <PendingCoursesNotification />
           </motion.div>
 
           {/* Quick Stats & Recent Activity */}
