@@ -61,7 +61,8 @@ For each result provide: title, source, url, description, contentType (video/art
 
 IMPORTANT: You MUST return exactly 6 results in the results array. Never return an empty array.`;
 
-    const userPrompt = `Find 6 educational resources about: "${query || 'general educational content'}"${filterContext}
+    const defaultQuery = language === 'es' ? 'contenido educativo general variado' : 'general educational content';
+    const userPrompt = `Find 6 educational resources about: "${query || defaultQuery}"${filterContext}
 
 You MUST return exactly 6 results. Use the search_results tool.`;
 

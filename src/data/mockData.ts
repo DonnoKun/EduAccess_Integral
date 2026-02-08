@@ -613,6 +613,20 @@ export const sampleProfiles: VisualProfile[] = [
 
 export const recentSearches: string[] = [];
 
+// Spanish mock search results for fallback
+export const mockSearchResultsES: SearchResult[] = [
+  { ...mockSearchResults[0], title: 'Introducción al Álgebra Lineal', description: 'Aprende los fundamentos de vectores, matrices y transformaciones lineales en esta serie de videos.' },
+  { ...mockSearchResults[1], title: 'Fotosíntesis Explicada', description: 'Artículo completo sobre el proceso químico por el cual las plantas convierten la energía luminosa en energía química.' },
+  { ...mockSearchResults[2], title: 'Ecuaciones Cuadráticas - Problemas de Práctica', description: '20 problemas de práctica con soluciones paso a paso para dominar las ecuaciones cuadráticas.' },
+  { ...mockSearchResults[3], title: 'Programación Python para Principiantes', description: 'Guía completa para principiantes en programación Python, cubriendo variables, bucles y funciones.' },
+  { ...mockSearchResults[4], title: 'Fundamentos de Biología Celular', description: 'Capítulo de libro de texto sobre estructura celular, organelos y procesos celulares.' },
+  { ...mockSearchResults[5], title: 'La Revolución Francesa', description: 'Relato histórico detallado de la Revolución Francesa, sus causas y consecuencias.' },
+  { ...mockSearchResults[6], title: 'Química Básica: Átomos y Moléculas', description: 'Introducción a la estructura atómica, enlaces químicos y formaciones moleculares.' },
+  { ...mockSearchResults[7], title: 'Introducción al Aprendizaje Automático', description: 'Artículo académico que resume los conceptos centrales de los algoritmos de aprendizaje automático.' },
+  { ...mockSearchResults[8], title: 'Geografía Mundial: Continentes y Océanos', description: 'Lección interactiva sobre geografía mundial, principales formas de relieve y cuerpos de agua.' },
+  { ...mockSearchResults[9], title: 'Shakespeare: Análisis de Romeo y Julieta', description: 'Análisis literario de la famosa tragedia de Shakespeare, explorando temas y simbolismo.' },
+];
+
 // Bilingual recommended content
 export const recommendedContentES = [
   { id: 'rec-1', title: 'Álgebra Lineal: Vectores y Matrices', source: 'khan', query: 'álgebra lineal vectores matrices' },
