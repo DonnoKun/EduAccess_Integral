@@ -55,7 +55,8 @@ import type { ContentType, EducationLevel, AccessibilityStatus, ThemeMode } from
 
 export default function SearchPage() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language?.split('-')[0] || 'es';
   const [searchParams, setSearchParams] = useSearchParams();
   const { 
     searchQuery,
@@ -77,6 +78,33 @@ export default function SearchPage() {
 
   const [localQuery, setLocalQuery] = useState(searchParams.get('q') || '');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [isListening, setIsListening] = useState(false);
+
+  const handleVoiceSearch = () => {
+    const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognitionAPI) {
+      toast.error(lang === 'es' ? 'Tu navegador no soporta búsqueda por voz' : 'Voice search not supported');
+      return;
+    }
+    const recognition = new SpeechRecognitionAPI();
+    recognition.lang = lang === 'es' ? 'es-ES' : 'en-US';
+    recognition.interimResults = false;
+    setIsListening(true);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setLocalQuery(transcript);
+      setSearchParams({ q: transcript });
+      performSearch(transcript);
+      setIsListening(false);
+    };
+    recognition.onerror = () => {
+      toast.error(lang === 'es' ? 'Error en reconocimiento de voz' : 'Voice recognition error');
+      setIsListening(false);
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.start();
+    toast.info(lang === 'es' ? '🎤 Habla ahora...' : '🎤 Speak now...');
+  };
 
   const contentTypeLabels: Record<ContentType, string> = {
     video: t('search.contentTypes.video'),
@@ -130,10 +158,11 @@ export default function SearchPage() {
     const content = searchResults.find((r) => r.id === contentId);
     if (content) {
       selectContent(content);
+      const navState = { fromSearch: true, searchQuery: localQuery };
       if (content.accessibilityStatus === 'needs_remediation') {
-        navigate(`/remediate/${contentId}`);
+        navigate(`/remediate/${contentId}`, { state: navState });
       } else {
-        navigate(`/content/${contentId}`);
+        navigate(`/content/${contentId}`, { state: navState });
       }
     }
   };
@@ -380,14 +409,21 @@ export default function SearchPage() {
           <div className="flex gap-2">
             <div className="relative flex-1">
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" aria-hidden="true" />
-              <Input type="search" placeholder={t('search.placeholder')} value={localQuery} onChange={(e) => setLocalQuery(e.target.value)} className="pl-10 pr-10 h-12 text-lg" aria-label={t('search.placeholder')} />
+              <Input type="text" placeholder={t('search.placeholder')} value={localQuery} onChange={(e) => setLocalQuery(e.target.value)} className="pl-10 pr-10 h-12 text-lg" aria-label={t('search.placeholder')} />
               {localQuery && (
                 <button type="button" onClick={() => { setLocalQuery(''); setSearchParams({}); performSearch(''); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label={t('search.clearSearch')}>
                   <X className="h-5 w-5" />
                 </button>
               )}
             </div>
-            <Button type="button" variant="outline" size="icon" className="h-12 w-12" aria-label={t('search.voiceSearch')}>
+            <Button 
+              type="button" 
+              variant={isListening ? 'default' : 'outline'} 
+              size="icon" 
+              className={`h-12 w-12 ${isListening ? 'animate-pulse' : ''}`} 
+              aria-label={t('search.voiceSearch')}
+              onClick={handleVoiceSearch}
+            >
               <Mic className="h-5 w-5" />
             </Button>
             <Button type="submit" className="h-12 px-6">{t('search.searchButton')}</Button>
