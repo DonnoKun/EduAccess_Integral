@@ -53,7 +53,7 @@ function restoreProfileFromDB(profileData: any) {
 
     // Restore visual preferences if available and not already set
     const visualPrefs = profileData.visual_preferences;
-    if (visualPrefs && !store.visualProfile) {
+    if (visualPrefs) {
       console.log('🔄 Restoring visual profile from database');
       const prefs = {
         fontSize: visualPrefs.fontSize || 20,
@@ -69,6 +69,12 @@ function restoreProfileFromDB(profileData: any) {
         '6/12' as SnellenNotation,
         prefs
       );
+
+      // Restore TTS setting if saved
+      if (visualPrefs.enableTTS !== undefined) {
+        restoredProfile.technicalParameters.enableTTS = visualPrefs.enableTTS;
+      }
+
       store.setVisualProfile(restoredProfile);
     }
 
