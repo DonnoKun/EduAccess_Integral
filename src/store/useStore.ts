@@ -203,6 +203,18 @@ export const useStore = create<GlobalState>()(
           const filtered = current.filter((s) => s.toLowerCase() !== query.toLowerCase());
           const updated = [query, ...filtered].slice(0, 10);
           set({ recentSearches: updated });
+
+          // Persist to DB (fire-and-forget)
+          supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user) {
+              supabase
+                .from('user_searches')
+                .insert({ user_id: user.id, query: query.trim() } as any)
+                .then(({ error }) => {
+                  if (error) console.warn('Failed to save search to DB:', error);
+                });
+            }
+          });
         }
 
         try {

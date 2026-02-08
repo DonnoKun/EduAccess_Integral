@@ -35,10 +35,11 @@ interface AuthState {
 }
 
 /**
- * Restores visual profile, theme, onboarding status from the DB profile
- * into the global Zustand store so the user skips onboarding on re-login.
+ * Restores visual profile, theme, onboarding status, and recent searches
+ * from the DB profile into the global Zustand store so the user has full
+ * continuity on any device/session.
  */
-function restoreProfileFromDB(profileData: any) {
+async function restoreProfileFromDB(profileData: any, userId: string) {
   try {
     if (!profileData) return;
 
@@ -89,6 +90,33 @@ function restoreProfileFromDB(profileData: any) {
     if (profileData.reading_guide_enabled && !store.readingGuideEnabled) {
       store.toggleReadingGuide();
     }
+
+    // Restore recent searches from DB
+    try {
+      const { data: searches } = await supabase
+        .from('user_searches')
+        .select('query, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (searches && searches.length > 0) {
+        // Deduplicate, keeping most recent
+        const seen = new Set<string>();
+        const uniqueSearches: string[] = [];
+        for (const s of searches) {
+          const normalized = s.query.toLowerCase();
+          if (!seen.has(normalized)) {
+            seen.add(normalized);
+            uniqueSearches.push(s.query);
+          }
+        }
+        console.log('🔄 Restored', uniqueSearches.length, 'recent searches from database');
+        useStore.setState({ recentSearches: uniqueSearches });
+      }
+    } catch (err) {
+      console.warn('Could not restore recent searches:', err);
+    }
   } catch (err) {
     console.warn('Could not restore profile from DB:', err);
   }
@@ -136,10 +164,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             return;
           }
           // For other SIGNED_IN triggers (e.g. re-auth)
-          fetchProfile(session.user.id).then((profile) => {
+          fetchProfile(session.user.id).then(async (profile) => {
             if (!isMounted) return;
             if (profile) {
-              restoreProfileFromDB(profile);
+              await restoreProfileFromDB(profile, session.user.id);
             }
             set({
               currentUser: {
@@ -192,7 +220,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
               name: (profile as any)?.user_name || '',
             },
           }));
-          restoreProfileFromDB(profile);
+          await restoreProfileFromDB(profile, session.user.id);
         }
       }
     } catch (err) {
@@ -240,7 +268,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
         // Restore profile/onboarding BEFORE setting isAuthenticated
         // so routing sees hasCompletedOnboarding=true on the first render
-        restoreProfileFromDB(profile);
+        await restoreProfileFromDB(profile, data.user.id);
 
         set({
           currentUser: {
