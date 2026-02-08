@@ -98,8 +98,26 @@ export default function SearchPage() {
       performSearch(transcript);
       setIsListening(false);
     };
-    recognition.onerror = () => {
-      toast.error(lang === 'es' ? 'Error en reconocimiento de voz' : 'Voice recognition error');
+    recognition.onerror = (event: any) => {
+      let msg = '';
+      switch (event.error) {
+        case 'not-allowed':
+        case 'service-not-allowed':
+          msg = lang === 'es' ? 'Permiso de micrófono denegado. Actívalo en la configuración del navegador.' : 'Microphone permission denied.';
+          break;
+        case 'no-speech':
+          msg = lang === 'es' ? 'No se detectó voz. Intenta de nuevo.' : 'No speech detected.';
+          break;
+        case 'network':
+          msg = lang === 'es' ? 'Error de red en reconocimiento de voz.' : 'Network error in voice recognition.';
+          break;
+        case 'aborted':
+          msg = lang === 'es' ? 'Reconocimiento de voz cancelado.' : 'Voice recognition cancelled.';
+          break;
+        default:
+          msg = lang === 'es' ? `Error en reconocimiento de voz: ${event.error || 'desconocido'}` : `Voice recognition error: ${event.error || 'unknown'}`;
+      }
+      toast.error(msg);
       setIsListening(false);
     };
     recognition.onend = () => setIsListening(false);

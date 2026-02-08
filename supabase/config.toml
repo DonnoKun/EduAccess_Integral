@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.generate-course-image]
 verify_jwt = false
+
+[functions.manage-auth-token]
+verify_jwt = false
