@@ -231,8 +231,15 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
     }
   }, [currentStep, open, speakStep]);
 
+  const dialogContentRef = useRef<HTMLDivElement>(null);
+
+  const scrollToTop = () => {
+    dialogContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleNext = () => {
     synthRef.current?.cancel();
+    scrollToTop();
     if (isLast) {
       handleFinish();
     } else {
@@ -242,6 +249,7 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
 
   const handlePrev = () => {
     synthRef.current?.cancel();
+    scrollToTop();
     if (!isFirst) setCurrentStep((s) => s - 1);
   };
 
@@ -266,6 +274,7 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleFinish()}>
       <DialogContent
+        ref={dialogContentRef}
         className="sm:max-w-lg max-h-[90vh] overflow-x-hidden tutorial-dialog-scrollbar"
         style={{
           fontSize: '16px',
@@ -299,6 +308,7 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
               key={i}
               onClick={() => {
                 synthRef.current?.cancel();
+                scrollToTop();
                 setCurrentStep(i);
               }}
               className={`h-2 rounded-full transition-all ${
