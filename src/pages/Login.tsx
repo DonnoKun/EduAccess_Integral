@@ -19,12 +19,14 @@ import {
   Copy,
   Check,
   RefreshCw,
+  GraduationCap,
+  School,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore, type AppRole } from '@/store/useAuthStore';
 import { useStore } from '@/store/useStore';
 import LanguageSelector from '@/components/LanguageSelector';
 
@@ -42,6 +44,7 @@ export default function Login() {
   const [token, setToken] = useState('');
   const [generatedToken, setGeneratedToken] = useState('');
   const [tokenCopied, setTokenCopied] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<AppRole>('student');
 
   const emailInputRef = useRef<HTMLInputElement>(null);
   const tokenInputRef = useRef<HTMLInputElement>(null);
@@ -95,7 +98,7 @@ export default function Login() {
       return;
     }
 
-    const result = await register(email);
+    const result = await register(email, selectedRole);
     if (result.success && result.token) {
       setGeneratedToken(result.token);
       setStep('register-success');
@@ -279,6 +282,48 @@ export default function Login() {
                       onKeyDown={(e) => e.key === 'Enter' && handleRegister()}
                     />
                   </div>
+
+                  {/* Role selection */}
+                  <fieldset className="space-y-2">
+                    <legend className="text-sm font-medium mb-2 flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4" />
+                      {lang === 'es' ? 'Tipo de cuenta' : 'Account type'}
+                    </legend>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {([
+                        {
+                          value: 'student' as AppRole,
+                          icon: <GraduationCap className="h-5 w-5" aria-hidden="true" />,
+                          label: lang === 'es' ? 'Estudiante' : 'Student',
+                          hint: lang === 'es' ? 'Aprende y se une a cursos' : 'Learns and joins courses',
+                        },
+                        {
+                          value: 'teacher' as AppRole,
+                          icon: <School className="h-5 w-5" aria-hidden="true" />,
+                          label: lang === 'es' ? 'Docente / Institución' : 'Teacher / Institution',
+                          hint: lang === 'es' ? 'Crea grupos y lecciones' : 'Creates groups and lessons',
+                        },
+                      ]).map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setSelectedRole(option.value)}
+                          aria-pressed={selectedRole === option.value}
+                          className={`flex items-start gap-2 rounded-xl border p-3 text-left transition-colors touch-target ${
+                            selectedRole === option.value
+                              ? 'border-primary bg-primary/10'
+                              : 'border-border hover:bg-muted/50'
+                          }`}
+                        >
+                          <span className="text-primary mt-0.5">{option.icon}</span>
+                          <span className="min-w-0">
+                            <span className="block font-medium break-words">{option.label}</span>
+                            <span className="block text-xs text-muted-foreground break-words">{option.hint}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
 
                   <Button
                     onClick={handleRegister}
