@@ -1,16 +1,1 @@
-project_id = "qixohhlvelomeqapuerz"
-
-[functions.remediate-content]
-verify_jwt = false
-
-[functions.search-content]
-verify_jwt = false
-
-[functions.generate-course-content]
-verify_jwt = false
-
-[functions.generate-course-image]
-verify_jwt = false
-
-[functions.manage-auth-token]
-verify_jwt = false
+project_id = "mflfznpwwwkyfedfgnwl"
