@@ -17,8 +17,11 @@ export interface User {
   name: string;
 }
 
+export type AppRole = 'teacher' | 'student';
+
 interface AuthState {
   currentUser: User | null;
+  role: AppRole | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -27,7 +30,7 @@ interface AuthState {
   // Actions
   initialize: () => Promise<void>;
   login: (email: string, token: string) => Promise<boolean>;
-  register: (email: string) => Promise<{ success: boolean; token?: string; error?: string }>;
+  register: (email: string, role?: AppRole) => Promise<{ success: boolean; token?: string; error?: string }>;
   resetToken: (email: string) => Promise<{ success: boolean; token?: string; error?: string }>;
   logout: () => void;
   clearError: () => void;
@@ -127,8 +130,24 @@ async function restoreProfileFromDB(profileData: any, userId: string) {
   }
 }
 
+/** Reads the user's role from the user_roles table (teacher | student). */
+async function fetchUserRole(userId: string): Promise<AppRole | null> {
+  try {
+    const { data } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .limit(1)
+      .maybeSingle();
+    return ((data as any)?.role as AppRole) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export const useAuthStore = create<AuthState>()((set, get) => ({
   currentUser: null,
+  role: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
@@ -174,12 +193,14 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             if (profile) {
               await restoreProfileFromDB(profile, session.user.id);
             }
+            const role = await fetchUserRole(session.user.id);
             set({
               currentUser: {
                 id: session.user.id,
                 email: session.user.email || '',
                 name: (profile as any)?.user_name || '',
               },
+              role,
               isAuthenticated: true,
             });
           });
@@ -217,6 +238,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         });
 
         // Fetch profile BEFORE marking initialized to restore onboarding status
+        fetchUserRole(session.user.id).then((role) => {
+          if (isMounted) set({ role });
+        });
+
         const profile = await fetchProfile(session.user.id);
         if (isMounted && profile) {
           set((s) => ({
@@ -275,12 +300,15 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         // so routing sees hasCompletedOnboarding=true on the first render
         await restoreProfileFromDB(profile, data.user.id);
 
+        const role = await fetchUserRole(data.user.id);
+
         set({
           currentUser: {
             id: data.user.id,
             email: data.user.email || '',
             name: (profile as any)?.user_name || '',
           },
+          role,
           isAuthenticated: true,
           isLoading: false,
         });
@@ -297,12 +325,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
   },
 
-  register: async (email: string) => {
+  register: async (email: string, role: AppRole = 'student') => {
     set({ isLoading: true, error: null });
 
     try {
       const { data, error } = await supabase.functions.invoke('manage-auth-token', {
-        body: { action: 'register', email },
+        body: { action: 'register', email, role },
       });
 
       if (error) {
@@ -362,6 +390,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     supabase.auth.signOut();
     set({
       currentUser: null,
+      role: null,
       isAuthenticated: false,
       error: null,
     });
