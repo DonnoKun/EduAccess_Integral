@@ -24,7 +24,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, email } = await req.json();
+    const { action, email, role } = await req.json();
 
     if (!email || !action) {
       return new Response(
@@ -59,7 +59,16 @@ serve(async (req) => {
         throw error;
       }
 
-      console.log("✅ User registered:", email);
+      // Assign the role chosen at sign-up (teacher | student)
+      const chosenRole = role === "teacher" ? "teacher" : "student";
+      if (data?.user?.id) {
+        const { error: roleError } = await supabaseAdmin
+          .from("user_roles")
+          .insert({ user_id: data.user.id, role: chosenRole });
+        if (roleError) console.error("Role assignment error:", roleError.message);
+      }
+
+      console.log("✅ User registered:", email, "as", chosenRole);
 
       return new Response(
         JSON.stringify({ success: true, token }),
