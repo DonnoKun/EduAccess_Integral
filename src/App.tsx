@@ -19,6 +19,9 @@ import RemediatePage from "./pages/Remediate";
 import ContentViewer from "./pages/ContentViewer";
 import Settings from "./pages/Settings";
 import LibraryPage from "./pages/Library";
+import CoursesPage from "./pages/Courses";
+import GroupDetailPage from "./pages/GroupDetail";
+import LessonViewerPage from "./pages/LessonViewer";
 import NotFound from "./pages/NotFound";
 import ReadingGuide from "./components/ReadingGuide";
 
@@ -128,6 +131,21 @@ function AppContent() {
       <Route path="/library" element={
         <ProtectedRoute>
           <LibraryPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/courses" element={
+        <ProtectedRoute>
+          <CoursesPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/courses/:groupId" element={
+        <ProtectedRoute>
+          <GroupDetailPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/courses/:groupId/lessons/:lessonId" element={
+        <ProtectedRoute>
+          <LessonViewerPage />
         </ProtectedRoute>
       } />
       <Route path="*" element={<NotFound />} />

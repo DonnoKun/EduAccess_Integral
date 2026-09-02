@@ -5,7 +5,7 @@
 
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, LayoutDashboard, BookOpen, Settings } from 'lucide-react';
+import { Search, LayoutDashboard, BookOpen, Settings, GraduationCap } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface NavItem {
@@ -25,6 +25,7 @@ export default function MobileBottomNav() {
   const navItems: NavItem[] = [
     { path: '/dashboard', labelKey: 'navigation.dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
     { path: '/search', labelKey: 'navigation.search', icon: <Search className="h-5 w-5" /> },
+    { path: '/courses', labelKey: 'navigation.courses', icon: <GraduationCap className="h-5 w-5" /> },
     { path: '/library', labelKey: 'navigation.library', icon: <BookOpen className="h-5 w-5" /> },
     { path: '/settings', labelKey: 'navigation.settings', icon: <Settings className="h-5 w-5" /> },
   ];

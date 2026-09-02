@@ -29,6 +29,7 @@ import {
   User,
   ChevronDown,
   LogOut,
+  GraduationCap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -367,6 +368,10 @@ export default function Dashboard() {
                     <Button variant="outline" onClick={() => navigate('/library')} className="touch-target">
                       <BookOpen className="mr-2 h-4 w-4" aria-hidden="true" />
                       {t('dashboard.quickActions.library')}
+                    </Button>
+                    <Button variant="outline" onClick={() => navigate('/courses')} className="touch-target">
+                      <GraduationCap className="mr-2 h-4 w-4" aria-hidden="true" />
+                      {t('navigation.courses')}
                     </Button>
                     <Button variant="ghost" onClick={() => navigate('/settings')} className="touch-target">
                       <Settings className="mr-2 h-4 w-4" aria-hidden="true" />
