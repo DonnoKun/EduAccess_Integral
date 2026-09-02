@@ -133,6 +133,21 @@ function AppContent() {
           <LibraryPage />
         </ProtectedRoute>
       } />
+      <Route path="/courses" element={
+        <ProtectedRoute>
+          <CoursesPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/courses/:groupId" element={
+        <ProtectedRoute>
+          <GroupDetailPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/courses/:groupId/lessons/:lessonId" element={
+        <ProtectedRoute>
+          <LessonViewerPage />
+        </ProtectedRoute>
+      } />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
