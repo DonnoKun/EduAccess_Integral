@@ -19,6 +19,9 @@ import RemediatePage from "./pages/Remediate";
 import ContentViewer from "./pages/ContentViewer";
 import Settings from "./pages/Settings";
 import LibraryPage from "./pages/Library";
+import CoursesPage from "./pages/Courses";
+import GroupDetailPage from "./pages/GroupDetail";
+import LessonViewerPage from "./pages/LessonViewer";
 import NotFound from "./pages/NotFound";
 import ReadingGuide from "./components/ReadingGuide";
 
