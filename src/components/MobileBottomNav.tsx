@@ -5,7 +5,7 @@
 
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, LayoutDashboard, BookOpen, Settings } from 'lucide-react';
+import { Search, LayoutDashboard, BookOpen, Settings, GraduationCap } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface NavItem {
