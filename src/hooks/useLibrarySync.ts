@@ -123,9 +123,11 @@ export function useLibrarySync() {
     // Load initial data
     loadLibraryFromDB();
 
-    // Subscribe to realtime changes for this user's library
+    // Subscribe to realtime changes for this user's library.
+    // Unique suffix avoids reusing an already-subscribed channel instance
+    // when the hook mounts more than once (StrictMode / multiple consumers).
     const channel = supabase
-      .channel(`user_library_${currentUser.id}`)
+      .channel(`user_library_${currentUser.id}_${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         {
