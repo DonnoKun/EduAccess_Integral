@@ -79,7 +79,7 @@ export default function Dashboard() {
     toggleReadingGuide,
     recentSearches,
   } = useStore();
-  const { isAuthenticated, logout, currentUser } = useAuthStore();
+  const { isAuthenticated, logout, currentUser, role } = useAuthStore();
   const { i18n } = useTranslation();
   const lang = i18n.language?.split('-')[0] || 'es';
 
@@ -371,7 +371,8 @@ export default function Dashboard() {
                     </Button>
                     <Button variant="outline" onClick={() => navigate('/courses')} className="touch-target">
                       <GraduationCap className="mr-2 h-4 w-4" aria-hidden="true" />
-                      {t('navigation.courses')}
+                      {t(role === 'teacher' ? 'navigation.myGroups' : 'navigation.courses')}
+
                     </Button>
                     <Button variant="ghost" onClick={() => navigate('/settings')} className="touch-target">
                       <Settings className="mr-2 h-4 w-4" aria-hidden="true" />

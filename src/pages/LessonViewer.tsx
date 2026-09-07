@@ -13,6 +13,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import AudioPlayer from '@/components/AudioPlayer';
+import CourseImage from '@/components/CourseImage';
+
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
 import { checkAnswer, type GroupLesson, type LessonContent } from '@/lib/courses';
@@ -177,6 +179,15 @@ export default function LessonViewerPage() {
                 lang={lang}
               />
               <p className="whitespace-pre-line break-words">{section.content}</p>
+              {section.image_prompt && (
+                <CourseImage
+                  prompt={section.image_prompt}
+                  alt={section.image_alt || section.title}
+                  lang={lang}
+                  sectionTitle={section.title}
+                  sectionContext={section.content}
+                />
+              )}
               {section.keyPoints && section.keyPoints.length > 0 && (
                 <ul className="list-disc space-y-1 pl-6">
                   {section.keyPoints.map((point, k) => (
@@ -187,6 +198,7 @@ export default function LessonViewerPage() {
             </CardContent>
           </Card>
         ))}
+
 
         {(content.examples || []).length > 0 && (
           <Card>
@@ -252,6 +264,30 @@ export default function LessonViewerPage() {
             </CardContent>
           </Card>
         )}
+
+        {(content.sources || []).length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('courses.sourcesTitle')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="list-disc space-y-2 pl-6">
+                {(content.sources || []).map((source, i) => (
+                  <li key={i} className="break-words">
+                    <a href={source.url} target="_blank" rel="noopener noreferrer" className="underline">
+                      {source.name}
+                    </a>
+                    {source.description && (
+                      <span className="text-muted-foreground"> — {source.description}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
+
 
         {isStudent && (
           <Button onClick={handleComplete}>

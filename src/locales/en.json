@@ -287,7 +287,8 @@
     "userMenu": "User menu",
     "library": "Library",
     "courses": "Courses",
-    "main": "Main navigation"
+    "main": "Main navigation",
+    "myGroups": "My groups"
   },
   "themes": {
     "light": "Light",
@@ -360,6 +361,9 @@
     "markCompleted": "Mark as completed",
     "lessonCompleted": "Lesson completed!",
     "yourAnswer": "Your answer",
-    "checkAnswer": "Check answer"
+    "checkAnswer": "Check answer",
+    "inviteTitle": "How to add students",
+    "inviteDesc": "Share this code with your students. They go to \"My courses\" > \"Join a course\" and type it to enroll.",
+    "sourcesTitle": "Sources"
   }
 }
