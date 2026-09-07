@@ -13,6 +13,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import AudioPlayer from '@/components/AudioPlayer';
+import CourseImage from '@/components/CourseImage';
+
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
 import { checkAnswer, type GroupLesson, type LessonContent } from '@/lib/courses';
