@@ -284,9 +284,32 @@ export default function GroupDetailPage() {
               {lessonList}
             </TabsContent>
             <TabsContent value="students" className="space-y-4 pt-4">
+              {group && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t('courses.inviteTitle')}</CardTitle>
+                    <CardDescription className="break-words">{t('courses.inviteDesc')}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-md bg-muted px-3 py-1 font-mono tracking-widest">
+                      {group.join_code}
+                    </span>
+                    <Button
+                      variant="outline"
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(group.join_code);
+                        toast.success(t('courses.codeCopied'));
+                      }}
+                    >
+                      <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
+                      {t('courses.copyCode')}
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
               {roster.length === 0 ? (
                 <p className="text-muted-foreground">{t('courses.noStudents')}</p>
-              ) : (
+
                 roster.map((student) => (
                   <Card key={student.student_id}>
                     <CardHeader>

@@ -34,8 +34,10 @@ export interface LessonSection {
   title: string;
   content: string;
   keyPoints?: string[];
+  image_prompt?: string;
   image_alt?: string;
 }
+
 
 export interface LessonExample {
   title: string;
