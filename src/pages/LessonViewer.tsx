@@ -177,6 +177,15 @@ export default function LessonViewerPage() {
                 lang={lang}
               />
               <p className="whitespace-pre-line break-words">{section.content}</p>
+              {section.image_prompt && (
+                <CourseImage
+                  prompt={section.image_prompt}
+                  alt={section.image_alt || section.title}
+                  lang={lang}
+                  sectionTitle={section.title}
+                  sectionContext={section.content}
+                />
+              )}
               {section.keyPoints && section.keyPoints.length > 0 && (
                 <ul className="list-disc space-y-1 pl-6">
                   {section.keyPoints.map((point, k) => (
@@ -187,6 +196,7 @@ export default function LessonViewerPage() {
             </CardContent>
           </Card>
         ))}
+
 
         {(content.examples || []).length > 0 && (
           <Card>
