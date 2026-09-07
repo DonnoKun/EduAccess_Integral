@@ -287,7 +287,8 @@
     "userMenu": "Menú de usuario",
     "library": "Biblioteca",
     "courses": "Cursos",
-    "main": "Navegación principal"
+    "main": "Navegación principal",
+    "myGroups": "Mis grupos"
   },
   "themes": {
     "light": "Claro",
@@ -360,6 +361,9 @@
     "markCompleted": "Marcar como completada",
     "lessonCompleted": "¡Lección completada!",
     "yourAnswer": "Tu respuesta",
-    "checkAnswer": "Comprobar respuesta"
+    "checkAnswer": "Comprobar respuesta",
+    "inviteTitle": "Cómo agregar alumnos",
+    "inviteDesc": "Comparte este código con tus alumnos. Ellos entran a \"Mis cursos\" > \"Unirse a un curso\" y lo escriben para inscribirse.",
+    "sourcesTitle": "Fuentes"
   }
 }
