@@ -265,6 +265,30 @@ export default function LessonViewerPage() {
           </Card>
         )}
 
+        {(content.sources || []).length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('courses.sourcesTitle')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="list-disc space-y-2 pl-6">
+                {(content.sources || []).map((source, i) => (
+                  <li key={i} className="break-words">
+                    <a href={source.url} target="_blank" rel="noopener noreferrer" className="underline">
+                      {source.name}
+                    </a>
+                    {source.description && (
+                      <span className="text-muted-foreground"> — {source.description}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
+
+
         {isStudent && (
           <Button onClick={handleComplete}>
             <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />
