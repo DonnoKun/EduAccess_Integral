@@ -309,6 +309,7 @@ export default function GroupDetailPage() {
               )}
               {roster.length === 0 ? (
                 <p className="text-muted-foreground">{t('courses.noStudents')}</p>
+              ) : (
 
                 roster.map((student) => (
                   <Card key={student.student_id}>
