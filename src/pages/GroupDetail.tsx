@@ -159,6 +159,26 @@ export default function GroupDetailPage() {
     toast.success(t('courses.lessonDeleted'));
   };
 
+  const handleAddByEmail = async () => {
+    if (!groupId || !studentEmail.trim()) return;
+    setAddingStudent(true);
+    const res = await enrollStudentByEmail(groupId, studentEmail.trim());
+    setAddingStudent(false);
+    if (!res.success) {
+      const key =
+        res.error === 'user_not_found'
+          ? 'courses.emailNotFound'
+          : res.error === 'already_enrolled'
+            ? 'courses.alreadyEnrolled'
+            : 'courses.addStudentError';
+      toast.error(t(key));
+      return;
+    }
+    setStudentEmail('');
+    setRoster(await fetchGroupRoster(groupId));
+    toast.success(t('courses.studentAdded'));
+  };
+
   const handleRemoveStudent = async (studentId: string) => {
     if (!groupId) return;
     const { error } = await removeStudent(groupId, studentId);
