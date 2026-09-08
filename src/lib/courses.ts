@@ -191,6 +191,20 @@ export async function fetchGroupRoster(groupId: string): Promise<RosterEntry[]> 
   return ((data as any[]) || []) as RosterEntry[];
 }
 
+/** Teacher-side manual enrollment by the student's registered email. */
+export async function enrollStudentByEmail(
+  groupId: string,
+  email: string
+): Promise<{ success: boolean; error?: string }> {
+  const { data, error } = await supabase.rpc('enroll_student_by_email' as any, {
+    _group_id: groupId,
+    _email: email,
+  });
+  if (error) return { success: false, error: 'unknown' };
+  const res = (data as any) || {};
+  return { success: !!res.success, error: res.error };
+}
+
 export async function removeStudent(groupId: string, studentId: string) {
   return supabase.from('group_enrollments').delete().eq('group_id', groupId).eq('student_id', studentId);
 }
