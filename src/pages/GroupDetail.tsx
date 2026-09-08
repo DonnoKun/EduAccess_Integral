@@ -31,6 +31,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import {
   fetchGroupLessons,
   fetchGroupRoster,
+  enrollStudentByEmail,
   removeStudent,
   type Group,
   type GroupLesson,
