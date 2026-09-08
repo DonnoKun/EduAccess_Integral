@@ -307,6 +307,43 @@ export default function GroupDetailPage() {
                   </CardContent>
                 </Card>
               )}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('courses.addByEmailTitle')}</CardTitle>
+                  <CardDescription className="break-words">
+                    {t('courses.addByEmailDesc')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form
+                    className="flex flex-wrap items-end gap-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleAddByEmail();
+                    }}
+                  >
+                    <div className="min-w-[200px] flex-1 space-y-2">
+                      <Label htmlFor="student-email">{t('courses.studentEmail')}</Label>
+                      <Input
+                        id="student-email"
+                        type="email"
+                        value={studentEmail}
+                        onChange={(e) => setStudentEmail(e.target.value)}
+                        placeholder="alumno@correo.com"
+                        required
+                      />
+                    </div>
+                    <Button type="submit" disabled={addingStudent}>
+                      {addingStudent ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+                      )}
+                      {t('courses.addStudent')}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
               {roster.length === 0 ? (
                 <p className="text-muted-foreground">{t('courses.noStudents')}</p>
               ) : (
