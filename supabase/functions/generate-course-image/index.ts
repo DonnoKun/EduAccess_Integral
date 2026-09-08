@@ -82,16 +82,14 @@ serve(async (req) => {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      if (response.status === 429) {
+      // Images are optional decoration: never fail the lesson.
+      // Return 200 with success:false so the client skips the image silently.
+      if (response.status === 429 || response.status === 402) {
+        const reason = response.status === 402 ? "credits_exhausted" : "rate_limited";
+        console.warn("Image generation unavailable:", reason);
         return new Response(
-          JSON.stringify({ success: false, error: "Rate limit exceeded" }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ success: false, error: "AI credits exhausted" }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ success: false, error: reason, skipped: true }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       const errorText = await response.text();
