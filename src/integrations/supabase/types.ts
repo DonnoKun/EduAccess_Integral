@@ -368,6 +368,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      enroll_student_by_email: {
+        Args: { _email: string; _group_id: string }
+        Returns: Json
+      }
       find_group_by_code: {
         Args: { _code: string }
         Returns: {
