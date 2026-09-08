@@ -364,6 +364,14 @@
     "checkAnswer": "Comprobar respuesta",
     "inviteTitle": "Cómo agregar alumnos",
     "inviteDesc": "Comparte este código con tus alumnos. Ellos entran a \"Mis cursos\" > \"Unirse a un curso\" y lo escriben para inscribirse.",
-    "sourcesTitle": "Fuentes"
+    "sourcesTitle": "Fuentes",
+    "addByEmailTitle": "Agregar alumno por correo",
+    "addByEmailDesc": "Escribe el correo con el que el alumno se registró y quedará inscrito en este grupo.",
+    "studentEmail": "Correo del alumno",
+    "addStudent": "Agregar alumno",
+    "studentAdded": "Alumno agregado al grupo",
+    "emailNotFound": "No existe una cuenta con ese correo",
+    "alreadyEnrolled": "El alumno ya está inscrito en este grupo",
+    "addStudentError": "No se pudo agregar al alumno"
   }
 }

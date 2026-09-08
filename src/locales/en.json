@@ -364,6 +364,14 @@
     "checkAnswer": "Check answer",
     "inviteTitle": "How to add students",
     "inviteDesc": "Share this code with your students. They go to \"My courses\" > \"Join a course\" and type it to enroll.",
-    "sourcesTitle": "Sources"
+    "sourcesTitle": "Sources",
+    "addByEmailTitle": "Add student by email",
+    "addByEmailDesc": "Enter the email the student registered with and they will be enrolled in this group.",
+    "studentEmail": "Student email",
+    "addStudent": "Add student",
+    "studentAdded": "Student added to the group",
+    "emailNotFound": "No account exists with that email",
+    "alreadyEnrolled": "That student is already enrolled in this group",
+    "addStudentError": "Could not add the student"
   }
 }
