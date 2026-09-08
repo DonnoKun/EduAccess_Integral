@@ -247,24 +247,16 @@ First, classify this query, then return results accordingly. Remember: NEVER inv
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      if (response.status === 429) {
+      // Rate limit / credits: respond 200 with success:false so the client
+      // falls back to its local results instead of crashing on a non-2xx.
+      if (response.status === 429 || response.status === 402) {
+        const reason =
+          response.status === 402 ? "credits_exhausted" : "rate_limited";
+        console.warn("AI search unavailable:", reason);
         return new Response(
-          JSON.stringify({
-            error: "Rate limit exceeded. Please try again later.",
-          }),
+          JSON.stringify({ success: false, error: reason, aiUnavailable: true }),
           {
-            status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({
-            error: "AI credits exhausted. Please add credits.",
-          }),
-          {
-            status: 402,
+            status: 200,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           }
         );
