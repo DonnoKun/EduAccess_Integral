@@ -31,6 +31,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import {
   fetchGroupLessons,
   fetchGroupRoster,
+  enrollStudentByEmail,
   removeStudent,
   type Group,
   type GroupLesson,
@@ -63,6 +64,8 @@ export default function GroupDetailPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [studentEmail, setStudentEmail] = useState('');
+  const [addingStudent, setAddingStudent] = useState(false);
 
   const load = async () => {
     if (!groupId) return;
@@ -155,6 +158,26 @@ export default function GroupDetailPage() {
     }
     setLessons((prev) => prev.filter((l) => l.id !== lessonId));
     toast.success(t('courses.lessonDeleted'));
+  };
+
+  const handleAddByEmail = async () => {
+    if (!groupId || !studentEmail.trim()) return;
+    setAddingStudent(true);
+    const res = await enrollStudentByEmail(groupId, studentEmail.trim());
+    setAddingStudent(false);
+    if (!res.success) {
+      const key =
+        res.error === 'user_not_found'
+          ? 'courses.emailNotFound'
+          : res.error === 'already_enrolled'
+            ? 'courses.alreadyEnrolled'
+            : 'courses.addStudentError';
+      toast.error(t(key));
+      return;
+    }
+    setStudentEmail('');
+    setRoster(await fetchGroupRoster(groupId));
+    toast.success(t('courses.studentAdded'));
   };
 
   const handleRemoveStudent = async (studentId: string) => {
@@ -307,6 +330,43 @@ export default function GroupDetailPage() {
                   </CardContent>
                 </Card>
               )}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('courses.addByEmailTitle')}</CardTitle>
+                  <CardDescription className="break-words">
+                    {t('courses.addByEmailDesc')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form
+                    className="flex flex-wrap items-end gap-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleAddByEmail();
+                    }}
+                  >
+                    <div className="min-w-[200px] flex-1 space-y-2">
+                      <Label htmlFor="student-email">{t('courses.studentEmail')}</Label>
+                      <Input
+                        id="student-email"
+                        type="email"
+                        value={studentEmail}
+                        onChange={(e) => setStudentEmail(e.target.value)}
+                        placeholder="alumno@correo.com"
+                        required
+                      />
+                    </div>
+                    <Button type="submit" disabled={addingStudent}>
+                      {addingStudent ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+                      )}
+                      {t('courses.addStudent')}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
               {roster.length === 0 ? (
                 <p className="text-muted-foreground">{t('courses.noStudents')}</p>
               ) : (
