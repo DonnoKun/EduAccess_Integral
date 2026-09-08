@@ -63,6 +63,8 @@ export default function GroupDetailPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [studentEmail, setStudentEmail] = useState('');
+  const [addingStudent, setAddingStudent] = useState(false);
 
   const load = async () => {
     if (!groupId) return;
