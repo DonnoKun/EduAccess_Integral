@@ -140,6 +140,15 @@ serve(async (req) => {
 
     console.log("✅ Course image generated successfully");
 
+    // Persist so the same section never regenerates its illustration again
+    const { error: cacheError } = await admin
+      .from("course_images")
+      .upsert(
+        { cache_key: cacheKey, prompt, alt: alt || prompt, image_url: imageUrl },
+        { onConflict: "cache_key" }
+      );
+    if (cacheError) console.warn("Image cache save error:", cacheError.message);
+
     return new Response(
       JSON.stringify({
         success: true,
