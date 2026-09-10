@@ -44,6 +44,33 @@ export type Database = {
         }
         Relationships: []
       }
+      course_images: {
+        Row: {
+          alt: string | null
+          cache_key: string
+          created_at: string
+          id: string
+          image_url: string
+          prompt: string
+        }
+        Insert: {
+          alt?: string | null
+          cache_key: string
+          created_at?: string
+          id?: string
+          image_url: string
+          prompt: string
+        }
+        Update: {
+          alt?: string | null
+          cache_key?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          prompt?: string
+        }
+        Relationships: []
+      }
       group_enrollments: {
         Row: {
           created_at: string
