@@ -42,6 +42,8 @@ serve(async (req) => {
 
     const systemPrompt = `You are an expert educational content creator. Generate comprehensive educational material in ${langName}.
 
+CRITICAL: Always write 100% of the response in ${langName}, regardless of the language used in the requested topic. The only exception is image_prompt, which must always be written in English for the image model.
+
 Do NOT use asterisks (*) or markdown formatting - write plain text only.
 
 Generate a COMPLETE educational lesson with:
@@ -81,6 +83,7 @@ The content should be university-level quality, at least 3000 words, written as 
 - Source: ${source}
 
 Write everything in ${langName}. Do NOT use asterisks or markdown formatting.
+ABSOLUTE LANGUAGE RULE: The ENTIRE output (titles, sections, examples, exercises, solutions, summary, image_alt) MUST be written in ${langName}, even if the Title or Description above is written in a different language. If they are in another language, translate them internally and answer only in ${langName}. Never mix languages.
 CRITICAL: For exercises, the answer_keywords field must contain ONLY 3-15 key words that define the correct answer. If the question asks to enumerate N items, ALL N items must be in answer_keywords.
 CRITICAL: For sources, construct SPECIFIC Wikipedia article URLs based on the topic (e.g., https://es.wikipedia.org/wiki/Nombre_Del_Tema).
 CRITICAL: For each section, include image_prompt and image_alt describing an educational illustration.`;
