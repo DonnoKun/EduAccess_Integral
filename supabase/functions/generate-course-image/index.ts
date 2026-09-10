@@ -40,6 +40,26 @@ serve(async (req) => {
       );
     }
 
+    // --- Persistent cache: generate an illustration only once per section ---
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const admin = createClient(supabaseUrl, serviceKey);
+    const cacheKey = await makeCacheKey([prompt, sectionTitle || "", alt || ""]);
+
+    const { data: cached } = await admin
+      .from("course_images")
+      .select("image_url, alt")
+      .eq("cache_key", cacheKey)
+      .maybeSingle();
+
+    if (cached?.image_url) {
+      console.log("✅ Image cache HIT");
+      return new Response(
+        JSON.stringify({ success: true, imageUrl: cached.image_url, alt: cached.alt || alt || prompt, cached: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     console.log("🎨 Generating course image:", prompt.slice(0, 80));
 
     // Build a highly specific prompt using section context
