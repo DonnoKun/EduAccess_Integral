@@ -210,12 +210,21 @@ export default function Dashboard() {
           </div>
 
           <nav className="hidden md:flex items-center gap-6" aria-label="Main navigation">
-            <Link 
-              to="/search" 
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {t('navigation.search')}
-            </Link>
+            {role !== 'teacher' ? (
+              <Link 
+                to="/search" 
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {t('navigation.search')}
+              </Link>
+            ) : (
+              <Link 
+                to="/courses" 
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {t('navigation.myGroups')}
+              </Link>
+            )}
             <Link 
               to="/dashboard" 
               className="text-foreground font-medium"
@@ -361,14 +370,18 @@ export default function Dashboard() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-3">
-                    <Button onClick={() => navigate('/search')} className="touch-target">
-                      <Search className="mr-2 h-4 w-4" aria-hidden="true" />
-                      {t('dashboard.quickActions.search')}
-                    </Button>
-                    <Button variant="outline" onClick={() => navigate('/library')} className="touch-target">
-                      <BookOpen className="mr-2 h-4 w-4" aria-hidden="true" />
-                      {t('dashboard.quickActions.library')}
-                    </Button>
+                    {role !== 'teacher' && (
+                      <>
+                        <Button onClick={() => navigate('/search')} className="touch-target">
+                          <Search className="mr-2 h-4 w-4" aria-hidden="true" />
+                          {t('dashboard.quickActions.search')}
+                        </Button>
+                        <Button variant="outline" onClick={() => navigate('/library')} className="touch-target">
+                          <BookOpen className="mr-2 h-4 w-4" aria-hidden="true" />
+                          {t('dashboard.quickActions.library')}
+                        </Button>
+                      </>
+                    )}
                     <Button variant="outline" onClick={() => navigate('/courses')} className="touch-target">
                       <GraduationCap className="mr-2 h-4 w-4" aria-hidden="true" />
                       {t(role === 'teacher' ? 'navigation.myGroups' : 'navigation.courses')}
