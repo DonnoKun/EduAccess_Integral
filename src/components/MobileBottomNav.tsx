@@ -24,15 +24,21 @@ export default function MobileBottomNav() {
 
   if (!isMobile) return null;
 
+  const isTeacher = role === 'teacher';
+
   const navItems: NavItem[] = [
     { path: '/dashboard', labelKey: 'navigation.dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
-    { path: '/search', labelKey: 'navigation.search', icon: <Search className="h-5 w-5" /> },
+    ...(isTeacher
+      ? []
+      : [{ path: '/search', labelKey: 'navigation.search', icon: <Search className="h-5 w-5" /> }]),
     {
       path: '/courses',
-      labelKey: role === 'teacher' ? 'navigation.myGroups' : 'navigation.courses',
+      labelKey: isTeacher ? 'navigation.myGroups' : 'navigation.courses',
       icon: <GraduationCap className="h-5 w-5" />,
     },
-    { path: '/library', labelKey: 'navigation.library', icon: <BookOpen className="h-5 w-5" /> },
+    ...(isTeacher
+      ? []
+      : [{ path: '/library', labelKey: 'navigation.library', icon: <BookOpen className="h-5 w-5" /> }]),
     { path: '/settings', labelKey: 'navigation.settings', icon: <Settings className="h-5 w-5" /> },
   ];
 

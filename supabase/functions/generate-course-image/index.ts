@@ -4,6 +4,15 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+async function makeCacheKey(parts: string[]): Promise<string> {
+  const data = new TextEncoder().encode(parts.join("|"));
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,6 +37,26 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: "Missing prompt" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // --- Persistent cache: generate an illustration only once per section ---
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const admin = createClient(supabaseUrl, serviceKey);
+    const cacheKey = await makeCacheKey([prompt, sectionTitle || "", alt || ""]);
+
+    const { data: cached } = await admin
+      .from("course_images")
+      .select("image_url, alt")
+      .eq("cache_key", cacheKey)
+      .maybeSingle();
+
+    if (cached?.image_url) {
+      console.log("✅ Image cache HIT");
+      return new Response(
+        JSON.stringify({ success: true, imageUrl: cached.image_url, alt: cached.alt || alt || prompt, cached: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -110,6 +139,15 @@ serve(async (req) => {
     }
 
     console.log("✅ Course image generated successfully");
+
+    // Persist so the same section never regenerates its illustration again
+    const { error: cacheError } = await admin
+      .from("course_images")
+      .upsert(
+        { cache_key: cacheKey, prompt, alt: alt || prompt, image_url: imageUrl },
+        { onConflict: "cache_key" }
+      );
+    if (cacheError) console.warn("Image cache save error:", cacheError.message);
 
     return new Response(
       JSON.stringify({
