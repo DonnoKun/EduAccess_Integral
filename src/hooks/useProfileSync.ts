@@ -22,9 +22,11 @@ export function useProfileSync() {
 
     // Build the payload to sync
     const payload = {
+      user_id: currentUser.id,
       user_name: visualProfile.userName,
       current_theme: currentTheme,
       reading_guide_enabled: readingGuideEnabled,
+      has_completed_onboarding: true,
       visual_preferences: {
         fontSize: visualProfile.preferences.fontSize,
         contrast: visualProfile.preferences.contrast,
@@ -41,10 +43,10 @@ export function useProfileSync() {
     if (payloadKey === lastSyncRef.current) return;
 
     try {
+      // Upsert: the profile row may not exist yet for this user
       const { error } = await supabase
         .from('profiles')
-        .update(payload as any)
-        .eq('user_id', currentUser.id);
+        .upsert(payload as any, { onConflict: 'user_id' });
 
       if (error) {
         console.error('❌ Profile sync error:', error);

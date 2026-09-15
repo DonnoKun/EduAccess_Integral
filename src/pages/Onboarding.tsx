@@ -208,12 +208,14 @@ export default function Onboarding() {
     if (currentUser) {
       try {
         const { supabase } = await import('@/integrations/supabase/client');
-        await supabase.from('profiles').update({
+        const { error } = await supabase.from('profiles').upsert({
+          user_id: currentUser.id,
           user_name: finalName,
           visual_preferences: profile.preferences as any,
           has_completed_onboarding: true,
           current_theme: themeMode,
-        } as any).eq('user_id', currentUser.id);
+        } as any, { onConflict: 'user_id' });
+        if (error) throw error;
         console.log('✅ Profile saved to database');
       } catch (err) {
         console.warn('Could not save profile to DB:', err);

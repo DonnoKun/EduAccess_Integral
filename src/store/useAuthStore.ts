@@ -407,8 +407,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     const { error } = await supabase
       .from('profiles')
-      .update({ user_name: name } as any)
-      .eq('user_id', currentUser.id);
+      .upsert({ user_id: currentUser.id, user_name: name } as any, { onConflict: 'user_id' });
 
     if (!error) {
       set({ currentUser: { ...currentUser, name } });
