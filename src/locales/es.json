@@ -201,6 +201,11 @@
     "viewContent": "Ver Contenido"
   },
   "contentViewer": {
+    "introduction": "Introducción",
+    "examples": "Ejemplos prácticos",
+    "exercises": "Ejercicios de práctica",
+    "summary": "Resumen",
+    "imageDescription": "Descripción de la imagen",
     "backToSearch": "Volver a Búsqueda",
     "remediationComplete": "Remediación Completa",
     "services": "Servicios",

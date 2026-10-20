@@ -1,5 +1,6 @@
-- [ ] Translate existing lessons faithfully with Spanish/English spelling checks.
-- [ ] Add teacher lesson editing with unpublished drafts and explicit visibility states.
-- [ ] Keep a return control available while reading.
-- [ ] Preserve students' lesson version, answers and progress during teacher edits.
-- [ ] Verify affected flows and tests.
+- [x] Translate existing lessons faithfully with Spanish/English proofreading instructions and structure checks; Spanish live translation verified.
+- [x] Add teacher lesson editing with unpublished drafts and explicit visibility states; teacher flow verified.
+- [x] Keep a return control available while reading.
+- [x] Preserve students' lesson version, answers and progress during teacher edits.
+- [x] Run translation and exercise tests; check current build logs.
+- [ ] Verify concurrent editing through a student account — requires a student session/account selection.
