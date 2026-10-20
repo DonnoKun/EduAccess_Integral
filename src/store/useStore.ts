@@ -456,6 +456,7 @@ export const useStore = create<GlobalState>()(
             '--animation-duration',
             profile.preferences.enableAnimations ? '300ms' : '0ms'
           );
+          root.classList.toggle('reduce-motion', profile.preferences.enableAnimations === false);
           
           // Apply brightness sensitivity
           const brightnessMap: Record<string, string> = {

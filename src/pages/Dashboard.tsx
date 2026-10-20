@@ -86,6 +86,26 @@ export default function Dashboard() {
   // Load real aggregate analytics from DB
   const [dbAnalytics, setDbAnalytics] = useState({ totalTime: 0, totalContent: 0, totalTasks: 0, totalCourses: 0 });
   const [showTutorial, setShowTutorial] = useState(false);
+  const [teacherStats, setTeacherStats] = useState({ groups: 0, students: 0, published: 0, drafts: 0 });
+
+  useEffect(() => {
+    if (role !== 'teacher' || !currentUser?.id) return;
+    (async () => {
+      const { data: groups } = await supabase.from('groups').select('id').eq('owner_id', currentUser.id);
+      const ids = (groups || []).map((g) => g.id);
+      if (ids.length === 0) return setTeacherStats({ groups: 0, students: 0, published: 0, drafts: 0 });
+      const [{ data: enr }, { data: lessons }] = await Promise.all([
+        supabase.from('group_enrollments').select('student_id').in('group_id', ids),
+        supabase.from('group_lessons').select('status').in('group_id', ids),
+      ]);
+      setTeacherStats({
+        groups: ids.length,
+        students: new Set((enr || []).map((e) => e.student_id)).size,
+        published: (lessons || []).filter((l) => l.status === 'published').length,
+        drafts: (lessons || []).filter((l) => l.status !== 'published').length,
+      });
+    })();
+  }, [role, currentUser?.id]);
 
   // Show tutorial automatically for new users (first time after onboarding)
   useEffect(() => {
@@ -231,12 +251,6 @@ export default function Dashboard() {
               aria-current="page"
             >
               {t('navigation.dashboard')}
-            </Link>
-            <Link 
-              to="/settings" 
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {t('navigation.settings')}
             </Link>
           </nav>
 
@@ -387,7 +401,7 @@ export default function Dashboard() {
                       {t(role === 'teacher' ? 'navigation.myGroups' : 'navigation.courses')}
 
                     </Button>
-                    <Button variant="ghost" onClick={() => navigate('/settings')} className="touch-target">
+                    <Button variant="outline" onClick={() => navigate('/settings')} className="touch-target">
                       <Settings className="mr-2 h-4 w-4" aria-hidden="true" />
                       {t('dashboard.quickActions.settings')}
                     </Button>
@@ -407,6 +421,60 @@ export default function Dashboard() {
             <PendingCoursesNotification />
           </motion.div>
 
+          {role === 'teacher' ? (
+            <>
+          {/* Teacher summary */}
+          <motion.div variants={item}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" aria-hidden="true" />
+                  {t('courses.teacherSummary')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { icon: <GraduationCap className="h-6 w-6 text-primary" aria-hidden="true" />, value: teacherStats.groups, label: t('courses.statGroups') },
+                    { icon: <User className="h-6 w-6 text-primary" aria-hidden="true" />, value: teacherStats.students, label: t('courses.statStudents') },
+                    { icon: <CheckCircle2 className="h-6 w-6 text-primary" aria-hidden="true" />, value: teacherStats.published, label: t('courses.statLessons') },
+                    { icon: <BookOpen className="h-6 w-6 text-primary" aria-hidden="true" />, value: teacherStats.drafts, label: t('courses.statDrafts') },
+                  ].map((st) => (
+                    <div key={st.label} className="p-4 rounded-lg bg-secondary/50 text-center">
+                      <div className="flex items-center justify-center mb-2">{st.icon}</div>
+                      <p className="text-2xl font-bold">{st.value}</p>
+                      <p className="text-sm text-muted-foreground break-words">{st.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Teacher tips (actionable) */}
+          <motion.div variants={item}>
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="p-6 space-y-3">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" />
+                  {t('courses.teacherTipsTitle')}
+                </h3>
+                <ul className="space-y-2">
+                  {['teacherTip1', 'teacherTip2', 'teacherTip3', 'teacherTip4'].map((k) => (
+                    <li key={k}>
+                      <Button variant="ghost" className="h-auto w-full justify-start whitespace-normal text-left" onClick={() => navigate('/courses')}>
+                        <GraduationCap className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />
+                        <span className="break-words">{t(`courses.${k}`)}</span>
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </motion.div>
+            </>
+          ) : (
+            <>
           {/* Quick Stats & Recent Activity */}
           <div className="grid md:grid-cols-2 gap-6">
             {/* Recent Searches */}
@@ -574,6 +642,8 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </motion.div>
+            </>
+          )}
         </motion.div>
       </main>
 

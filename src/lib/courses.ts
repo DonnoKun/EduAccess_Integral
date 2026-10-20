@@ -209,18 +209,65 @@ export async function removeStudent(groupId: string, studentId: string) {
   return supabase.from('group_enrollments').delete().eq('group_id', groupId).eq('student_id', studentId);
 }
 
-/** Keyword-recall validation shared with the direct-mode exercises (recall >= 0.75). */
-export function checkAnswer(userAnswer: string, keywords?: string): 'correct' | 'partial' | 'incorrect' {
+export async function updateGroup(groupId: string, input: { name: string; description: string; level: string }) {
+  return supabase.from('groups').update(input).eq('id', groupId);
+}
+
+/** Deleting a group cascades to its lessons, enrollments and progress. */
+export async function deleteGroup(groupId: string) {
+  return supabase.from('groups').delete().eq('id', groupId);
+}
+
+/** AI-generated deep links often 404; link to the source's site root instead. */
+export function safeSourceUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+    return u.origin;
+  } catch {
+    return null;
+  }
+}
+
+const normalizeText = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+/** Numeric / math tokens like "13/15", "0.5", "-3", "42". */
+function mathTokens(s: string): string[] {
+  return (normalizeText(s).replace(/\s*\/\s*/g, '/').replace(/,/g, '.').match(/-?\d+(?:[./]\d+)?/g) || []);
+}
+
+/**
+ * Keyword-recall validation shared with the direct-mode exercises (recall >= 0.75).
+ * Numeric answers are correct when they match the final result of the keywords or solution.
+ */
+export function checkAnswer(
+  userAnswer: string,
+  keywords?: string,
+  solution?: string
+): 'correct' | 'partial' | 'incorrect' {
+  if (!userAnswer.trim()) return 'incorrect';
+
+  const givenMath = mathTokens(userAnswer);
+  if (givenMath.length > 0) {
+    const refs = [keywords, solution].filter(Boolean) as string[];
+    for (const ref of refs) {
+      const tokens = mathTokens(ref);
+      if (tokens.length === 0) continue;
+      const finalAnswer = tokens[tokens.length - 1];
+      if (givenMath.includes(finalAnswer)) return 'correct';
+      if (ref === keywords && givenMath.some((g) => tokens.includes(g))) return 'partial';
+    }
+  }
+
   if (!keywords) return 'partial';
-  const normalize = (s: string) =>
-    s
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^\w\s]/g, ' ');
+  const normalize = (s: string) => normalizeText(s).replace(/[^\w\s]/g, ' ');
 
   const stop = new Set(['de', 'la', 'el', 'los', 'las', 'y', 'o', 'en', 'a', 'un', 'una', 'the', 'of', 'and', 'to', 'in']);
-  const expected = normalize(keywords).split(/\s+/).filter((w) => w.length > 2 && !stop.has(w));
+  const expected = normalize(keywords).split(/\s+/).filter((w) => (w.length > 2 || /\d/.test(w)) && !stop.has(w));
   if (expected.length === 0) return 'partial';
 
   const given = normalize(userAnswer);

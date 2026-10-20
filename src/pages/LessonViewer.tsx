@@ -17,7 +17,7 @@ import CourseImage from '@/components/CourseImage';
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
-import { checkAnswer, type GroupLesson, type LessonContent } from '@/lib/courses';
+import { checkAnswer, safeSourceUrl, type GroupLesson, type LessonContent } from '@/lib/courses';
 
 export default function LessonViewerPage() {
   const { groupId, lessonId } = useParams<{ groupId: string; lessonId: string }>();
@@ -113,7 +113,7 @@ export default function LessonViewerPage() {
 
   const handleCheck = (index: number) => {
     const exercise = exercises[index];
-    const result = checkAnswer(answers[index] || '', exercise.answer_keywords);
+    const result = checkAnswer(answers[index] || '', exercise.answer_keywords, exercise.solution);
     setResults((prev) => ({ ...prev, [index]: result }));
   };
 
@@ -270,18 +270,26 @@ export default function LessonViewerPage() {
             <CardHeader>
               <CardTitle>{t('courses.sourcesTitle')}</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
+              <p className="text-muted-foreground">{t('courses.sourcesNote')}</p>
               <ul className="list-disc space-y-2 pl-6">
-                {(content.sources || []).map((source, i) => (
-                  <li key={i} className="break-words">
-                    <a href={source.url} target="_blank" rel="noopener noreferrer" className="underline">
-                      {source.name}
-                    </a>
-                    {source.description && (
-                      <span className="text-muted-foreground"> — {source.description}</span>
-                    )}
-                  </li>
-                ))}
+                {(content.sources || []).map((source, i) => {
+                  const href = safeSourceUrl(source.url);
+                  return (
+                    <li key={i} className="break-words">
+                      {href ? (
+                        <a href={href} target="_blank" rel="noopener noreferrer" className="underline">
+                          {source.name}
+                        </a>
+                      ) : (
+                        <span>{source.name}</span>
+                      )}
+                      {source.description && (
+                        <span className="text-muted-foreground"> — {source.description}</span>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </CardContent>
           </Card>

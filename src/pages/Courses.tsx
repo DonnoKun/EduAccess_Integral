@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Plus, Users, GraduationCap, Copy, RefreshCw, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Users, GraduationCap, Copy, RefreshCw, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,10 +22,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
   createGroup,
+  deleteGroup,
+  updateGroup,
   fetchStudentGroups,
   fetchTeacherGroups,
   joinGroupByCode,
@@ -48,6 +60,32 @@ export default function CoursesPage() {
   const [description, setDescription] = useState('');
   const [level, setLevel] = useState('');
   const [creating, setCreating] = useState(false);
+
+  // Teacher edit / delete
+  const [editing, setEditing] = useState<Group | null>(null);
+  const [deleting, setDeleting] = useState<Group | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const handleSaveEdit = async () => {
+    if (!editing || !editing.name.trim()) return;
+    setSaving(true);
+    const payload = { name: editing.name.trim(), description: editing.description.trim(), level: editing.level.trim() };
+    const { error } = await updateGroup(editing.id, payload);
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    setGroups((prev) => prev.map((g) => (g.id === editing.id ? { ...g, ...payload } : g)));
+    setEditing(null);
+    toast.success(t('courses.groupUpdated'));
+  };
+
+  const handleDelete = async () => {
+    if (!deleting) return;
+    const { error } = await deleteGroup(deleting.id);
+    if (error) return toast.error(error.message);
+    setGroups((prev) => prev.filter((g) => g.id !== deleting.id));
+    setDeleting(null);
+    toast.success(t('courses.groupDeleted'));
+  };
 
   // Student join form
   const [code, setCode] = useState('');
@@ -238,16 +276,76 @@ export default function CoursesPage() {
                         </Button>
                       </div>
                     )}
-                    <Button variant="secondary" onClick={() => navigate(`/courses/${group.id}`)}>
-                      <Users className="mr-2 h-4 w-4" aria-hidden="true" />
-                      {t('courses.open')}
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="secondary" onClick={() => navigate(`/courses/${group.id}`)}>
+                        <Users className="mr-2 h-4 w-4" aria-hidden="true" />
+                        {t('courses.open')}
+                      </Button>
+                      {isTeacher && (
+                        <>
+                          <Button variant="outline" onClick={() => setEditing({ ...group })}>
+                            <Pencil className="mr-2 h-4 w-4" aria-hidden="true" />
+                            {t('courses.editGroup')}
+                          </Button>
+                          <Button variant="destructive" onClick={() => setDeleting(group)}>
+                            <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
+                            {t('courses.deleteGroup')}
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           )}
         </section>
+
+        <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('courses.editGroup')}</DialogTitle>
+            </DialogHeader>
+            {editing && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">{t('courses.groupName')}</Label>
+                  <Input id="edit-name" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-desc">{t('courses.groupDescription')}</Label>
+                  <Textarea id="edit-desc" value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-level">{t('courses.groupLevel')}</Label>
+                  <Input id="edit-level" value={editing.level} onChange={(e) => setEditing({ ...editing, level: e.target.value })} />
+                </div>
+              </div>
+            )}
+            <DialogFooter className="flex-wrap gap-2">
+              <Button variant="outline" onClick={() => setEditing(null)}>{t('courses.cancel')}</Button>
+              <Button onClick={handleSaveEdit} disabled={saving || !editing?.name.trim()}>
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+                {t('courses.save')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t('courses.deleteGroup')}</AlertDialogTitle>
+              <AlertDialogDescription>{t('courses.deleteConfirm', { name: deleting?.name })}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-wrap gap-2">
+              <AlertDialogCancel>{t('courses.cancel')}</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                {t('courses.deleteGroup')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
