@@ -9,6 +9,7 @@ import { Play, Pause, RotateCcw, SkipBack, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
+import { useStore } from '@/store/useStore';
 
 interface AudioPlayerProps {
   text: string;
@@ -38,6 +39,7 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
   const [speed, setSpeed] = useState(1);
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
   const [totalChunks, setTotalChunks] = useState(0);
+  const ttsEnabled = useStore((s) => s.visualProfile?.technicalParameters?.enableTTS !== false);
 
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const chunksRef = useRef<string[]>([]);
@@ -244,6 +246,8 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
 
   const speedOptions = [0.5, 0.75, 1, 1.25, 1.5, 2];
   const isActive = isPlaying || isPaused || progress > 0;
+
+  if (!ttsEnabled) return null;
 
   return (
     <div className="flex flex-col gap-3 w-full">
