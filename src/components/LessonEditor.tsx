@@ -61,10 +61,16 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
 
   const save = async () => {
     setSaving(true);
-    const { error } = await supabase.from('lesson_drafts').upsert({ lesson_id: lesson.id, payload: JSON.parse(JSON.stringify(draft)), updated_at: new Date().toISOString() });
+    // Drop empty key points and blank image requests so no image is generated for nothing.
+    const sections = (draft.content.sections || []).map(({ image_prompt, image_alt, ...s }) => ({
+      ...s, keyPoints: (s.keyPoints || []).map(k => k.trim()).filter(Boolean),
+      ...(image_prompt?.trim() ? { image_prompt: image_prompt.trim(), image_alt: image_alt?.trim() || image_prompt.trim() } : {}),
+    }));
+    const clean = { ...draft, content: { ...draft.content, sections } };
+    const { error } = await supabase.from('lesson_drafts').upsert({ lesson_id: lesson.id, payload: JSON.parse(JSON.stringify(clean)), updated_at: new Date().toISOString() });
     setSaving(false);
     if (error) { toast.error(t('courses.editError')); return; }
-    onSaved(draft);
+    onSaved(clean);
     toast.success(t('courses.draftSaved'));
     onClose();
   };
@@ -100,7 +106,7 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
         <div className="space-y-1"><Label htmlFor="edit-title">{t('courses.lessonTitle')}</Label><Input id="edit-title" value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} /></div>
         <div className="space-y-1"><Label htmlFor="edit-description">{t('courses.lessonDescription')}</Label><Textarea id="edit-description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} /></div>
         <div className="space-y-1"><Label htmlFor="edit-intro">{t('courses.editFields.introduction', { defaultValue: 'Introduction' })}</Label><Textarea id="edit-intro" rows={6} value={c.introduction || ''} onChange={e => setC({ introduction: e.target.value })} /></div>
-        <ListEditor<LessonSection> idPrefix="sec" title={t('courses.edit.sections')} items={c.sections || []} onChange={sections => setC({ sections: sections.map(s => ({ ...s, keyPoints: s.keyPoints?.map(k => k).filter((k, i, a) => k.trim() || i === a.length - 1) })) })}
+        <ListEditor<LessonSection> idPrefix="sec" title={t('courses.edit.sections')} items={c.sections || []} onChange={sections => setC({ sections })}
           blank={() => ({ title: '', content: '', keyPoints: [] })}
           fields={[{ key: 'title', label: t('courses.edit.title') }, { key: 'content', label: t('courses.edit.content'), long: true }]}
           extra={(s, set, i) => <>{keyPoints(s, set, i)}{imageEditor(s, set, i)}</>} />

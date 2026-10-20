@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, BookOpen, Copy, Loader2, Plus, Send, Trash2, Users, EyeOff, Pencil } from 'lucide-react';
+import { useCourseCache } from '@/hooks/useCourseCache';
 import LessonEditor, { type LessonDraft } from '@/components/LessonEditor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,6 +66,7 @@ export default function GroupDetailPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [generating, setGenerating] = useState(false);
+  const { getCachedCourse, saveCourseToCache } = useCourseCache();
   const [studentEmail, setStudentEmail] = useState('');
   const [addingStudent, setAddingStudent] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, LessonDraft>>({});
@@ -97,9 +99,13 @@ export default function GroupDetailPage() {
 
   const handleCreateLesson = async () => {
     if (!groupId || !currentUser?.id || !title.trim()) return;
+    if (generating) return;
     setGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-course-content', {
+      // Reuse an identical lesson (same title, focus and language) instead of spending AI credits again.
+      const cacheTitle = `group:${title.trim()}|${(description.trim() || title.trim())}`;
+      const cached = await getCachedCourse(cacheTitle, lang);
+      const { data, error } = cached ? { data: { success: true, content: cached }, error: null } : await supabase.functions.invoke('generate-course-content', {
         body: {
           title: title.trim(),
           description: description.trim() || title.trim(),
@@ -111,6 +117,7 @@ export default function GroupDetailPage() {
       if (error) throw new Error(error.message);
       if (!data?.success || !data?.content?.introduction) throw new Error(data?.error || t('courses.lessonError'));
       const content = { ...(data?.content || {}), language: lang };
+      if (!cached) saveCourseToCache(cacheTitle, lang, data.content);
 
       const { data: inserted, error: insertError } = await supabase
         .from('group_lessons')
@@ -216,7 +223,7 @@ export default function GroupDetailPage() {
   const lessonList = (
     <div className="space-y-4">
       {isTeacher && (
-        <Dialog open={openNew} onOpenChange={setOpenNew}>
+        <Dialog open={openNew} onOpenChange={(o) => { if (!generating) setOpenNew(o); }}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -231,13 +238,14 @@ export default function GroupDetailPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="lesson-title">{t('courses.lessonTitle')}</Label>
-                <Input id="lesson-title" value={title} onChange={(e) => setTitle(e.target.value)} />
+                <Input id="lesson-title" disabled={generating} value={title} onChange={(e) => setTitle(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lesson-desc">{t('courses.lessonDescription')}</Label>
-                <Textarea id="lesson-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
+                <Textarea id="lesson-desc" disabled={generating} value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
             </div>
+            {generating && <p role="status" className="text-sm text-muted-foreground">{t('courses.generatingWait')}</p>}
             <DialogFooter>
               <Button onClick={handleCreateLesson} disabled={generating || !title.trim()}>
                 {generating && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
