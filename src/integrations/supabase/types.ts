@@ -112,6 +112,7 @@ export type Database = {
           group_id: string
           id: string
           published_at: string | null
+          revision: number
           status: string
           title: string
           updated_at: string
@@ -124,6 +125,7 @@ export type Database = {
           group_id: string
           id?: string
           published_at?: string | null
+          revision?: number
           status?: string
           title: string
           updated_at?: string
@@ -136,6 +138,7 @@ export type Database = {
           group_id?: string
           id?: string
           published_at?: string | null
+          revision?: number
           status?: string
           title?: string
           updated_at?: string
@@ -183,15 +186,44 @@ export type Database = {
         }
         Relationships: []
       }
+      lesson_drafts: {
+        Row: {
+          lesson_id: string
+          payload: Json
+          updated_at: string
+        }
+        Insert: {
+          lesson_id: string
+          payload: Json
+          updated_at?: string
+        }
+        Update: {
+          lesson_id?: string
+          payload?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_drafts_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: true
+            referencedRelation: "group_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_progress: {
         Row: {
           completed: boolean
           created_at: string
+          exercise_answers: Json
+          exercise_results: Json
           exercises_completed: number
           exercises_total: number
           group_id: string
           id: string
           lesson_id: string
+          lesson_snapshot: Json | null
           progress_percentage: number
           student_id: string
           time_spent_seconds: number
@@ -200,11 +232,14 @@ export type Database = {
         Insert: {
           completed?: boolean
           created_at?: string
+          exercise_answers?: Json
+          exercise_results?: Json
           exercises_completed?: number
           exercises_total?: number
           group_id: string
           id?: string
           lesson_id: string
+          lesson_snapshot?: Json | null
           progress_percentage?: number
           student_id: string
           time_spent_seconds?: number
@@ -213,11 +248,14 @@ export type Database = {
         Update: {
           completed?: boolean
           created_at?: string
+          exercise_answers?: Json
+          exercise_results?: Json
           exercises_completed?: number
           exercises_total?: number
           group_id?: string
           id?: string
           lesson_id?: string
+          lesson_snapshot?: Json | null
           progress_percentage?: number
           student_id?: string
           time_spent_seconds?: number
