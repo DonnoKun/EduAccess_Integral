@@ -45,6 +45,7 @@ export default function LessonViewerPage() {
   const { getCachedCourse, saveCourseToCache } = useCourseCache();
   const original: LessonContent = (lesson?.content as LessonContent) || {};
   const content: LessonContent = translated || original;
+  const readingLanguage = content.language || (translationFailed ? ((`${content.introduction || ''}`.match(/\b(the|and|of|to)\b/gi) || []).length > 3 ? 'en' : 'es') : lang);
 
   // Show the lesson in the user's current language (translate once, then cache)
   useEffect(() => {
@@ -243,7 +244,7 @@ export default function LessonViewerPage() {
             <CardTitle>{t('contentViewer.introduction', 'Introducción')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <AudioPlayer text={fullText} lang={lang} storageKey={`${lessonId}:intro:${lang}`} />
+            <AudioPlayer text={fullText} lang={readingLanguage} storageKey={`${currentUser?.id}:${lessonId}:intro:${readingLanguage}`} />
             <p className="whitespace-pre-line break-words">{content.introduction}</p>
           </CardContent>
         </Card>
@@ -256,8 +257,8 @@ export default function LessonViewerPage() {
             <CardContent className="space-y-3">
               <AudioPlayer
                 text={`${section.title}. ${section.content}. ${section.image_alt || ''}`}
-                lang={lang}
-                storageKey={`${lessonId}:s${i}:${lang}`}
+                lang={readingLanguage}
+                storageKey={`${currentUser?.id}:${lessonId}:s${i}:${readingLanguage}`}
               />
               <p className="whitespace-pre-line break-words">{section.content}</p>
               {section.image_prompt && (
@@ -265,8 +266,9 @@ export default function LessonViewerPage() {
                   prompt={section.image_prompt}
                   alt={section.image_alt || section.title}
                   lang={lang}
-                  sectionTitle={section.title}
-                  sectionContext={section.content}
+                  cacheAlt={original.sections?.[i]?.image_alt || original.sections?.[i]?.title}
+                  sectionTitle={original.sections?.[i]?.title || section.title}
+                  sectionContext={original.sections?.[i]?.content || section.content}
                 />
               )}
               {section.keyPoints && section.keyPoints.length > 0 && (
@@ -287,7 +289,7 @@ export default function LessonViewerPage() {
               <CardTitle>{t('contentViewer.examples', 'Ejemplos prácticos')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <AudioPlayer text={examplesText} lang={lang} storageKey={`${lessonId}:examples:${lang}`} />
+              <AudioPlayer text={examplesText} lang={readingLanguage} storageKey={`${currentUser?.id}:${lessonId}:examples:${readingLanguage}`} />
               {(content.examples || []).map((example, i) => (
                 <div key={i} className="space-y-1">
                   <h3 className="font-semibold break-words">{example.title}</h3>
@@ -304,7 +306,7 @@ export default function LessonViewerPage() {
               <CardTitle>{t('contentViewer.exercises', 'Ejercicios de práctica')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <AudioPlayer text={exercisesText} lang={lang} storageKey={`${lessonId}:exercises:${lang}`} />
+              <AudioPlayer text={exercisesText} lang={readingLanguage} storageKey={`${currentUser?.id}:${lessonId}:exercises:${readingLanguage}`} />
               {exercises.map((exercise, i) => (
                 <div key={i} className="space-y-2">
                   <p className="break-words font-medium">{i + 1}. {exercise.question}</p>
@@ -340,7 +342,7 @@ export default function LessonViewerPage() {
               <CardTitle>{t('contentViewer.summary', 'Resumen')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <AudioPlayer text={content.summary} lang={lang} storageKey={`${lessonId}:summary:${lang}`} />
+              <AudioPlayer text={content.summary} lang={readingLanguage} storageKey={`${currentUser?.id}:${lessonId}:summary:${readingLanguage}`} />
               <p className="whitespace-pre-line break-words">{content.summary}</p>
             </CardContent>
           </Card>
