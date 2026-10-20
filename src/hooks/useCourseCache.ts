@@ -73,7 +73,7 @@ export function useCourseCache() {
             language,
             content: content as any,
           },
-          { onConflict: 'cache_key' }
+          { onConflict: 'cache_key', ignoreDuplicates: true }
         );
 
       if (error) {

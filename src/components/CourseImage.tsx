@@ -11,6 +11,8 @@ import { ImageIcon } from 'lucide-react';
 interface CourseImageProps {
   prompt: string;
   alt: string;
+  /** Stable original-language alt text used only to identify the cached bitmap. */
+  cacheAlt?: string;
   className?: string;
   lang?: string;
   /** Section title for context-aware generation */
@@ -21,7 +23,7 @@ interface CourseImageProps {
   onStatusChange?: (status: 'loading' | 'done' | 'error') => void;
 }
 
-export default function CourseImage({ prompt, alt, className, lang = 'es', sectionTitle, sectionContext, onStatusChange }: CourseImageProps) {
+export default function CourseImage({ prompt, alt, cacheAlt, className, lang = 'es', sectionTitle, sectionContext, onStatusChange }: CourseImageProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -33,7 +35,7 @@ export default function CourseImage({ prompt, alt, className, lang = 'es', secti
     const generateImage = async () => {
       try {
         const { data, error: fnError } = await supabase.functions.invoke('generate-course-image', {
-          body: { prompt, alt, sectionTitle, sectionContext },
+          body: { prompt, alt: cacheAlt || alt, sectionTitle, sectionContext },
         });
 
         if (cancelled) return;
@@ -78,10 +80,11 @@ export default function CourseImage({ prompt, alt, className, lang = 'es', secti
     );
   }
 
+  if (!imageUrl) return null;
   return (
     <figure className={`rounded-lg overflow-hidden my-4 ${className || ''}`}>
       <img
-        src={imageUrl!}
+        src={imageUrl}
         alt={alt}
         className="w-full rounded-lg shadow-sm"
         loading="lazy"

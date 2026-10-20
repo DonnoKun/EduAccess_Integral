@@ -7,7 +7,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, BookOpen, Copy, Loader2, Plus, Send, Trash2, Users, EyeOff } from 'lucide-react';
+import { ArrowLeft, BookOpen, Copy, Loader2, Plus, Send, Trash2, Users, EyeOff, Pencil } from 'lucide-react';
+import LessonEditor, { type LessonDraft } from '@/components/LessonEditor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -66,6 +67,9 @@ export default function GroupDetailPage() {
   const [generating, setGenerating] = useState(false);
   const [studentEmail, setStudentEmail] = useState('');
   const [addingStudent, setAddingStudent] = useState(false);
+  const [drafts, setDrafts] = useState<Record<string, LessonDraft>>({});
+  const [editing, setEditing] = useState<GroupLesson | null>(null);
+  const [publishing, setPublishing] = useState<string | null>(null);
 
   const load = async () => {
     if (!groupId) return;
@@ -74,6 +78,8 @@ export default function GroupDetailPage() {
     setGroup((g as Group) || null);
     setLessons(await fetchGroupLessons(groupId, !isTeacher));
     if (isTeacher) {
+      const { data: savedDrafts } = await supabase.from('lesson_drafts').select('lesson_id,payload');
+      setDrafts(Object.fromEntries((savedDrafts || []).map(d => [d.lesson_id, d.payload as unknown as LessonDraft])));
       setRoster(await fetchGroupRoster(groupId));
       const { data: p } = await supabase
         .from('lesson_progress')
@@ -103,6 +109,7 @@ export default function GroupDetailPage() {
         },
       });
       if (error) throw new Error(error.message);
+      if (!data?.success || !data?.content?.introduction) throw new Error(data?.error || t('courses.lessonError'));
       const content = { ...(data?.content || {}), language: lang };
 
       const { data: inserted, error: insertError } = await supabase
@@ -131,22 +138,30 @@ export default function GroupDetailPage() {
     }
   };
 
-  const togglePublish = async (lesson: GroupLesson) => {
-    const nextStatus = lesson.status === 'published' ? 'draft' : 'published';
-    const { error } = await supabase
+  const togglePublish = async (lesson: GroupLesson, publishChanges = false) => {
+    const nextStatus = publishChanges || lesson.status !== 'published' ? 'published' : 'draft';
+    const draft = nextStatus === 'published' ? drafts[lesson.id] : undefined;
+    setPublishing(lesson.id);
+    const { data: updated, error } = await supabase
       .from('group_lessons')
       .update({
         status: nextStatus,
         published_at: nextStatus === 'published' ? new Date().toISOString() : null,
+        ...(draft ? { title: draft.title, description: draft.description, content: JSON.parse(JSON.stringify(draft.content)) } : {}),
       })
-      .eq('id', lesson.id);
+      .eq('id', lesson.id).select().single();
+    setPublishing(null);
     if (error) {
       toast.error(error.message);
       return;
     }
     setLessons((prev) =>
-      prev.map((l) => (l.id === lesson.id ? { ...l, status: nextStatus as GroupLesson['status'] } : l))
+      prev.map((l) => (l.id === lesson.id ? updated as unknown as GroupLesson : l))
     );
+    if (draft) {
+      const { error: deleteError } = await supabase.from('lesson_drafts').delete().eq('lesson_id', lesson.id);
+      if (!deleteError) setDrafts(prev => { const next = { ...prev }; delete next[lesson.id]; return next; });
+    }
     toast.success(nextStatus === 'published' ? t('courses.published') : t('courses.unpublished'));
   };
 
@@ -245,7 +260,9 @@ export default function GroupDetailPage() {
                   <Badge variant={lesson.status === 'published' ? 'default' : 'secondary'}>
                     {t(lesson.status === 'published' ? 'courses.statusPublished' : 'courses.statusDraft')}
                   </Badge>
+                  {isTeacher && drafts[lesson.id] && <Badge variant="outline">{t('courses.pendingChanges')}</Badge>}
                 </div>
+                {isTeacher && <p className="break-words text-muted-foreground">{t(lesson.status === 'published' ? 'courses.visibleToStudents' : 'courses.hiddenFromStudents')}</p>}
                 {lesson.description && (
                   <CardDescription className="break-words">{lesson.description}</CardDescription>
                 )}
@@ -260,7 +277,9 @@ export default function GroupDetailPage() {
                 </Button>
                 {isTeacher && (
                   <>
-                    <Button variant="outline" onClick={() => togglePublish(lesson)}>
+                    <Button variant="outline" onClick={() => setEditing(lesson)}><Pencil className="h-4 w-4" />{t('courses.editLesson')}</Button>
+                    {lesson.status === 'published' && drafts[lesson.id] && <Button disabled={publishing === lesson.id} onClick={() => togglePublish(lesson, true)}><Send className="h-4 w-4" />{t('courses.publishChanges')}</Button>}
+                    <Button disabled={publishing === lesson.id} variant="outline" onClick={() => togglePublish(lesson)}>
                       {lesson.status === 'published' ? (
                         <EyeOff className="mr-2 h-4 w-4" aria-hidden="true" />
                       ) : (
@@ -399,6 +418,7 @@ export default function GroupDetailPage() {
           lessonList
         )}
       </main>
+      {editing && <LessonEditor key={editing.id} lesson={editing} initial={drafts[editing.id] || { title: editing.title, description: editing.description, content: editing.content }} onClose={() => setEditing(null)} onSaved={draft => setDrafts(prev => ({ ...prev, [editing.id]: draft }))} />}
     </div>
   );
 }

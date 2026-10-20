@@ -1,0 +1,4 @@
+# Architecture rules
+- Group lesson edits are stored in owner-only lesson_drafts; publishing copies a draft into group_lessons so students never see unfinished edits.
+- Pin each student's first published lesson snapshot in lesson_progress and preserve it on updates; exercise answers and scores must remain tied to the material they started.
+- Translate original structured lesson content rather than regenerating a topic; validate structure and preserve source URLs and image prompts to prevent changed exercises and unnecessary image generation.

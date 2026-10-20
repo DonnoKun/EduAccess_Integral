@@ -34,17 +34,25 @@ export default function LessonViewerPage() {
   const [results, setResults] = useState<Record<number, 'correct' | 'partial' | 'incorrect'>>({});
   const [progressId, setProgressId] = useState<string | null>(null);
   const [savedSeconds, setSavedSeconds] = useState(0);
+  const [savedPercentage, setSavedPercentage] = useState(0);
+  const [savedCorrectCount, setSavedCorrectCount] = useState(0);
+  const completedRef = useRef(false);
   const startedAt = useRef(Date.now());
 
   const [translated, setTranslated] = useState<LessonContent | null>(null);
   const [translating, setTranslating] = useState(false);
+  const [translationFailed, setTranslationFailed] = useState(false);
   const { getCachedCourse, saveCourseToCache } = useCourseCache();
   const original: LessonContent = (lesson?.content as LessonContent) || {};
   const content: LessonContent = translated || original;
+  const readingLanguage = content.language || (translationFailed ? ((`${content.introduction || ''}`.match(/\b(the|and|of|to)\b/gi) || []).length > 3 ? 'en' : 'es') : lang);
 
   // Show the lesson in the user's current language (translate once, then cache)
   useEffect(() => {
     if (!lesson) return;
+    setTranslated(null);
+    setTranslationFailed(false);
+    setTranslating(false);
     const orig = (lesson.content as any) || {};
     const sample = `${orig.introduction || ''} ${orig.summary || ''}`.toLowerCase();
     const esHits = (sample.match(/\b(el|la|los|las|de|que|y|en|una|es)\b/g) || []).length;
@@ -54,32 +62,42 @@ export default function LessonViewerPage() {
     let cancelled = false;
     (async () => {
       setTranslating(true);
-      const key = `lesson:${lesson.id}`;
+      try {
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(orig)));
+      const hash = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
+      const key = `lesson-translation-v2:${lesson.id}:${hash}`;
       let c = (await getCachedCourse(key, lang)) as any;
       if (!c) {
-        const { data } = await supabase.functions.invoke('generate-course-content', {
-          body: { title: lesson.title, description: lesson.description || lesson.title, contentType: 'article', source: 'oer', language: lang },
+        const { data, error } = await supabase.functions.invoke('generate-course-content', {
+          body: { title: lesson.title, description: lesson.description || lesson.title, contentType: 'article', source: 'oer', language: lang, originalContent: orig },
         });
-        if (data?.content?.introduction) {
+        if (!error && data?.success && data?.content?.introduction) {
           c = { ...data.content, language: lang };
           await saveCourseToCache(key, lang, c);
         }
       }
-      if (!cancelled) { setTranslated(c || null); setTranslating(false); }
+      if (!cancelled) { setTranslated(c || null); setTranslationFailed(!c); }
+      } catch { if (!cancelled) setTranslationFailed(true); }
+      finally { if (!cancelled) setTranslating(false); }
     })();
     return () => { cancelled = true; };
   }, [lesson, lang, getCachedCourse, saveCourseToCache]);
   const exercises = content.exercises || [];
 
   const correctCount = useMemo(
-    () => Object.values(results).filter((r) => r === 'correct').length,
-    [results]
+    () => Math.max(savedCorrectCount, Object.values(results).filter((r) => r === 'correct').length),
+    [results, savedCorrectCount]
   );
-  const percentage = exercises.length > 0 ? Math.round((correctCount / exercises.length) * 100) : 0;
+  const percentage = Math.max(savedPercentage, exercises.length > 0 ? Math.round((correctCount / exercises.length) * 100) : 0);
 
   useEffect(() => {
     const load = async () => {
       if (!lessonId) return;
+      setIsLoading(true);
+      setAnswers({}); setResults({}); setProgressId(null);
+      setSavedCorrectCount(0); setSavedPercentage(0); setSavedSeconds(0);
+      completedRef.current = false;
+      startedAt.current = Date.now();
       const { data } = await supabase.from('group_lessons').select('*').eq('id', lessonId).maybeSingle();
       setLesson((data as unknown as GroupLesson) || null);
 
@@ -93,6 +111,18 @@ export default function LessonViewerPage() {
         if (p) {
           setProgressId((p as any).id);
           setSavedSeconds((p as any).time_spent_seconds || 0);
+          setSavedPercentage(p.progress_percentage);
+          setSavedCorrectCount(p.exercises_completed);
+          setAnswers(p.exercise_answers as Record<number, string> || {});
+          setResults(p.exercise_results as Record<number, 'correct' | 'partial' | 'incorrect'> || {});
+          completedRef.current = p.completed;
+          if (p.lesson_snapshot) setLesson(p.lesson_snapshot as unknown as GroupLesson);
+        } else if (data && groupId) {
+          const { data: created, error } = await supabase.from('lesson_progress').insert({ lesson_id: lessonId, group_id: groupId, student_id: currentUser.id }).select().single();
+          if (created) {
+            setProgressId(created.id);
+            if (created.lesson_snapshot) setLesson(created.lesson_snapshot as unknown as GroupLesson);
+          } else if (error) toast.error(t('courses.progressSaveError'));
         }
       }
       setIsLoading(false);
@@ -101,34 +131,41 @@ export default function LessonViewerPage() {
   }, [lessonId, currentUser?.id, isStudent]);
 
   const saveProgress = async (completed = false) => {
-    if (!currentUser?.id || !groupId || !lessonId || !isStudent) return;
+    if (!currentUser?.id || !groupId || !lessonId || !isStudent || isLoading || !progressId) return;
+    if (completed) completedRef.current = true;
     const elapsed = savedSeconds + Math.round((Date.now() - startedAt.current) / 1000);
     const payload = {
       lesson_id: lessonId,
       group_id: groupId,
       student_id: currentUser.id,
-      completed,
-      progress_percentage: completed ? 100 : percentage,
+      completed: completedRef.current,
+      progress_percentage: completedRef.current ? 100 : percentage,
       exercises_completed: correctCount,
       exercises_total: exercises.length,
       time_spent_seconds: elapsed,
+      exercise_answers: answers,
+      exercise_results: results,
     };
 
-    if (progressId) {
-      await supabase.from('lesson_progress').update(payload).eq('id', progressId);
-    } else {
-      const { data } = await supabase.from('lesson_progress').insert(payload).select().single();
-      if (data) setProgressId((data as any).id);
-    }
+    const { error } = await supabase.from('lesson_progress').update(payload).eq('id', progressId);
+    if (error) throw error;
   };
 
-  // Persist time on unmount
+  const saveRef = useRef(saveProgress);
+  saveRef.current = saveProgress;
+  // Autosave answers, preserve completion, and flush current data on exit.
   useEffect(() => {
-    return () => {
-      saveProgress(false);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progressId, percentage, correctCount]);
+    if (!progressId || isLoading) return;
+    const timer = window.setTimeout(() => { saveRef.current().catch(() => toast.error(t('courses.progressSaveError'))); }, 600);
+    return () => window.clearTimeout(timer);
+  }, [answers, results, progressId, isLoading]);
+  useEffect(() => {
+    const flush = () => { saveRef.current().catch(() => {}); };
+    const timer = window.setInterval(flush, 15000);
+    const hidden = () => { if (document.visibilityState === 'hidden') flush(); };
+    document.addEventListener('visibilitychange', hidden);
+    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', hidden); flush(); };
+  }, []);
 
   const fullText = useMemo(() => {
     const parts: string[] = [];
@@ -151,8 +188,11 @@ export default function LessonViewerPage() {
   };
 
   const handleComplete = async () => {
-    await saveProgress(true);
-    toast.success(t('courses.lessonCompleted'));
+    try {
+      await saveProgress(true);
+      setSavedPercentage(100);
+      toast.success(t('courses.lessonCompleted'));
+    } catch { toast.error(t('courses.progressSaveError')); }
   };
 
   if (isLoading) {
@@ -173,22 +213,25 @@ export default function LessonViewerPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
+      <header className="sticky top-0 z-40 border-b bg-background">
         <div className="container mx-auto flex flex-wrap items-center gap-3 px-4 py-4">
           <Button variant="ghost" size="sm" onClick={() => navigate(`/courses/${groupId}`)}>
             <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
-            {t('common.back')}
+            {t('courses.backToLessons')}
           </Button>
           <h1 className="break-words font-bold">{lesson.title}</h1>
         </div>
       </header>
 
-      <main className="container mx-auto max-w-3xl space-y-6 px-4 py-6">
+      <main className="container mx-auto max-w-3xl space-y-6 px-4 py-6" aria-busy={translating}>
+        {isStudent && <p className="text-muted-foreground">{t('courses.pinnedVersion')}</p>}
+        {translationFailed && <p role="alert" className="text-destructive">{t('courses.translationFailed')}</p>}
         {translating && (
           <p role="status" className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> {t('courses.translating')}
           </p>
         )}
+        {!translating && <>
         {isStudent && exercises.length > 0 && (
           <div className="space-y-2">
             <p className="text-muted-foreground">{t('courses.yourProgress')}: {percentage}%</p>
@@ -201,7 +244,7 @@ export default function LessonViewerPage() {
             <CardTitle>{t('contentViewer.introduction', 'Introducción')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <AudioPlayer text={fullText} lang={lang} storageKey={`${lessonId}:intro:${lang}`} />
+            <AudioPlayer text={fullText} lang={readingLanguage} storageKey={`${currentUser?.id}:${lessonId}:intro:${readingLanguage}`} />
             <p className="whitespace-pre-line break-words">{content.introduction}</p>
           </CardContent>
         </Card>
@@ -214,8 +257,8 @@ export default function LessonViewerPage() {
             <CardContent className="space-y-3">
               <AudioPlayer
                 text={`${section.title}. ${section.content}. ${section.image_alt || ''}`}
-                lang={lang}
-                storageKey={`${lessonId}:s${i}:${lang}`}
+                lang={readingLanguage}
+                storageKey={`${currentUser?.id}:${lessonId}:s${i}:${readingLanguage}`}
               />
               <p className="whitespace-pre-line break-words">{section.content}</p>
               {section.image_prompt && (
@@ -223,8 +266,9 @@ export default function LessonViewerPage() {
                   prompt={section.image_prompt}
                   alt={section.image_alt || section.title}
                   lang={lang}
-                  sectionTitle={section.title}
-                  sectionContext={section.content}
+                  cacheAlt={original.sections?.[i]?.image_alt || original.sections?.[i]?.title}
+                  sectionTitle={original.sections?.[i]?.title || section.title}
+                  sectionContext={original.sections?.[i]?.content || section.content}
                 />
               )}
               {section.keyPoints && section.keyPoints.length > 0 && (
@@ -245,7 +289,7 @@ export default function LessonViewerPage() {
               <CardTitle>{t('contentViewer.examples', 'Ejemplos prácticos')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <AudioPlayer text={examplesText} lang={lang} storageKey={`${lessonId}:examples:${lang}`} />
+              <AudioPlayer text={examplesText} lang={readingLanguage} storageKey={`${currentUser?.id}:${lessonId}:examples:${readingLanguage}`} />
               {(content.examples || []).map((example, i) => (
                 <div key={i} className="space-y-1">
                   <h3 className="font-semibold break-words">{example.title}</h3>
@@ -262,7 +306,7 @@ export default function LessonViewerPage() {
               <CardTitle>{t('contentViewer.exercises', 'Ejercicios de práctica')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <AudioPlayer text={exercisesText} lang={lang} storageKey={`${lessonId}:exercises:${lang}`} />
+              <AudioPlayer text={exercisesText} lang={readingLanguage} storageKey={`${currentUser?.id}:${lessonId}:exercises:${readingLanguage}`} />
               {exercises.map((exercise, i) => (
                 <div key={i} className="space-y-2">
                   <p className="break-words font-medium">{i + 1}. {exercise.question}</p>
@@ -298,7 +342,7 @@ export default function LessonViewerPage() {
               <CardTitle>{t('contentViewer.summary', 'Resumen')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <AudioPlayer text={content.summary} lang={lang} storageKey={`${lessonId}:summary:${lang}`} />
+              <AudioPlayer text={content.summary} lang={readingLanguage} storageKey={`${currentUser?.id}:${lessonId}:summary:${readingLanguage}`} />
               <p className="whitespace-pre-line break-words">{content.summary}</p>
             </CardContent>
           </Card>
@@ -337,11 +381,12 @@ export default function LessonViewerPage() {
 
 
         {isStudent && (
-          <Button onClick={handleComplete}>
+          <Button disabled={!progressId} onClick={handleComplete}>
             <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />
             {t('courses.markCompleted')}
           </Button>
         )}
+        </>}
       </main>
     </div>
   );

@@ -18,6 +18,7 @@ export interface Group {
 }
 
 export interface GroupLesson {
+  revision?: number;
   id: string;
   group_id: string;
   created_by: string;
@@ -58,6 +59,7 @@ export interface LessonSource {
 }
 
 export interface LessonContent {
+  language?: string;
   introduction?: string;
   sections?: LessonSection[];
   examples?: LessonExample[];
