@@ -462,7 +462,13 @@ export default function Dashboard() {
                 <ul className="space-y-2">
                   {['teacherTip1', 'teacherTip2', 'teacherTip3', 'teacherTip4'].map((k) => (
                     <li key={k}>
-                      <Button variant="ghost" className="h-auto w-full justify-start whitespace-normal text-left" onClick={() => navigate('/courses')}>
+                      <Button variant="ghost" className="h-auto w-full justify-start whitespace-normal text-left" onClick={async () => {
+                        if (k === 'teacherTip1') return navigate('/courses?create=1');
+                        const { data } = await supabase.from('groups').select('id').eq('owner_id', currentUser?.id || '').order('created_at').limit(1);
+                        const gid = data?.[0]?.id;
+                        if (!gid) return navigate('/courses?create=1');
+                        navigate(`/courses/${gid}?tab=${k === 'teacherTip3' ? 'lessons' : 'students'}`);
+                      }}>
                         <GraduationCap className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />
                         <span className="break-words">{t(`courses.${k}`)}</span>
                       </Button>

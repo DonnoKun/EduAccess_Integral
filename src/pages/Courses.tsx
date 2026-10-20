@@ -55,7 +55,7 @@ export default function CoursesPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Teacher create form
-  const [openCreate, setOpenCreate] = useState(false);
+  const [openCreate, setOpenCreate] = useState(() => new URLSearchParams(window.location.search).get('create') === '1');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [level, setLevel] = useState('');
