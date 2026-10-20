@@ -4,6 +4,7 @@
  * Independent from the self-managed "direct mode" library.
  */
 
+import LevelField from '@/components/LevelField';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -195,10 +196,7 @@ export default function CoursesPage() {
                   <Label htmlFor="group-desc">{t('courses.groupDescription')}</Label>
                   <Textarea id="group-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="group-level">{t('courses.groupLevel')}</Label>
-                  <Input id="group-level" value={level} onChange={(e) => setLevel(e.target.value)} />
-                </div>
+                <LevelField id="group-level" value={level} onChange={setLevel} />
               </div>
               <DialogFooter>
                 <Button onClick={handleCreate} disabled={creating || !name.trim()}>
@@ -316,10 +314,7 @@ export default function CoursesPage() {
                   <Label htmlFor="edit-desc">{t('courses.groupDescription')}</Label>
                   <Textarea id="edit-desc" value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-level">{t('courses.groupLevel')}</Label>
-                  <Input id="edit-level" value={editing.level} onChange={(e) => setEditing({ ...editing, level: e.target.value })} />
-                </div>
+                <LevelField id="edit-level" value={editing.level} onChange={(v) => setEditing({ ...editing, level: v })} />
               </div>
             )}
             <DialogFooter className="flex-wrap gap-2">
