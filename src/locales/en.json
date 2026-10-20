@@ -405,6 +405,24 @@
     "goToGroups": "Go to my groups",
     "nowReading": "Now reading",
     "resumeReading": "Resume where you left off",
-    "translating": "Translating the lesson to your language…"
+    "translating": "Translating and proofreading the lesson…",
+    "translationFailed": "Translation was unavailable. Showing the original content; your progress is saved.",
+    "editLesson": "Edit lesson",
+    "editNotice": "You are editing the original content. Changes are saved as a draft and only reach students when you publish them.",
+    "saveDraft": "Save draft",
+    "draftSaved": "Draft saved; not yet visible to students",
+    "editError": "Could not save the draft",
+    "discardChanges": "Discard unsaved changes?",
+    "publishChanges": "Publish changes",
+    "pendingChanges": "Unpublished changes",
+    "visibleToStudents": "Visible to enrolled students. Students who already started keep their version and progress.",
+    "hiddenFromStudents": "Hidden from new readings. Students who already started keep their saved work.",
+    "backToLessons": "Back to lessons",
+    "pinnedVersion": "Your reading keeps the version you started and your answers, even if your teacher publishes changes.",
+    "progressSaveError": "Could not save progress. Please retry before leaving.",
+    "editFields": {
+      "introduction": "Introduction", "sections": "Sections", "examples": "Examples", "exercises": "Exercises", "summary": "Summary", "sources": "Sources",
+      "title": "Title", "content": "Text", "description": "Description", "keyPoints": "Key points", "image_prompt": "Illustration prompt (English)", "image_alt": "Accessible image description", "question": "Question", "hint": "Hint", "answer_keywords": "Answer keywords", "solution": "Solution", "name": "Name", "url": "Link"
+    }
   }
 }

@@ -405,6 +405,24 @@
     "goToGroups": "Ir a mis grupos",
     "nowReading": "Leyendo ahora",
     "resumeReading": "Continuar donde quedaste",
-    "translating": "Traduciendo la lección a tu idioma…"
+    "translating": "Traduciendo y revisando la lección a tu idioma…",
+    "translationFailed": "No se pudo traducir. Se muestra el contenido original; tu avance está guardado.",
+    "editLesson": "Editar lección",
+    "editNotice": "Editas el contenido original. Los cambios se guardan como borrador y solo llegan a los alumnos cuando los publicas.",
+    "saveDraft": "Guardar borrador",
+    "draftSaved": "Borrador guardado; aún no es visible para alumnos",
+    "editError": "No se pudo guardar el borrador",
+    "discardChanges": "¿Descartar los cambios sin guardar?",
+    "publishChanges": "Publicar cambios",
+    "pendingChanges": "Cambios sin publicar",
+    "visibleToStudents": "Visible para alumnos inscritos. Quienes ya comenzaron conservan su versión y su avance.",
+    "hiddenFromStudents": "Oculta para nuevas lecturas. Quienes ya comenzaron conservan su trabajo guardado.",
+    "backToLessons": "Volver a lecciones",
+    "pinnedVersion": "Tu lectura conserva la versión con la que empezaste y tus respuestas, aunque el docente publique cambios.",
+    "progressSaveError": "No se pudo guardar el avance. Vuelve a intentarlo antes de salir.",
+    "editFields": {
+      "introduction": "Introducción", "sections": "Secciones", "examples": "Ejemplos", "exercises": "Ejercicios", "summary": "Resumen", "sources": "Fuentes",
+      "title": "Título", "content": "Texto", "description": "Descripción", "keyPoints": "Puntos clave", "image_prompt": "Descripción para la ilustración (inglés)", "image_alt": "Descripción accesible de la imagen", "question": "Pregunta", "hint": "Pista", "answer_keywords": "Palabras clave de la respuesta", "solution": "Solución", "name": "Nombre", "url": "Enlace"
+    }
   }
 }
