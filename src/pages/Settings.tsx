@@ -66,7 +66,9 @@ export default function Settings() {
     events,
     sessionMetrics,
   } = useStore();
-  const { isAuthenticated, logout, currentUser } = useAuthStore();
+  const { isAuthenticated, logout, currentUser, role } = useAuthStore();
+  const isTeacher = role === 'teacher';
+  const [tStats, setTStats] = useState({ groups: 0, students: 0, published: 0, drafts: 0, completions: 0 });
   
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
@@ -98,6 +100,27 @@ export default function Settings() {
     };
     loadStats();
   }, [currentUser?.id]);
+
+  useEffect(() => {
+    if (!isTeacher || !currentUser?.id) return;
+    (async () => {
+      const { data: gs } = await supabase.from('groups').select('id').eq('owner_id', currentUser.id);
+      const ids = (gs || []).map((g) => g.id);
+      if (ids.length === 0) return setTStats({ groups: 0, students: 0, published: 0, drafts: 0, completions: 0 });
+      const [{ data: en }, { data: ls }, { data: pr }] = await Promise.all([
+        supabase.from('group_enrollments').select('student_id').in('group_id', ids),
+        supabase.from('group_lessons').select('status').in('group_id', ids),
+        supabase.from('lesson_progress').select('completed').in('group_id', ids),
+      ]);
+      setTStats({
+        groups: ids.length,
+        students: new Set((en || []).map((e) => e.student_id)).size,
+        published: (ls || []).filter((l) => l.status === 'published').length,
+        drafts: (ls || []).filter((l) => l.status !== 'published').length,
+        completions: (pr || []).filter((p) => p.completed).length,
+      });
+    })();
+  }, [isTeacher, currentUser?.id]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -465,7 +488,15 @@ export default function Settings() {
                 </CardHeader>
                 <CardContent className="settings-card-content">
                   <div className="settings-info-box">
-                    <h3 className="settings-info-title">{t('settings.data.sessionStats')}</h3>
+                    {isTeacher ? (<>
+                    <h3 className="settings-info-title">{t('settings.data.teacherStats')}</h3>
+                    <ul className="settings-stats-list">
+                      {([['groups', tStats.groups], ['students', tStats.students], ['publishedLessons', tStats.published], ['draftLessons', tStats.drafts], ['completions', tStats.completions]] as const).map(([k, v]) => (
+                        <li key={k}><span>{t(`settings.data.${k}`)}:</span><strong>{v}</strong></li>
+                      ))}
+                      <li><span>{t('settings.data.totalTime')}:</span><strong>{Math.floor(dbStats.totalTime / 60)} min</strong></li>
+                    </ul>
+                    </>) : (<><h3 className="settings-info-title">{t('settings.data.sessionStats')}</h3>
                     <ul className="settings-stats-list">
                       <li>
                         <span>{t('settings.data.contentViewed')}:</span>
@@ -477,9 +508,9 @@ export default function Settings() {
                       </li>
                       <li>
                         <span>{t('settings.data.eventsTracked')}:</span>
-                        <strong>{dbStats.totalTime > 0 ? `${Math.floor(dbStats.totalTime / 60)}m` : `${events.length}`}</strong>
+                        <strong>{dbStats.totalTime > 0 ? `${Math.floor(dbStats.totalTime / 60)} min` : '0 min'}</strong>
                       </li>
-                    </ul>
+                    </ul></>)}
                   </div>
 
                   <Button onClick={exportData} className="settings-action-button">

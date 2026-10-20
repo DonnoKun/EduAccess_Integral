@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import AudioPlayer from '@/components/AudioPlayer';
+import { useCourseCache } from '@/hooks/useCourseCache';
 import CourseImage from '@/components/CourseImage';
 
 import { supabase } from '@/integrations/supabase/client';
@@ -35,7 +36,39 @@ export default function LessonViewerPage() {
   const [savedSeconds, setSavedSeconds] = useState(0);
   const startedAt = useRef(Date.now());
 
-  const content: LessonContent = (lesson?.content as LessonContent) || {};
+  const [translated, setTranslated] = useState<LessonContent | null>(null);
+  const [translating, setTranslating] = useState(false);
+  const { getCachedCourse, saveCourseToCache } = useCourseCache();
+  const original: LessonContent = (lesson?.content as LessonContent) || {};
+  const content: LessonContent = translated || original;
+
+  // Show the lesson in the user's current language (translate once, then cache)
+  useEffect(() => {
+    if (!lesson) return;
+    const orig = (lesson.content as any) || {};
+    const sample = `${orig.introduction || ''} ${orig.summary || ''}`.toLowerCase();
+    const esHits = (sample.match(/\b(el|la|los|las|de|que|y|en|una|es)\b/g) || []).length;
+    const enHits = (sample.match(/\b(the|and|of|to|is|in|a|that|with)\b/g) || []).length;
+    const sourceLang = orig.language || (esHits >= enHits ? 'es' : 'en');
+    if (sourceLang === lang) { setTranslated(null); return; }
+    let cancelled = false;
+    (async () => {
+      setTranslating(true);
+      const key = `lesson:${lesson.id}`;
+      let c = (await getCachedCourse(key, lang)) as any;
+      if (!c) {
+        const { data } = await supabase.functions.invoke('generate-course-content', {
+          body: { title: lesson.title, description: lesson.description || lesson.title, contentType: 'article', source: 'oer', language: lang },
+        });
+        if (data?.content?.introduction) {
+          c = { ...data.content, language: lang };
+          await saveCourseToCache(key, lang, c);
+        }
+      }
+      if (!cancelled) { setTranslated(c || null); setTranslating(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [lesson, lang, getCachedCourse, saveCourseToCache]);
   const exercises = content.exercises || [];
 
   const correctCount = useMemo(
@@ -151,6 +184,11 @@ export default function LessonViewerPage() {
       </header>
 
       <main className="container mx-auto max-w-3xl space-y-6 px-4 py-6">
+        {translating && (
+          <p role="status" className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> {t('courses.translating')}
+          </p>
+        )}
         {isStudent && exercises.length > 0 && (
           <div className="space-y-2">
             <p className="text-muted-foreground">{t('courses.yourProgress')}: {percentage}%</p>
@@ -163,7 +201,7 @@ export default function LessonViewerPage() {
             <CardTitle>{t('contentViewer.introduction', 'Introducción')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <AudioPlayer text={fullText} lang={lang} />
+            <AudioPlayer text={fullText} lang={lang} storageKey={`${lessonId}:intro:${lang}`} />
             <p className="whitespace-pre-line break-words">{content.introduction}</p>
           </CardContent>
         </Card>
@@ -177,6 +215,7 @@ export default function LessonViewerPage() {
               <AudioPlayer
                 text={`${section.title}. ${section.content}. ${section.image_alt || ''}`}
                 lang={lang}
+                storageKey={`${lessonId}:s${i}:${lang}`}
               />
               <p className="whitespace-pre-line break-words">{section.content}</p>
               {section.image_prompt && (
@@ -206,7 +245,7 @@ export default function LessonViewerPage() {
               <CardTitle>{t('contentViewer.examples', 'Ejemplos prácticos')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <AudioPlayer text={examplesText} lang={lang} />
+              <AudioPlayer text={examplesText} lang={lang} storageKey={`${lessonId}:examples:${lang}`} />
               {(content.examples || []).map((example, i) => (
                 <div key={i} className="space-y-1">
                   <h3 className="font-semibold break-words">{example.title}</h3>
@@ -223,7 +262,7 @@ export default function LessonViewerPage() {
               <CardTitle>{t('contentViewer.exercises', 'Ejercicios de práctica')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <AudioPlayer text={exercisesText} lang={lang} />
+              <AudioPlayer text={exercisesText} lang={lang} storageKey={`${lessonId}:exercises:${lang}`} />
               {exercises.map((exercise, i) => (
                 <div key={i} className="space-y-2">
                   <p className="break-words font-medium">{i + 1}. {exercise.question}</p>
@@ -259,7 +298,7 @@ export default function LessonViewerPage() {
               <CardTitle>{t('contentViewer.summary', 'Resumen')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <AudioPlayer text={content.summary} lang={lang} />
+              <AudioPlayer text={content.summary} lang={lang} storageKey={`${lessonId}:summary:${lang}`} />
               <p className="whitespace-pre-line break-words">{content.summary}</p>
             </CardContent>
           </Card>

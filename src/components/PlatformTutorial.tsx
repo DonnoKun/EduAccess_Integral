@@ -23,6 +23,8 @@ import {
   ImageIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/store/useAuthStore';
+import { Users as TUsers, BookOpen as TBook, BarChart3 as TChart, Sparkles as TSpark } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -158,6 +160,33 @@ const tutorialSteps: TutorialStep[] = [
 ];
 
 /** Build the narration text for a given step */
+
+const T = (title: [string,string], desc: [string,string], tES: string[], tEN: string[], icon: React.ReactNode): TutorialStep =>
+  ({ icon, titleES: title[0], titleEN: title[1], descriptionES: desc[0], descriptionEN: desc[1], tipsES: tES, tipsEN: tEN });
+
+const teacherSteps: TutorialStep[] = [
+  T(['👩‍🏫 Bienvenido, docente', '👩‍🏫 Welcome, teacher'],
+    ['EduAccess te permite crear grupos, generar lecciones accesibles con IA y seguir el progreso de tus alumnos.', 'EduAccess lets you create groups, generate accessible AI lessons and follow your students\' progress.'],
+    ['Todo empieza en "Mis grupos" (menú superior o inferior)', 'Tus alumnos verán las lecciones con audio, contraste y letra adaptada'],
+    ['Everything starts in "My groups" (top or bottom menu)', 'Students see lessons with audio, contrast and adapted text'], <TSpark className="h-12 w-12" />),
+  T(['➕ Crea un grupo', '➕ Create a group'],
+    ['En "Mis grupos" pulsa "Crear grupo" y escribe nombre, descripción y nivel. Se genera un código de invitación.', 'In "My groups" press "Create group" and enter name, description and level. An invitation code is generated.'],
+    ['Copia el código con el botón junto a él', 'Puedes editar o eliminar el grupo desde su tarjeta'],
+    ['Copy the code with the button next to it', 'You can edit or delete the group from its card'], <GraduationCap className="h-12 w-12" />),
+  T(['👥 Agrega alumnos', '👥 Add students'],
+    ['Comparte el código para que tus alumnos se unan, o abre el grupo, ve a la pestaña "Alumnos" y agrégalos por correo.', 'Share the code so students join, or open the group, go to the "Students" tab and add them by email.'],
+    ['El alumno debe tener una cuenta registrada', 'Puedes quitar a un alumno desde la misma pestaña'],
+    ['The student must have a registered account', 'You can remove a student from the same tab'], <TUsers className="h-12 w-12" />),
+  T(['📝 Crea y publica lecciones', '📝 Create and publish lessons'],
+    ['Dentro del grupo pulsa "Nueva lección": la IA genera texto, imágenes, ejemplos y ejercicios. Revísala y publícala.', 'Inside the group press "New lesson": AI generates text, images, examples and exercises. Review it and publish it.'],
+    ['Los borradores no los ven los alumnos', 'Puedes despublicar una lección en cualquier momento'],
+    ['Students cannot see drafts', 'You can unpublish a lesson at any time'], <TBook className="h-12 w-12" />),
+  T(['📊 Sigue el progreso', '📊 Track progress'],
+    ['En la pestaña "Alumnos" ves el avance promedio de cada alumno en las lecciones del grupo.', 'In the "Students" tab you see each student\'s average progress in the group\'s lessons.'],
+    ['Ajustes > Datos muestra el resumen de tus grupos', 'Puedes volver a ver esta guía desde el panel'],
+    ['Settings > Data shows a summary of your groups', 'You can reopen this guide from the dashboard'], <TChart className="h-12 w-12" />),
+];
+
 function buildNarrationText(step: TutorialStep, stepIndex: number, totalSteps: number, isES: boolean): string {
   const title = (isES ? step.titleES : step.titleEN).replace(/[🔍📚🔊🖼️📖🎨]/g, '').trim();
   const description = isES ? step.descriptionES : step.descriptionEN;
@@ -185,6 +214,8 @@ interface PlatformTutorialProps {
 
 export default function PlatformTutorial({ open, onClose }: PlatformTutorialProps) {
   const [currentStep, setCurrentStep] = useState(0);
+  const role = useAuthStore((s) => s.role);
+  const steps = role === 'teacher' ? teacherSteps : tutorialSteps;
   const [isMuted, setIsMuted] = useState(false);
   const { i18n } = useTranslation();
   const lang = i18n.language?.split('-')[0] || 'es';
@@ -200,9 +231,9 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
 
   useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
 
-  const step = tutorialSteps[currentStep];
+  const step = steps[currentStep];
   const isFirst = currentStep === 0;
-  const isLast = currentStep === tutorialSteps.length - 1;
+  const isLast = currentStep === steps.length - 1;
 
   /** Speak narration for the current step */
   const speakStep = useCallback((stepIdx: number) => {
@@ -211,8 +242,8 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
 
     synth.cancel();
 
-    const stepData = tutorialSteps[stepIdx];
-    const narration = buildNarrationText(stepData, stepIdx, tutorialSteps.length, isES);
+    const stepData = steps[stepIdx];
+    const narration = buildNarrationText(stepData, stepIdx, steps.length, isES);
 
     const utterance = new SpeechSynthesisUtterance(narration);
     utterance.lang = isES ? 'es-ES' : 'en-US';
@@ -325,7 +356,7 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
 
         {/* Step indicator */}
         <div className="flex items-center justify-center gap-1.5 py-2">
-          {tutorialSteps.map((_, i) => (
+          {steps.map((_, i) => (
             <button
               key={i}
               onClick={() => {
@@ -399,7 +430,7 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
           </Button>
 
           <span className="text-muted-foreground" style={{ fontSize: '12px' }}>
-            {currentStep + 1} / {tutorialSteps.length}
+            {currentStep + 1} / {steps.length}
           </span>
 
           <Button onClick={handleNext} size="sm" style={{ fontSize: '14px' }}>

@@ -260,16 +260,23 @@
       "sessionStats": "Session Statistics",
       "contentViewed": "Content viewed",
       "tasksCompleted": "Tasks completed",
-      "eventsTracked": "Events tracked",
+      "eventsTracked": "Total time",
       "exportData": "Export My Data (GDPR)",
       "privacyNote": "Your data is stored locally in your browser and is used only for research purposes. No personal information is shared with third parties.",
       "logout": "Logout",
       "logoutConfirm": "Are you sure you want to logout?",
-      "logoutDescription": "Your visual settings will be reset to default values."
+      "logoutDescription": "Your visual settings will be reset to default values.",
+      "teacherStats": "My groups summary",
+      "groups": "Groups",
+      "students": "Enrolled students",
+      "publishedLessons": "Published lessons",
+      "draftLessons": "Drafts",
+      "completions": "Lessons completed by students",
+      "totalTime": "Time on platform"
     },
     "about": {
       "title": "About EduAccess",
-      "version": "Version 1.0.0 (Doctoral Thesis Prototype)",
+      "version": "Version 1.9.0 (Doctoral Thesis Prototype) · Updated Oct 2026",
       "description": "EduAccess is an intelligent educational content aggregation ecosystem with automatic accessibility remediation for students with mild to moderate visual impairment.",
       "research": "Research Project",
       "researchDesc": "This prototype is part of a doctoral thesis investigating middleware architectures for educational accessibility. Based on research by Michael (2024), Jeanneret & Baudet (2022), and ISO/IEC 24751 standards.",
@@ -395,6 +402,9 @@
     "teacherTip2": "Add students by email from the group's Students tab",
     "teacherTip3": "Review and publish your lessons; students can't see drafts",
     "teacherTip4": "Check each student's progress inside the group",
-    "goToGroups": "Go to my groups"
+    "goToGroups": "Go to my groups",
+    "nowReading": "Now reading",
+    "resumeReading": "Resume where you left off",
+    "translating": "Translating the lesson to your language…"
   }
 }

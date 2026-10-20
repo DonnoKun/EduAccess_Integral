@@ -17,6 +17,8 @@ interface AudioPlayerProps {
   disabled?: boolean;
   onChunkChange?: (chunkIndex: number, totalChunks: number) => void;
   onChunkTextChange?: (chunkText: string) => void;
+  /** When set, reading position is saved and restored across visits */
+  storageKey?: string;
 }
 
 function cleanTextForTTS(text: string): string {
@@ -32,7 +34,9 @@ function cleanTextForTTS(text: string): string {
     .trim();
 }
 
-export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChunkTextChange }: AudioPlayerProps) {
+export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChunkTextChange, storageKey }: AudioPlayerProps) {
+  const posKey = storageKey ? `eduaccess-tts:${storageKey}` : null;
+  const [nowReading, setNowReading] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -79,6 +83,20 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
     return chunks;
   }, [text]);
 
+  // Restore saved reading position
+  useEffect(() => {
+    if (!posKey) return;
+    const saved = Number(localStorage.getItem(posKey) || '0');
+    const chunks = buildChunks();
+    chunksRef.current = chunks;
+    setTotalChunks(chunks.length);
+    if (saved > 0 && saved < chunks.length) {
+      currentChunkRef.current = saved;
+      setCurrentChunkIndex(saved);
+      setProgress(Math.round((saved / chunks.length) * 100));
+    }
+  }, [posKey, buildChunks]);
+
   const stop = useCallback(() => {
     synthRef.current?.cancel();
     isPlayingRef.current = false;
@@ -88,6 +106,7 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
     setCurrentChunkIndex(0);
     currentChunkRef.current = 0;
     onChunkTextChangeRef.current?.('');
+    setNowReading('');
   }, []);
 
   const speakFromChunk = useCallback((startIndex: number) => {
@@ -107,6 +126,8 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
         setCurrentChunkIndex(chunks.length - 1);
         onChunkChangeRef.current?.(chunks.length - 1, chunks.length);
         onChunkTextChangeRef.current?.('');
+        setNowReading('');
+        if (posKey) localStorage.removeItem(posKey);
         toast.success(lang === 'es' ? 'Lectura completada' : 'Reading complete');
         return;
       }
@@ -122,6 +143,8 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
         setProgress(pct);
         onChunkChangeRef.current?.(chunkIndex, chunks.length);
         onChunkTextChangeRef.current?.(chunks[chunkIndex]);
+        setNowReading(chunks[chunkIndex]);
+        if (posKey) localStorage.setItem(posKey, String(chunkIndex));
       };
 
       utterance.onend = () => {
@@ -142,7 +165,7 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
     };
 
     speakNext();
-  }, [lang]);
+  }, [lang, posKey]);
 
   const play = useCallback(() => {
     const synth = synthRef.current;
@@ -163,8 +186,9 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
     isPlayingRef.current = true;
     setIsPlaying(true);
     setIsPaused(false);
-    setProgress(0);
-    speakFromChunk(0);
+    const start = currentChunkRef.current > 0 && currentChunkRef.current < chunks.length ? currentChunkRef.current : 0;
+    setProgress(Math.round((start / chunks.length) * 100));
+    speakFromChunk(start);
   }, [isPaused, buildChunks, speakFromChunk]);
 
   const pause = useCallback(() => {
@@ -186,9 +210,10 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
       setProgress(0);
       setCurrentChunkIndex(0);
       currentChunkRef.current = 0;
+      if (posKey) localStorage.removeItem(posKey);
       speakFromChunk(0);
     }, 100);
-  }, [buildChunks, speakFromChunk]);
+  }, [buildChunks, speakFromChunk, posKey]);
 
   const handleSpeedChange = useCallback((newSpeed: number) => {
     setSpeed(newSpeed);
@@ -217,6 +242,7 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
     setProgress(pct);
     setCurrentChunkIndex(targetChunk);
     currentChunkRef.current = targetChunk;
+    if (posKey) localStorage.setItem(posKey, String(targetChunk));
 
     const synth = synthRef.current;
     if (synth && (isPlaying || isPaused)) {
@@ -226,7 +252,7 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
       setIsPaused(false);
       setTimeout(() => speakFromChunk(targetChunk), 50);
     }
-  }, [isPlaying, isPaused, buildChunks, speakFromChunk]);
+  }, [isPlaying, isPaused, buildChunks, speakFromChunk, posKey]);
 
   const skipChunks = useCallback((delta: number) => {
     const chunks = chunksRef.current;
@@ -324,6 +350,18 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
           {progress}%
         </span>
       </div>
+
+      {(isPlaying || isPaused) && nowReading && (
+        <div role="status" aria-live="off" className="rounded-md border-l-4 border-primary bg-primary/10 p-3">
+          <p className="text-xs font-semibold text-primary">{lang === 'es' ? 'Leyendo ahora' : 'Now reading'}:</p>
+          <p className="break-words">{nowReading}</p>
+        </div>
+      )}
+      {!isPlaying && !isPaused && progress > 0 && progress < 100 && (
+        <p className="text-xs text-muted-foreground">
+          {lang === 'es' ? 'Pulsa Escuchar para continuar donde te quedaste' : 'Press Listen to resume where you left off'}
+        </p>
+      )}
 
       {isActive && totalChunks > 0 && (
         <p className="text-xs text-muted-foreground">
