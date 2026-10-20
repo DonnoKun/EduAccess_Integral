@@ -10,6 +10,7 @@ import { useSessionTracker } from "@/hooks/useSessionTracker";
 import { useLibrarySync } from "@/hooks/useLibrarySync";
 import InstallAppBanner from "@/components/InstallAppBanner";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
 import SplashScreen from "@/components/SplashScreen";
 import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
@@ -165,6 +166,7 @@ function AppWrapper() {
       <InstallAppBanner />
       <AppContent />
       {isAuthenticated && <MobileBottomNav />}
+      {isAuthenticated && <ScrollToTopButton />}
       <ReadingGuide enabled={showReadingGuide} />
     </div>
   );
