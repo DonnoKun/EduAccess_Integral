@@ -1,6 +1,8 @@
 export function validateTranslation(original: Record<string, unknown>, translated: Record<string, unknown>) {
+  const paragraphs = (text: string) => text.trim().split(/\n\s*\n/).length;
   for (const key of ['introduction', 'summary']) {
     if (typeof translated[key] !== 'string' || !(translated[key] as string).trim()) throw new Error('Incomplete translation');
+    if (typeof original[key] === 'string' && paragraphs(original[key] as string) !== paragraphs(translated[key] as string)) throw new Error('Translation changed paragraph structure');
   }
   for (const key of ['sections', 'examples', 'exercises', 'sources']) {
     const before = original[key];

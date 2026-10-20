@@ -11,4 +11,7 @@ describe('faithful lesson translation', () => {
   it('rejects translations which lose exercises', () => {
     expect(() => validateTranslation(original, { ...original, exercises: [] })).toThrow('Translation changed exercises');
   });
+  it('rejects expansions of a single-paragraph introduction', () => {
+    expect(() => validateTranslation(original, { ...original, introduction: 'First.\n\nAdded paragraph.' })).toThrow('Translation changed paragraph structure');
+  });
 });
