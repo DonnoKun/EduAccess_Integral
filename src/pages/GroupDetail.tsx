@@ -103,7 +103,7 @@ export default function GroupDetailPage() {
         },
       });
       if (error) throw new Error(error.message);
-      const content = data?.content || {};
+      const content = { ...(data?.content || {}), language: lang };
 
       const { data: inserted, error: insertError } = await supabase
         .from('group_lessons')
@@ -298,7 +298,7 @@ export default function GroupDetailPage() {
         {isLoading ? (
           <p className="text-muted-foreground">{t('common.loading')}</p>
         ) : isTeacher ? (
-          <Tabs defaultValue="lessons">
+          <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') === 'students' ? 'students' : 'lessons'}>
             <TabsList className="flex-wrap">
               <TabsTrigger value="lessons">{t('courses.lessons')}</TabsTrigger>
               <TabsTrigger value="students">{t('courses.students')}</TabsTrigger>
