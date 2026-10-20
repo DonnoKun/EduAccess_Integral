@@ -11,6 +11,7 @@ import { useLibrarySync } from "@/hooks/useLibrarySync";
 import InstallAppBanner from "@/components/InstallAppBanner";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
+import { MotionConfig } from "framer-motion";
 import SplashScreen from "@/components/SplashScreen";
 import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
@@ -156,12 +157,14 @@ function AppContent() {
 
 function AppWrapper() {
   const { readingGuideEnabled } = useStore();
+  const animationsOn = useStore((s) => s.visualProfile?.preferences?.enableAnimations !== false);
   const { isAuthenticated } = useAuthStore();
   
   // Only show reading guide when user is authenticated
   const showReadingGuide = readingGuideEnabled && isAuthenticated;
   
   return (
+    <MotionConfig reducedMotion={animationsOn ? "never" : "always"}>
     <div className="pb-14 md:pb-0">
       <InstallAppBanner />
       <AppContent />
@@ -169,6 +172,7 @@ function AppWrapper() {
       {isAuthenticated && <ScrollToTopButton />}
       <ReadingGuide enabled={showReadingGuide} />
     </div>
+    </MotionConfig>
   );
 }
 
