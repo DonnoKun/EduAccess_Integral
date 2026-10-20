@@ -1,0 +1,5 @@
+- [ ] Translate existing lessons faithfully with Spanish/English spelling checks.
+- [ ] Add teacher lesson editing with unpublished drafts and explicit visibility states.
+- [ ] Keep a return control available while reading.
+- [ ] Preserve students' lesson version, answers and progress during teacher edits.
+- [ ] Verify affected flows and tests.
