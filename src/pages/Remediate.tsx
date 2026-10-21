@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useStore } from '@/store/useStore';
 import { supabase } from '@/integrations/supabase/client';
+import { cachedAI, aiCacheKey } from '@/lib/aiCache';
 import { toast } from 'sonner';
 import type { RemediationStage, RemediatedContent } from '@/types';
 
@@ -102,16 +103,25 @@ export default function RemediatePage() {
       try {
         // Call real AI remediation edge function
         console.log('📡 Calling AI remediation edge function...');
-        const { data, error: fnError } = await supabase.functions.invoke('remediate-content', {
-          body: {
-            title: currentContent.title,
-            description: currentContent.description,
-            contentType: currentContent.contentType,
-            source: currentContent.source,
-            url: currentContent.url,
-            language: 'es',
+        const remBody = {
+          title: currentContent.title,
+          description: currentContent.description,
+          contentType: currentContent.contentType,
+          source: currentContent.source,
+          url: currentContent.url,
+          language: 'es',
+        };
+        const { data, error: fnError } = await cachedAI(
+          aiCacheKey('remediate', remBody.url || remBody.title, remBody.language),
+          remBody.title,
+          remBody.language,
+          async () => {
+            const r = await supabase.functions.invoke('remediate-content', { body: remBody });
+            if (r.error) throw r.error;
+            return r.data;
           },
-        });
+          (d: any) => !!d?.success,
+        ).then((d: any) => ({ data: d, error: null as Error | null }), (e: Error) => ({ data: null as any, error: e }));
 
         if (fnError) {
           throw new Error(fnError.message || 'AI remediation failed');

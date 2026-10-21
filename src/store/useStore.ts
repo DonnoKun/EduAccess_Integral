@@ -24,6 +24,7 @@ import {
 } from '@/types';
 import { mockSearchResults, mockSearchResultsES } from '@/data/mockData';
 import { supabase } from '@/integrations/supabase/client';
+import { cachedAI, aiCacheKey } from '@/lib/aiCache';
 
 interface GlobalState {
   // User and profile
@@ -225,18 +226,27 @@ export const useStore = create<GlobalState>()(
           const defaultQuery = lang === 'es' ? 'contenido educativo general' : 'educational content';
           console.log('🔍 Calling AI search for:', query || defaultQuery, 'lang:', lang);
           
-          const searchPromise = supabase.functions.invoke('search-content', {
-            body: { 
-              query: query || defaultQuery, 
-              filters: {
-                contentType: filters.contentType,
-                educationLevel: filters.educationLevel,
-                source: filters.source,
-                language: lang,
-              },
+          const searchBody = {
+            query: query || defaultQuery,
+            filters: {
+              contentType: filters.contentType,
+              educationLevel: filters.educationLevel,
+              source: filters.source,
               language: lang,
             },
-          });
+            language: lang,
+          };
+          const searchPromise = cachedAI(
+            aiCacheKey('search', searchBody.query, searchBody.filters, lang),
+            searchBody.query,
+            lang,
+            async () => {
+              const r = await supabase.functions.invoke('search-content', { body: searchBody });
+              if (r.error) throw r.error;
+              return r.data;
+            },
+            (d: any) => !!d?.success && !d?.aiUnavailable && Array.isArray(d?.results) && d.results.length > 0,
+          ).then((data) => ({ data, error: null as Error | null }), (error) => ({ data: null, error }));
 
           const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) => {
             setTimeout(() => resolve({ data: null, error: new Error('Search timed out after 35 seconds') }), 35000);
