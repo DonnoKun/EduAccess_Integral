@@ -229,15 +229,29 @@ export default function ContentViewer() {
       }, 2500);
 
       try {
-        const { data, error } = await supabase.functions.invoke('generate-course-content', {
-          body: {
-            title: currentContent.title,
-            description: currentContent.description,
-            contentType: currentContent.contentType,
-            source: currentContent.source,
-            language: lang,
+        // Reuse the same course saved in the other language: translate it instead of regenerating
+        const otherLang = lang === 'es' ? 'en' : 'es';
+        const original = await getCachedCourse(currentContent.title, otherLang);
+        const { data, error } = await cachedAI(
+          aiCacheKey('course-gen', currentContent.title, lang),
+          currentContent.title,
+          lang,
+          async () => {
+            const r = await supabase.functions.invoke('generate-course-content', {
+              body: {
+                title: currentContent.title,
+                description: currentContent.description,
+                contentType: currentContent.contentType,
+                source: currentContent.source,
+                language: lang,
+                ...(original ? { originalContent: original } : {}),
+              },
+            });
+            if (r.error) throw r.error;
+            return r.data;
           },
-        });
+          () => false, // saved below under the normal course key
+        ).then((d: any) => ({ data: d, error: null as Error | null }), (e: Error) => ({ data: null as any, error: e }));
 
         clearInterval(stageInterval);
         if (cancelled) return;
