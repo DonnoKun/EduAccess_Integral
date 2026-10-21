@@ -24,6 +24,7 @@ import {
 } from '@/types';
 import { mockSearchResults, mockSearchResultsES } from '@/data/mockData';
 import { supabase } from '@/integrations/supabase/client';
+import { cachedAI, aiCacheKey } from '@/lib/aiCache';
 
 interface GlobalState {
   // User and profile

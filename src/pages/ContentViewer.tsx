@@ -53,6 +53,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useStore } from '@/store/useStore';
 import { supabase } from '@/integrations/supabase/client';
+import { cachedAI, aiCacheKey } from '@/lib/aiCache';
 import { toast } from 'sonner';
 import LanguageSelector from '@/components/LanguageSelector';
 import AudioPlayer from '@/components/AudioPlayer';

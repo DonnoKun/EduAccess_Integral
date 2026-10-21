@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useStore } from '@/store/useStore';
 import { supabase } from '@/integrations/supabase/client';
+import { cachedAI, aiCacheKey } from '@/lib/aiCache';
 import { toast } from 'sonner';
 import type { RemediationStage, RemediatedContent } from '@/types';
 
