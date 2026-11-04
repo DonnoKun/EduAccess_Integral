@@ -7,6 +7,7 @@ vi.mock('@/lib/speech', () => ({ configureSpeech: vi.fn(async () => {}), warmSpe
 afterEach(cleanup);
 describe('manual lesson reading', () => {
   it('keeps narration, all six speeds and current passage available for a visual-mode student', async () => {
+    vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
     // A disabled automatic-TTS preference must not remove manual narration.
     localStorage.setItem('eduaccess-storage', JSON.stringify({ state: { visualProfile: { technicalParameters: { enableTTS: false } } } }));
     const speak = vi.fn((utterance: SpeechSynthesisUtterance) => utterance.onstart?.({} as SpeechSynthesisEvent));
