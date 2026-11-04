@@ -9,7 +9,6 @@ import { Play, Pause, RotateCcw, SkipBack, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
-import { useStore } from '@/store/useStore';
 import { configureSpeech, warmSpeechVoices } from '@/lib/speech';
 
 interface AudioPlayerProps {
@@ -44,7 +43,6 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
   const [speed, setSpeed] = useState(1);
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
   const [totalChunks, setTotalChunks] = useState(0);
-  const ttsEnabled = useStore((s) => s.visualProfile?.technicalParameters?.enableTTS !== false);
 
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const chunksRef = useRef<string[]>([]);
@@ -276,7 +274,6 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
   const speedOptions = [0.5, 0.75, 1, 1.25, 1.5, 2];
   const isActive = isPlaying || isPaused || progress > 0;
 
-  if (!ttsEnabled) return null;
 
   return (
     <div className="audio-player flex min-w-0 flex-col gap-3 w-full">
@@ -300,10 +297,10 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
 
         {isActive && (
           <>
-            <Button variant="ghost" size="icon" onClick={() => skipChunks(-3)} className="h-8 w-8" aria-label="Retroceder">
+            <Button variant="outline" size="icon" onClick={() => skipChunks(-3)} aria-label={lang === 'es' ? 'Retroceder' : 'Skip back'}>
               <SkipBack className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => skipChunks(3)} className="h-8 w-8" aria-label="Adelantar">
+            <Button variant="outline" size="icon" onClick={() => skipChunks(3)} aria-label={lang === 'es' ? 'Adelantar' : 'Skip forward'}>
               <SkipForward className="h-3.5 w-3.5" />
             </Button>
             <Button variant="ghost" size="sm" onClick={restart} className="gap-1">
@@ -321,14 +318,10 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
             {speedOptions.map((s) => (
               <Button
                 key={s}
-                variant={speed === s ? 'default' : 'secondary'}
+                variant={speed === s ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => handleSpeedChange(s)}
-                className={`text-xs px-2 py-1 rounded-md transition-colors ${
-                  speed === s
-                    ? 'bg-primary text-primary-foreground font-semibold'
-                    : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                }`}
+                className="audio-speed-option"
                 aria-label={`${s}x`}
                 aria-pressed={speed === s}
               >
