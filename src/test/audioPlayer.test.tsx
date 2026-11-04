@@ -17,7 +17,7 @@ describe('manual lesson reading', () => {
     for (const rate of ['0.5x', '0.75x', '1x', '1.25x', '1.5x', '2x']) {
       expect(screen.getByRole('button', { name: rate })).toBeEnabled();
     }
-    fireEvent.click(screen.getByRole('button', { name: 'Escuchar', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^Escuchar$/ }));
     await waitFor(() => expect(speak).toHaveBeenCalledOnce());
     expect(screen.getByText('Leyendo ahora', { exact: false })).toBeInTheDocument();
     expect(screen.getByText('El dinero facilita los intercambios.')).toBeInTheDocument();
