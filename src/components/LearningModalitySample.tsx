@@ -1,7 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Play, Pause } from 'lucide-react';
-import videoAsset from '@/assets/learning-water-cycle.asset.json';
+import videoAsset from '@/assets/water-cycle.mp4.asset.json';
+import posterAsset from '@/assets/water-cycle-poster.jpg.asset.json';
+import { useState } from 'react';
 import type { PreferredModality } from '@/types';
 
 export function LearningModalitySample({ modality, playing, onPlay, onStop }: {
@@ -9,12 +11,14 @@ export function LearningModalitySample({ modality, playing, onPlay, onStop }: {
 }) {
   const { i18n } = useTranslation();
   const es = i18n.language.startsWith('es');
+  const [failed, setFailed] = useState(false);
   return (
     <section className="learning-sample space-y-4 border-t border-border pt-5" aria-label={es ? 'Muestra de lección' : 'Lesson sample'}>
       <h3 className="font-semibold">{es ? 'El ciclo del agua' : 'The water cycle'}</h3>
       {modality !== 'audio' && (
         <figure className="space-y-2">
-          <video key={modality} className="learning-sample-video" src={videoAsset.url} controls playsInline preload="metadata" aria-label={es ? 'Animación del ciclo del agua' : 'Water cycle animation'} />
+          {failed ? <img className="learning-sample-video" src={posterAsset.url} alt={es ? 'Sol, evaporación del mar, nubes y lluvia sobre una montaña' : 'Sun, evaporation from the sea, clouds and rain over a mountain'} /> : <video key={modality} className="learning-sample-video" poster={posterAsset.url} src={videoAsset.url} onError={() => setFailed(true)} controls playsInline preload="auto" aria-label={es ? 'Animación del ciclo del agua' : 'Water cycle animation'} />}
+          {failed && <p role="status">{es ? 'No se pudo reproducir el video.' : 'The video could not be played.'}</p>}
           <figcaption className="text-muted-foreground">{es ? 'Evaporación → Condensación → Precipitación' : 'Evaporation → Condensation → Precipitation'}</figcaption>
         </figure>
       )}

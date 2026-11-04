@@ -451,6 +451,7 @@ export const useStore = create<GlobalState>()(
       },
 
       applyProfileStyles: () => {
+        if (document.documentElement.hasAttribute('data-profile-preview')) return;
         const profile = get().visualProfile;
         const theme = get().currentTheme;
         const root = document.documentElement;

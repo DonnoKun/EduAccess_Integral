@@ -44,24 +44,25 @@ import type {
 import { snellenToLogMAR, getSeverityFromLogMAR } from '@/types';
 import { configureSpeech, warmSpeechVoices } from '@/lib/speech';
 import { LearningModalitySample } from '@/components/LearningModalitySample';
+import { useOnboardingPreview } from '@/hooks/useOnboardingPreview';
 
 const snellenOptions: SnellenNotation[] = ['6/6', '6/12', '6/18', '6/24', '6/36', '6/60'];
 
 export default function Onboarding() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const { setVisualProfile, completeOnboarding, setTheme } = useStore();
+  const { setVisualProfile, completeOnboarding, setTheme, visualProfile } = useStore();
   const { currentUser, updateUserName, isAuthenticated } = useAuthStore();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [userName, setUserName] = useState(currentUser?.name || '');
   const [snellen, setSnellen] = useState<SnellenNotation>('6/12');
-  const [fontSize, setFontSize] = useState(20);
-  const [lineSpacing, setLineSpacing] = useState(1.75);
-  const [contrast, setContrast] = useState<ContrastMode>('normal');
-  const [modality, setModality] = useState<PreferredModality>('visual');
-  const [enableAnimations, setEnableAnimations] = useState(true);
-  const [brightnessSensitivity, setBrightnessSensitivity] = useState<BrightnessSensitivity>('low');
+  const [fontSize, setFontSize] = useState(visualProfile?.preferences.fontSize ?? 20);
+  const [lineSpacing, setLineSpacing] = useState(visualProfile?.preferences.lineSpacing ?? 1.75);
+  const [contrast, setContrast] = useState<ContrastMode>(visualProfile?.preferences.contrast ?? 'normal');
+  const [modality, setModality] = useState<PreferredModality>(visualProfile?.preferences.preferredModality ?? 'visual');
+  const [enableAnimations, setEnableAnimations] = useState(visualProfile?.preferences.enableAnimations ?? true);
+  const [brightnessSensitivity, setBrightnessSensitivity] = useState<BrightnessSensitivity>(visualProfile?.preferences.brightnessSensitivity ?? 'low');
   const [isPlayingDemo, setIsPlayingDemo] = useState(false);
 
   // TTS demo function using browser speechSynthesis
@@ -115,51 +116,7 @@ export default function Onboarding() {
     }
   }, [isAuthenticated, navigate]);
 
-  // Apply live preview for font size and line spacing - CUMULATIVE across all steps
-  useEffect(() => {
-    const root = document.documentElement;
-    root.style.setProperty('--profile-font-size', `${fontSize}px`);
-    root.style.setProperty('--profile-line-height', String(lineSpacing));
-    console.log('📐 Preview: Font size:', fontSize, 'Line spacing:', lineSpacing);
-  }, [fontSize, lineSpacing]);
-
-  // Apply contrast preview - CUMULATIVE across all steps
-  useEffect(() => {
-    const root = document.documentElement;
-    root.classList.remove('light', 'dark', 'high-contrast', 'inverted');
-    
-    if (contrast === 'high') {
-      root.classList.add('high-contrast');
-    } else if (contrast === 'inverted') {
-      root.classList.add('inverted');
-    }
-    console.log('🎨 Preview: Contrast mode:', contrast);
-  }, [contrast]);
-
-  // Apply animations preview - CUMULATIVE across all steps
-  useEffect(() => {
-    const root = document.documentElement;
-    root.style.setProperty('--animation-duration', enableAnimations ? '300ms' : '0ms');
-    console.log('🎬 Preview: Animations:', enableAnimations);
-  }, [enableAnimations]);
-
-  // Apply brightness sensitivity preview - CUMULATIVE across all steps
-  useEffect(() => {
-    const root = document.documentElement;
-    const brightnessMap: Record<BrightnessSensitivity, string> = {
-      'low': '1',        // No sensitivity - full brightness
-      'medium': '0.85',  // Medium sensitivity - slightly reduced
-      'high': '0.7',     // High sensitivity - significantly reduced
-    };
-    const brightnessValue = brightnessMap[brightnessSensitivity];
-    root.style.setProperty('--brightness-filter', brightnessValue);
-    root.style.filter = `brightness(${brightnessValue})`;
-    console.log('☀️ Preview: Brightness sensitivity:', brightnessSensitivity, 'filter:', brightnessValue);
-
-    return () => {
-      // Don't remove on cleanup during onboarding - let handleComplete persist it
-    };
-  }, [brightnessSensitivity]);
+  useOnboardingPreview(fontSize, lineSpacing, contrast, enableAnimations, brightnessSensitivity);
 
   // Cleanup speech synthesis on unmount
   useEffect(() => {

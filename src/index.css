@@ -657,14 +657,20 @@
   }
 
   .dashboard-icon-control {
-    width: max(48px, calc(var(--profile-font-size) * 1.5));
-    height: max(48px, calc(var(--profile-font-size) * 1.5));
+    width: max(52px, calc(var(--profile-font-size) * 1.75)) !important;
+    height: max(52px, calc(var(--profile-font-size) * 1.75)) !important;
     flex-shrink: 0;
   }
   .dashboard-icon-control svg, .dashboard-user-control svg {
-    width: max(24px, calc(var(--profile-font-size) * 0.75)) !important;
-    height: max(24px, calc(var(--profile-font-size) * 0.75)) !important;
+    width: max(28px, var(--profile-font-size)) !important;
+    height: max(28px, var(--profile-font-size)) !important;
   }
+  .back-to-top-control {
+    max-width: calc(100% - 2rem);
+    white-space: normal;
+    line-height: 1.3 !important;
+  }
+  .back-to-top-control svg { width: 0.8em !important; height: 0.8em !important; }
   .dashboard-user-control {
     height: auto;
     min-height: max(48px, calc(var(--profile-font-size) * 1.5));
