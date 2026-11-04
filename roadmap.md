@@ -16,3 +16,5 @@
 - [x] Restore manual lesson reading for every modality; preserve six speeds and current-passage/progress controls. Shared buttons, tabs and headings scale together. Nine tests passed; teacher lesson and speed selection verified at 48px desktop/mobile without player overflow. Student account flow remains unverified.- [x] Mixed-mode sample served from the app itself with drawn fallback; teacher-written group/lesson descriptions translated once and cached; heading icons, badges and buttons scale with text; voice picker avoids robotic desktop voices (8 tests pass).
 - [ ] Truly human-sounding voice on every device — browser voices depend on the device; an AI voice would cost credits (awaiting user decision).
 - [x] Reconfigure visual profile starts setup from defaults; back-to-top hides at the top; water-cycle sample drawn in-app (no video file); all icons scale with profile text (v1.10.0).
+
+- [ ] Fix automatic modality preview, proportional enrollment/edit fields, stable bilingual headers, installation icon and search layout; verify at large text sizes.

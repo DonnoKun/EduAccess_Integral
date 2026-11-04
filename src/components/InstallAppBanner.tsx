@@ -44,15 +44,15 @@ export default function InstallAppBanner() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
-        className="bg-primary text-primary-foreground px-4 py-3"
+        className="install-banner bg-primary text-primary-foreground px-4 py-3"
       >
         <div className="container mx-auto flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="install-banner-message flex items-center gap-3 flex-1 min-w-0">
             <Smartphone className="h-5 w-5 flex-shrink-0" />
-            <p className="text-sm font-medium truncate">
+            <p className="text-sm font-medium">
               {lang === 'es'
-                ? '📲 Instala EduAccess en tu dispositivo para acceso rápido y sin conexión'
-                : '📲 Install EduAccess on your device for quick offline access'}
+                ? 'Instala EduAccess en tu dispositivo'
+                : 'Install EduAccess on your device'}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -69,6 +69,7 @@ export default function InstallAppBanner() {
               variant="ghost"
               size="icon"
               onClick={handleDismiss}
+              aria-label={lang === 'es' ? 'Cerrar aviso de instalación' : 'Dismiss installation notice'}
               className="h-7 w-7 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
             >
               <X className="h-4 w-4" />

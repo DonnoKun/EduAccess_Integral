@@ -205,105 +205,24 @@ export default function SearchPage() {
     return count;
   }, [searchFilters]);
 
-  // Get the current font size for badge scaling
-  // Use higher scale for large font sizes to ensure readability
-  const currentFontSize = visualProfile?.preferences?.fontSize 
-    ? parseInt(String(visualProfile.preferences.fontSize)) 
-    : 16;
-  // For small fonts (≤24px): 80%, for large fonts (>24px): 90%
-  const badgeScaleFactor = currentFontSize <= 24 ? 0.8 : 0.9;
-  const badgeFontSize = Math.max(14, currentFontSize * badgeScaleFactor);
-
-  const getAccessibilityBadge = (status: AccessibilityStatus, isListView = false) => {
-    const badgeConfigs = {
-      accessible: {
-        icon: CheckCircle2,
-        label: t('search.badges.accessible'),
-        bgColor: 'rgba(22, 163, 74, 0.15)',
-        textColor: '#16A34A',
-        borderColor: '#16A34A',
-        darkBgColor: 'rgba(34, 197, 94, 0.25)',
-        darkTextColor: '#86EFAC',
-        darkBorderColor: '#22C55E',
-      },
-      needs_remediation: {
-        icon: AlertCircle,
-        label: t('search.badges.needsRemediation'),
-        bgColor: 'rgba(220, 38, 38, 0.15)',
-        textColor: '#DC2626',
-        borderColor: '#DC2626',
-        darkBgColor: 'rgba(239, 68, 68, 0.25)',
-        darkTextColor: '#FCA5A5',
-        darkBorderColor: '#EF4444',
-      },
-      partially_accessible: {
-        icon: AlertTriangle,
-        label: t('search.badges.partial'),
-        bgColor: 'rgba(245, 158, 11, 0.15)',
-        textColor: '#D97706',
-        borderColor: '#F59E0B',
-        darkBgColor: 'rgba(245, 158, 11, 0.25)',
-        darkTextColor: '#FCD34D',
-        darkBorderColor: '#F59E0B',
-      },
+  const currentFontSize = parseInt(String(visualProfile?.preferences?.fontSize || '16'));
+  const getAccessibilityBadge = (status: AccessibilityStatus, _isListView = false) => {
+    const configs = {
+      accessible: { icon: CheckCircle2, label: t('search.badges.accessible'), className: 'badge-accessible' },
+      needs_remediation: { icon: AlertCircle, label: t('search.badges.needsRemediation'), className: 'badge-needs-remediation' },
+      partially_accessible: { icon: AlertTriangle, label: t('search.badges.partial'), className: 'badge-partial' },
     };
-
-    const config = badgeConfigs[status];
+    const config = configs[status];
     const Icon = config.icon;
-    const isDark = currentTheme === 'dark';
-
-    const badgeContent = (
-      <div
-        className="inline-flex items-center gap-2 rounded-full border-2 font-semibold cursor-help"
-        style={{
-          fontSize: `${badgeFontSize}px`,
-          padding: `0.4em 0.9em`,
-          backgroundColor: isDark ? config.darkBgColor : config.bgColor,
-          color: isDark ? config.darkTextColor : config.textColor,
-          borderColor: isDark ? config.darkBorderColor : config.borderColor,
-          lineHeight: 1.2,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
-          flexShrink: 0,
-          maxWidth: '100%',
-          overflow: 'hidden',
-          whiteSpace: 'nowrap',
-          textOverflow: 'ellipsis',
-        }}
-        role="status"
-      >
-        <Icon 
-          style={{ 
-            width: '1.2em', 
-            height: '1.2em',
-            flexShrink: 0,
-          }} 
-          aria-hidden="true" 
-        />
-        <span style={{ 
-          fontWeight: 600, 
-          lineHeight: 1.1, 
-          overflow: 'hidden', 
-          textOverflow: 'ellipsis',
-        }}>{config.label}</span>
-      </div>
-    );
-
-    // Wrap in tooltip to show full text on hover
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            {badgeContent}
-          </TooltipTrigger>
-          <TooltipContent 
-            side="top" 
-            className="bg-popover text-popover-foreground border shadow-lg"
-            style={{ fontSize: `${Math.max(14, currentFontSize * 0.85)}px` }}
-          >
-            <p>{config.label}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <TooltipProvider><Tooltip>
+        <TooltipTrigger asChild>
+          <div className={`search-status ${config.className}`} role="status" tabIndex={0}>
+            <Icon aria-hidden="true" /><span>{config.label}</span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent><p>{config.label}</p></TooltipContent>
+      </Tooltip></TooltipProvider>
     );
   };
 
@@ -318,13 +237,13 @@ export default function SearchPage() {
       <a href="#search-results" className="skip-link">{t('common.skipToMain')}</a>
 
       <header className="sticky top-0 z-50 glass-card border-b">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="site-header-layout search-header-layout container mx-auto px-4 min-h-16 py-3">
           <Link to="/dashboard" className="flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />
             <span className="text-xl font-bold hidden md:inline">{t('search.title')}</span>
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="site-header-actions flex flex-wrap items-center gap-2">
             <LanguageSelector />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -423,12 +342,12 @@ export default function SearchPage() {
 
       <main className="container mx-auto px-4 py-6">
         <form onSubmit={handleSearch} className="mb-6">
-          <div className="flex gap-2">
-            <div className="relative flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="search-field relative min-w-0 flex-1">
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" aria-hidden="true" />
-              <Input type="text" placeholder={t('search.placeholder')} value={localQuery} onChange={(e) => setLocalQuery(e.target.value)} className="pl-10 pr-10 h-12 text-lg" aria-label={t('search.placeholder')} />
+              <Input type="text" placeholder={t('search.placeholder')} value={localQuery} onChange={(e) => setLocalQuery(e.target.value)} className="search-query-input" aria-label={t('search.placeholder')} />
               {localQuery && (
-                <button type="button" onClick={() => { setLocalQuery(''); setSearchParams({}); performSearch(''); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label={t('search.clearSearch')}>
+                <button type="button" onClick={() => { setLocalQuery(''); setSearchParams({}); performSearch(''); }} className="search-clear absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label={t('search.clearSearch')}>
                   <X className="h-5 w-5" />
                 </button>
               )}
@@ -508,7 +427,7 @@ export default function SearchPage() {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-muted-foreground">{t('search.results', { count: searchResults.length })}</span>
             <div className="flex border rounded-lg">
               <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('grid')} aria-label={t('search.gridView')} aria-pressed={viewMode === 'grid'}>
@@ -523,7 +442,7 @@ export default function SearchPage() {
 
         <section id="search-results" aria-label="Search results" aria-busy={searchLoading}>
           {searchLoading ? (
-            <div className={`grid gap-4 ${viewMode === 'grid' ? 'md:grid-cols-2 lg:grid-cols-3' : ''}`}>
+            <div className={`grid gap-4 ${viewMode === 'grid' ? 'search-card-grid' : ''}`}>
               {[...Array(6)].map((_, i) => (
                 <Card key={i}><CardContent className="p-4"><Skeleton className="h-40 w-full mb-4" /><Skeleton className="h-6 w-3/4 mb-2" /><Skeleton className="h-4 w-full mb-2" /><Skeleton className="h-4 w-2/3" /></CardContent></Card>
               ))}
@@ -570,7 +489,7 @@ export default function SearchPage() {
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }} 
-                className={`grid gap-4 ${viewMode === 'grid' ? 'md:grid-cols-2 lg:grid-cols-3' : ''}`}
+                className={`grid gap-4 ${viewMode === 'grid' ? 'search-card-grid' : ''}`}
               >
                 {searchResults.map((result, index) => (
                   <motion.div key={result.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
@@ -581,7 +500,7 @@ export default function SearchPage() {
                       tabIndex={0} 
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleContentClick(result.id); } }}
                     >
-                      <CardContent className={`p-4 ${viewMode === 'list' ? 'flex gap-4' : ''}`} style={{ overflow: 'hidden' }}>
+                      <CardContent className={`p-4 ${viewMode === 'list' ? 'flex flex-wrap gap-4' : ''}`} style={{ overflow: 'hidden' }}>
                         {/* GRID VIEW: Thumbnail + Badge below */}
                         {viewMode === 'grid' && (
                           <>
