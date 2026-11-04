@@ -238,7 +238,7 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
   const isLast = currentStep === steps.length - 1;
 
   /** Speak narration for the current step */
-  const speakStep = useCallback((stepIdx: number) => {
+  const speakStep = useCallback(async (stepIdx: number) => {
     const synth = synthRef.current;
     if (!synth || isMutedRef.current) return;
 
@@ -248,11 +248,12 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
     const narration = buildNarrationText(stepData, stepIdx, steps.length, isES);
 
     const utterance = new SpeechSynthesisUtterance(narration);
-    configureSpeech(utterance, lang);
+    await configureSpeech(utterance, lang);
+    if (isMutedRef.current) return;
     utterance.rate = 0.95;
 
     synth.speak(utterance);
-  }, [isES, steps]);
+  }, [isES, steps, lang]);
 
   /** Auto-narrate when step changes or dialog opens */
   useEffect(() => {

@@ -118,7 +118,7 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
     const chunks = chunksRef.current;
     let chunkIndex = startIndex;
 
-    const speakNext = () => {
+    const speakNext = async () => {
       if (!isPlayingRef.current) return;
       if (chunkIndex >= chunks.length) {
         isPlayingRef.current = false;
@@ -135,7 +135,8 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
       }
 
       const utterance = new SpeechSynthesisUtterance(chunks[chunkIndex]);
-      configureSpeech(utterance, lang);
+      await configureSpeech(utterance, lang);
+      if (!isPlayingRef.current) return;
       utterance.rate = speedRef.current;
 
       utterance.onstart = () => {

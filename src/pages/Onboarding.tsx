@@ -65,7 +65,7 @@ export default function Onboarding() {
   const [isPlayingDemo, setIsPlayingDemo] = useState(false);
 
   // TTS demo function using browser speechSynthesis
-  const playTTSDemo = (modalityValue: PreferredModality) => {
+  const playTTSDemo = async (modalityValue: PreferredModality) => {
     if (modalityValue === 'visual') return;
     if (!window.speechSynthesis) return;
     
@@ -78,7 +78,7 @@ export default function Onboarding() {
       : 'The sun warms the water, which evaporates and forms clouds. As it cools, it falls as rain and returns to rivers and the sea.';
     
     const utterance = new SpeechSynthesisUtterance(demoText);
-    configureSpeech(utterance, lang);
+    await configureSpeech(utterance, lang);
     utterance.rate = 0.9;
     utterance.pitch = 1;
     
