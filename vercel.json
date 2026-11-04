@@ -10,6 +10,7 @@
     { "source": "/favicon.ico", "destination": "/favicon.ico" },
     { "source": "/favicon.png", "destination": "/favicon.png" },
     { "source": "/og-image.png", "destination": "/og-image.png" },
+    { "source": "/og-image.jpg", "destination": "/og-image.jpg" },
     { "source": "/placeholder.svg", "destination": "/placeholder.svg" },
     { "source": "/pwa-192x192.png", "destination": "/pwa-192x192.png" },
     { "source": "/pwa-512x512.png", "destination": "/pwa-512x512.png" },
