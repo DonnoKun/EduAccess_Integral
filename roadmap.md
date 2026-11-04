@@ -13,3 +13,4 @@
 - [ ] Verify saved card percentage and notice narration with a student account — current session is teacher; device audio is not available in headless checks.
 - [x] Scale shared header controls and balance dashboard actions for both roles; teacher session verified at 48px with 72px controls/36px icons. Shared English/Spanish voices now await device readiness; six tests passed. Actual voice sound and student-session checks remain device/account dependent.
 - [x] Restore onboarding preview on revisit; eight tests passed. Shared back-to-top is always visible and sun/eye controls scale across pages. Converted sample to MP4 with a visible poster; hosted media playback verified via sandbox forwarding (local asset endpoint returns 404). Teacher session checked at 48px; student session unavailable.
+- [ ] Restore manual lesson reading for every modality and fix shared button/tab/heading proportions at large text sizes for both roles.
