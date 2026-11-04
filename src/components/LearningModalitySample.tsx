@@ -40,7 +40,7 @@ export function LearningModalitySample({ modality, playing, onPlay, onStop }: {
       <h3 className="font-semibold">{es ? 'El ciclo del agua' : 'The water cycle'}</h3>
       {modality !== 'audio' && (
         <figure className="space-y-2">
-          {failed ? <WaterCycleIllustration label={altText} /> : <video key={modality} className="learning-sample-video" poster={POSTER_URL} src={VIDEO_URL} onError={() => setFailed(true)} controls playsInline muted loop autoPlay preload="auto" aria-label={es ? 'Animación del ciclo del agua' : 'Water cycle animation'} />}
+          {failed ? <WaterCycleIllustration label={altText} /> : <video key={modality} className="learning-sample-video" poster={POSTER_URL} src={VIDEO_URL} onError={() => setFailed(true)} controls playsInline preload="auto" aria-label={es ? 'Animación del ciclo del agua' : 'Water cycle animation'} />}
           <figcaption className="text-muted-foreground">{es ? 'Evaporación → Condensación → Precipitación' : 'Evaporation → Condensation → Precipitation'}</figcaption>
         </figure>
       )}
