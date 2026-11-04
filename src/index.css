@@ -359,10 +359,18 @@
     line-height: inherit !important;
   }
   /* Every icon follows the surrounding text size so tabs, cards and stats stay proportional */
-  html[data-user-profile] svg.lucide:not([role="radio"] svg, [role="checkbox"] svg, [role="switch"] svg, [data-radix-collection-item] [data-state] > svg) {
+  html[data-user-profile] svg.lucide {
     width: max(16px, 1em, calc(var(--profile-font-size) * 0.75)) !important;
     height: max(16px, 1em, calc(var(--profile-font-size) * 0.75)) !important;
     flex-shrink: 0;
+  }
+  /* Radio dots and checkbox ticks keep the size of their control */
+  html[data-user-profile] [role="radio"] svg.lucide,
+  html[data-user-profile] [role="checkbox"] svg.lucide,
+  html[data-user-profile] [role="menuitemradio"] svg.lucide,
+  html[data-user-profile] [role="option"] > span svg.lucide {
+    width: 60% !important;
+    height: 60% !important;
   }
   /* Icons beside headings grow with the heading instead of staying 20px */
   html[data-user-profile] h1 > svg,
