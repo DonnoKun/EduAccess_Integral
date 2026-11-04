@@ -4,3 +4,7 @@
 - [x] Preserve students' lesson version, answers and progress during teacher edits.
 - [x] Run translation and exercise tests; check current build logs.
 - [ ] Verify concurrent editing through a student account — requires a student session/account selection.
+- [ ] Show visual/audio/mixed learning samples and an animation sample for both roles.
+- [ ] Improve browser voice selection without AI charges.
+- [ ] Keep tutorial close controls visible and language selector proportional at large font sizes.
+- [ ] Add Courses to the student's top navigation and verify in the preview.
