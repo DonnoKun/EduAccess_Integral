@@ -149,29 +149,76 @@ export default function Login() {
     exit: { opacity: 0, x: -20 },
   };
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="p-4 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />
-          <span className="text-xl font-bold">{t('common.appName')}</span>
-        </div>
-        <LanguageSelector />
-      </header>
+  const es = lang === 'es';
+  const pillars = es
+    ? [
+        ['Lectura en voz', 'Cada lección se escucha, con la frase actual resaltada.'],
+        ['Hecho a tu vista', 'Tamaño de letra, contraste y brillo según tu perfil visual.'],
+        ['Aulas reales', 'Tu docente publica lecciones; tú entras con un código.'],
+      ]
+    : [
+        ['Read aloud', 'Every lesson can be heard, with the current sentence highlighted.'],
+        ['Built for your eyes', 'Text size, contrast and brightness follow your visual profile.'],
+        ['Real classrooms', 'Your teacher publishes lessons; you join with a code.'],
+      ];
 
-      <main className="flex-1 flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md"
-        >
-          <div className="glass-card rounded-2xl p-8">
+  return (
+    <div className="login-shell min-h-screen grid lg:grid-cols-[1.05fr_1fr]">
+      {/* Editorial brand panel */}
+      <aside className="login-brand relative hidden lg:flex flex-col justify-between overflow-hidden p-12 xl:p-16">
+        <div className="login-brand-grid" aria-hidden="true" />
+        <div className="relative flex items-center gap-3">
+          <span className="login-monogram" aria-hidden="true">E</span>
+          <span className="login-brand-name">{t('common.appName')}</span>
+        </div>
+
+        <div className="relative max-w-xl">
+          <p className="login-eyebrow">{es ? 'Plataforma educativa accesible' : 'Accessible learning platform'}</p>
+          <h2 className="login-display">
+            {es ? (<>Aprender no debería<br />depender de <em>cuánto</em><br />alcanzas a ver.</>)
+                : (<>Learning shouldn't<br />depend on <em>how much</em><br />you can see.</>)}
+          </h2>
+          <ol className="mt-12 space-y-6">
+            {pillars.map(([title, body], i) => (
+              <li key={title} className="login-pillar">
+                <span className="login-pillar-num">0{i + 1}</span>
+                <div>
+                  <p className="login-pillar-title">{title}</p>
+                  <p className="login-pillar-body">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <p className="relative login-brand-foot">
+          {es ? 'Proyecto de tesis · EduAccess Integral' : 'Thesis project · EduAccess Integral'}
+        </p>
+      </aside>
+
+      {/* Form side */}
+      <div className="flex flex-col bg-background min-w-0">
+        <header className="px-6 py-5 sm:px-10 flex justify-between items-center gap-4">
+          <div className="flex items-center gap-3 lg:invisible">
+            <span className="login-monogram" aria-hidden="true">E</span>
+            <span className="text-lg font-semibold">{t('common.appName')}</span>
+          </div>
+          <LanguageSelector />
+        </header>
+
+        <main className="flex-1 flex items-center justify-center px-6 py-8 sm:px-10">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full max-w-[26rem] login-form"
+          >
             <AnimatePresence mode="wait">
               {/* ===== LOGIN ===== */}
               {step === 'login' && (
                 <motion.div key="login" {...slideVariants} className="space-y-6">
-                  <div className="text-center">
-                    <h1 className="text-2xl font-bold mb-2">
+                  <div>
+                    <h1 className="login-title">
                       {lang === 'es' ? 'Iniciar Sesión' : 'Sign In'}
                     </h1>
                     <p className="text-muted-foreground">
@@ -255,8 +302,8 @@ export default function Login() {
               {/* ===== REGISTER ===== */}
               {step === 'register' && (
                 <motion.div key="register" {...slideVariants} className="space-y-6">
-                  <div className="text-center">
-                    <h1 className="text-2xl font-bold mb-2">
+                  <div>
+                    <h1 className="login-title">
                       {lang === 'es' ? 'Crear Cuenta' : 'Create Account'}
                     </h1>
                     <p className="text-muted-foreground">
@@ -358,7 +405,7 @@ export default function Login() {
                     >
                       <CheckCircle2 className="h-14 w-14 text-emerald-500 mx-auto mb-3" />
                     </motion.div>
-                    <h1 className="text-2xl font-bold mb-2">
+                    <h1 className="login-title">
                       {lang === 'es' ? '¡Cuenta Creada!' : 'Account Created!'}
                     </h1>
                   </div>
@@ -408,8 +455,8 @@ export default function Login() {
               {/* ===== FORGOT TOKEN ===== */}
               {step === 'forgot' && (
                 <motion.div key="forgot" {...slideVariants} className="space-y-6">
-                  <div className="text-center">
-                    <h1 className="text-2xl font-bold mb-2">
+                  <div>
+                    <h1 className="login-title">
                       {lang === 'es' ? 'Recuperar Token' : 'Recover Token'}
                     </h1>
                     <p className="text-muted-foreground">
@@ -469,7 +516,7 @@ export default function Login() {
                     >
                       <RefreshCw className="h-14 w-14 text-primary mx-auto mb-3" />
                     </motion.div>
-                    <h1 className="text-2xl font-bold mb-2">
+                    <h1 className="login-title">
                       {lang === 'es' ? '¡Token Actualizado!' : 'Token Updated!'}
                     </h1>
                   </div>
@@ -516,15 +563,15 @@ export default function Login() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
-        </motion.div>
-      </main>
+          </motion.div>
+        </main>
 
-      <footer className="p-4 text-center border-t border-border">
-        <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-          {t('common.appName')} - {t('settings.about.description')}
-        </p>
-      </footer>
+        <footer className="px-6 py-5 sm:px-10 border-t border-border">
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} {t('common.appName')} — {t('settings.about.description')}
+          </p>
+        </footer>
+      </div>
     </div>
   );
 }
