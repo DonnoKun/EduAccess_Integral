@@ -278,7 +278,7 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
   if (!ttsEnabled) return null;
 
   return (
-    <div className="flex flex-col gap-3 w-full">
+    <div className="audio-player flex min-w-0 flex-col gap-3 w-full">
       <div className="flex items-center gap-2 flex-wrap">
         <Button
           variant={isPlaying ? 'default' : isPaused ? 'secondary' : 'outline'}
@@ -286,7 +286,7 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
           onClick={isPlaying ? pause : play}
           disabled={disabled}
           className="gap-2"
-          aria-label={isPlaying ? 'Pausar' : isPaused ? 'Continuar' : 'Escuchar'}
+          aria-label={lang === 'es' ? (isPlaying ? 'Pausar' : isPaused ? 'Continuar' : 'Escuchar') : (isPlaying ? 'Pause' : isPaused ? 'Resume' : 'Listen')}
         >
           {isPlaying ? (
             <><Pause className="h-4 w-4" /> {lang === 'es' ? 'Pausar' : 'Pause'}</>
@@ -312,14 +312,16 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
           </>
         )}
 
-        <div className="flex items-center gap-1.5 ml-auto">
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-3">
           <span className="text-xs text-muted-foreground">
             {lang === 'es' ? 'Velocidad' : 'Speed'}:
           </span>
-          <div className="flex gap-1">
+          <div className="flex min-w-0 flex-wrap gap-2" role="group" aria-label={lang === 'es' ? 'Velocidad' : 'Speed'}>
             {speedOptions.map((s) => (
-              <button
+              <Button
                 key={s}
+                variant={speed === s ? 'default' : 'secondary'}
+                size="sm"
                 onClick={() => handleSpeedChange(s)}
                 className={`text-xs px-2 py-1 rounded-md transition-colors ${
                   speed === s
@@ -330,14 +332,14 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
                 aria-pressed={speed === s}
               >
                 {s}x
-              </button>
+              </Button>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="flex-1">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1 basis-40">
           <Slider
             value={[progress]}
             min={0}
@@ -348,7 +350,7 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
             className="cursor-pointer"
           />
         </div>
-        <span className="text-xs text-muted-foreground font-mono min-w-[36px] text-right">
+        <span className="shrink-0 text-muted-foreground font-mono text-right">
           {progress}%
         </span>
       </div>
