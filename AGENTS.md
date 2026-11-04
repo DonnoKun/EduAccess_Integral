@@ -6,3 +6,4 @@
 - Onboarding owns global preview styles until unmount, then restores the saved profile; background profile application must not overwrite an active preview.
 - Show saved exercise-based lesson progress separately from each audio block's playback percentage, preserving explicit completion on revisit.
 - Translate original structured lesson content rather than regenerating a topic; validate structure and preserve source URLs and image prompts to prevent changed exercises and unnecessary image generation.
+- Manual lesson players remain available independently of automatic TTS preference; shared Button markers scale control dimensions and icons with profile text across roles.
