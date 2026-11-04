@@ -12,3 +12,4 @@
 - [x] Make lesson notices audible, fix translation array counts, wrap audio controls for both roles, and show saved progress on student lesson cards. Live translation and 48px desktop/mobile widths verified; progress tests passed.
 - [ ] Verify saved card percentage and notice narration with a student account — current session is teacher; device audio is not available in headless checks.
 - [x] Scale shared header controls and balance dashboard actions for both roles; teacher session verified at 48px with 72px controls/36px icons. Shared English/Spanish voices now await device readiness; six tests passed. Actual voice sound and student-session checks remain device/account dependent.
+- [ ] Restore onboarding preview on revisit, repair missing sample video, show back-to-top reliably and scale sun/eye controls across student and teacher pages.
