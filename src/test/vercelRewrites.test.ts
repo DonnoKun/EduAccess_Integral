@@ -86,6 +86,9 @@ describe("vercel.json SPA rewrites", () => {
     for (const rewrite of rewrites) {
       expect(() => toRegExp(rewrite.source)).not.toThrow();
     }
+    // Guard: the old config used a lookahead group, which Vercel rejects and
+    // which left every deep link 404ing.
+    expect(() => toRegExp("/((?!assets/|.*\\.[a-zA-Z0-9]+$).*)")).toThrow();
   });
 
   it("serves the app for every tab, not just the dashboard", () => {
