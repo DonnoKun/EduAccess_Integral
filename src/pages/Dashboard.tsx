@@ -107,15 +107,33 @@ export default function Dashboard() {
     })();
   }, [role, currentUser?.id]);
 
-  // Show tutorial automatically for new users (first time after onboarding)
+  // Show tutorial automatically ONLY for brand-new users (first time ever).
+  // Checks both the browser flag and the DB-persisted flag so returning users
+  // never see it again on any device; it can always be reopened with the button.
   useEffect(() => {
-    const tutorialSeen = localStorage.getItem('tutorial_seen');
-    if (!tutorialSeen && hasCompletedOnboarding && isAuthenticated) {
-      // Small delay so dashboard renders first
-      const timer = setTimeout(() => setShowTutorial(true), 800);
-      return () => clearTimeout(timer);
-    }
-  }, [hasCompletedOnboarding, isAuthenticated]);
+    if (!hasCompletedOnboarding || !isAuthenticated || !currentUser?.id) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      if (localStorage.getItem('tutorial_seen')) return;
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('visual_preferences')
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+        const prefs = data?.visual_preferences as Record<string, unknown> | null;
+        if (prefs?.tutorial_seen) {
+          localStorage.setItem('tutorial_seen', 'true');
+          return;
+        }
+      } catch {
+        // If the check fails, don't pester possibly-returning users
+        return;
+      }
+      if (!cancelled) setShowTutorial(true);
+    }, 800);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [hasCompletedOnboarding, isAuthenticated, currentUser?.id]);
   
   useEffect(() => {
     const loadAnalytics = async () => {
