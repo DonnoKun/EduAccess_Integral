@@ -317,7 +317,7 @@ export default function Settings() {
                         <span className="settings-info-value">{visualProfile.visualAcuity.severity}</span>
                       </div>
                     </div>
-                    <Button variant="link" className="settings-reconfigure-link" onClick={() => navigate('/onboarding')}>
+                    <Button variant="link" className="settings-reconfigure-link" onClick={() => navigate('/onboarding?reset=1')}>
                       {t('settings.profile.reconfigure')}
                     </Button>
                   </div>

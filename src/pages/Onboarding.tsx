@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -53,16 +53,20 @@ export default function Onboarding() {
   const { t, i18n } = useTranslation();
   const { setVisualProfile, completeOnboarding, setTheme, visualProfile } = useStore();
   const { currentUser, updateUserName, isAuthenticated } = useAuthStore();
+  // "Reconfigure visual profile" starts from defaults instead of the saved profile.
+  const [searchParams] = useSearchParams();
+  const isReset = searchParams.get('reset') === '1';
+  const saved = isReset ? null : visualProfile;
   
   const [currentStep, setCurrentStep] = useState(1);
   const [userName, setUserName] = useState(currentUser?.name || '');
   const [snellen, setSnellen] = useState<SnellenNotation>('6/12');
-  const [fontSize, setFontSize] = useState(visualProfile?.preferences.fontSize ?? 20);
-  const [lineSpacing, setLineSpacing] = useState(visualProfile?.preferences.lineSpacing ?? 1.75);
-  const [contrast, setContrast] = useState<ContrastMode>(visualProfile?.preferences.contrast ?? 'normal');
-  const [modality, setModality] = useState<PreferredModality>(visualProfile?.preferences.preferredModality ?? 'visual');
-  const [enableAnimations, setEnableAnimations] = useState(visualProfile?.preferences.enableAnimations ?? true);
-  const [brightnessSensitivity, setBrightnessSensitivity] = useState<BrightnessSensitivity>(visualProfile?.preferences.brightnessSensitivity ?? 'low');
+  const [fontSize, setFontSize] = useState(saved?.preferences.fontSize ?? 20);
+  const [lineSpacing, setLineSpacing] = useState(saved?.preferences.lineSpacing ?? 1.75);
+  const [contrast, setContrast] = useState<ContrastMode>(saved?.preferences.contrast ?? 'normal');
+  const [modality, setModality] = useState<PreferredModality>(saved?.preferences.preferredModality ?? 'visual');
+  const [enableAnimations, setEnableAnimations] = useState(saved?.preferences.enableAnimations ?? true);
+  const [brightnessSensitivity, setBrightnessSensitivity] = useState<BrightnessSensitivity>(saved?.preferences.brightnessSensitivity ?? 'low');
   const [isPlayingDemo, setIsPlayingDemo] = useState(false);
 
   // TTS demo function using browser speechSynthesis

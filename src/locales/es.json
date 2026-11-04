@@ -281,7 +281,7 @@
     },
     "about": {
       "title": "Acerca de EduAccess",
-      "version": "Versión 1.9.0 (Prototipo de Tesis Doctoral) · Actualizado oct 2026",
+      "version": "Versión 1.10.0 (Prototipo de Tesis Doctoral) · Actualizado nov 2026",
       "description": "EduAccess es un ecosistema inteligente de agregación de contenido educativo con remediación automática de accesibilidad para estudiantes con discapacidad visual leve a moderada.",
       "research": "Proyecto de Investigación",
       "researchDesc": "Este prototipo es parte de una tesis doctoral que investiga arquitecturas middleware para accesibilidad educativa. Basado en investigaciones de Michael (2024), Jeanneret & Baudet (2022), y estándares ISO/IEC 24751.",
