@@ -1,4 +1,6 @@
 import { createRoot } from "react-dom/client";
+import { warmSpeechVoices } from "./lib/speech";
+if (typeof window !== "undefined" && "speechSynthesis" in window) { warmSpeechVoices(); window.speechSynthesis.addEventListener?.("voiceschanged", () => warmSpeechVoices()); }
 import App from "./App.tsx";
 import "./index.css";
 import "./lib/i18n"; // Initialize i18n

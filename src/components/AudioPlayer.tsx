@@ -135,7 +135,8 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
       const utterance = new SpeechSynthesisUtterance(chunks[chunkIndex]);
       await configureSpeech(utterance, lang);
       if (!isPlayingRef.current) return;
-      utterance.rate = speedRef.current;
+      // Same gentle pace as the tutorial narration, which sounds most natural.
+      utterance.rate = speedRef.current === 1 ? 0.95 : speedRef.current;
 
       utterance.onstart = () => {
         currentChunkRef.current = chunkIndex;
