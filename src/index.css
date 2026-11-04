@@ -671,6 +671,21 @@
     min-height: 44px;
     white-space: normal;
   }
+  .audio-player button {
+    height: auto;
+    min-height: 44px;
+    max-width: 100%;
+    line-height: 1.3 !important;
+    padding: 0.35em 0.55em;
+    white-space: normal;
+  }
+  .audio-player button svg {
+    width: max(20px, 0.7em);
+    height: max(20px, 0.7em);
+  }
+  html[data-user-profile] .audio-player button span {
+    line-height: 1.3 !important;
+  }
   .learning-sample-video {
     display: block;
     width: 100%;

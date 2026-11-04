@@ -19,6 +19,11 @@ import CourseImage from '@/components/CourseImage';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
 import { checkAnswer, safeSourceUrl, type GroupLesson, type LessonContent } from '@/lib/courses';
+import { cachedAI } from '@/lib/aiCache';
+import { lessonPercentage } from '@/lib/lessonProgress';
+import { useStore } from '@/store/useStore';
+import { configureSpeech } from '@/lib/speech';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 
 export default function LessonViewerPage() {
   const { groupId, lessonId } = useParams<{ groupId: string; lessonId: string }>();
@@ -42,6 +47,9 @@ export default function LessonViewerPage() {
   const [translated, setTranslated] = useState<LessonContent | null>(null);
   const [translating, setTranslating] = useState(false);
   const [translationFailed, setTranslationFailed] = useState(false);
+  const [translationReason, setTranslationReason] = useState('');
+  const [translationAttempt, setTranslationAttempt] = useState(0);
+  const ttsEnabled = useStore(s => s.visualProfile?.technicalParameters?.enableTTS !== false);
   const { getCachedCourse, saveCourseToCache } = useCourseCache();
   const original: LessonContent = (lesson?.content as LessonContent) || {};
   const content: LessonContent = translated || original;
@@ -65,30 +73,49 @@ export default function LessonViewerPage() {
       try {
       const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(orig)));
       const hash = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
-      const key = `lesson-translation-v2:${lesson.id}:${hash}`;
+      const key = `lesson-translation-v3:${lesson.id}:${hash}`;
       let c = (await getCachedCourse(key, lang)) as any;
       if (!c) {
-        const { data, error } = await supabase.functions.invoke('generate-course-content', {
-          body: { title: lesson.title, description: lesson.description || lesson.title, contentType: 'article', source: 'oer', language: lang, originalContent: orig },
-        });
-        if (!error && data?.success && data?.content?.introduction) {
-          c = { ...data.content, language: lang };
-          await saveCourseToCache(key, lang, c);
-        }
+        c = await cachedAI(`${key}:${lang}`, lesson.title, lang, async () => {
+          const { data, error } = await supabase.functions.invoke('generate-course-content', {
+            body: { title: lesson.title, description: lesson.description || lesson.title, contentType: 'article', source: 'oer', language: lang, originalContent: orig },
+          });
+          if (error) {
+            const detail = error instanceof FunctionsHttpError ? await error.context.text() : error.message;
+            console.error('Lesson translation failed:', detail);
+            throw new Error(detail);
+          }
+          if (!data?.success || !data?.content) throw new Error(data?.error || 'Translation unavailable');
+          return { ...data.content, language: lang };
+        }, value => Boolean(value?.introduction));
+        await saveCourseToCache(key, lang, c);
       }
       if (!cancelled) { setTranslated(c || null); setTranslationFailed(!c); }
-      } catch { if (!cancelled) setTranslationFailed(true); }
+      } catch (error) { if (!cancelled) { setTranslationFailed(true); setTranslationReason(error instanceof Error ? error.message : ''); } }
       finally { if (!cancelled) setTranslating(false); }
     })();
     return () => { cancelled = true; };
-  }, [lesson, lang, getCachedCourse, saveCourseToCache]);
+  }, [lesson, lang, getCachedCourse, saveCourseToCache, translationAttempt]);
   const exercises = content.exercises || [];
 
   const correctCount = useMemo(
     () => Math.max(savedCorrectCount, Object.values(results).filter((r) => r === 'correct').length),
     [results, savedCorrectCount]
   );
-  const percentage = Math.max(savedPercentage, exercises.length > 0 ? Math.round((correctCount / exercises.length) * 100) : 0);
+  const percentage = lessonPercentage(savedPercentage, correctCount, exercises.length, completedRef.current);
+
+  const notice = [isStudent ? t('courses.pinnedVersion') : '', translating ? t('courses.translating') : '', translationFailed ? t('courses.translationFailed') : ''].filter(Boolean).join('. ');
+  useEffect(() => {
+    if (!notice || isLoading || !ttsEnabled || !window.speechSynthesis) return;
+    const timer = window.setTimeout(() => {
+      const synth = window.speechSynthesis;
+      if (synth.speaking) return;
+      const utterance = new SpeechSynthesisUtterance(notice);
+      configureSpeech(utterance, lang);
+      synth.speak(utterance);
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [notice, lang, isLoading, ttsEnabled]);
 
   useEffect(() => {
     const load = async () => {
@@ -219,23 +246,34 @@ export default function LessonViewerPage() {
             <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
             {t('courses.backToLessons')}
           </Button>
-          <h1 className="break-words font-bold">{lesson.title}</h1>
+          <h1 className="min-w-0 max-w-full break-words font-bold">{lesson.title}</h1>
         </div>
       </header>
 
       <main className="container mx-auto max-w-3xl space-y-6 px-4 py-6" aria-busy={translating}>
         {isStudent && <p className="text-muted-foreground">{t('courses.pinnedVersion')}</p>}
-        {translationFailed && <p role="alert" className="text-destructive">{t('courses.translationFailed')}</p>}
+        {notice && ttsEnabled && <Button variant="outline" className="h-auto whitespace-normal" onClick={() => {
+          window.speechSynthesis?.cancel();
+          const utterance = new SpeechSynthesisUtterance(notice);
+          configureSpeech(utterance, lang);
+          window.speechSynthesis?.speak(utterance);
+        }}>{lang === 'es' ? 'Escuchar avisos' : 'Listen to notices'}</Button>}
+        {translationFailed && <div className="space-y-3">
+          <p role="alert" className="text-foreground">{t('courses.translationFailed')}</p>
+          {/402|credits|PaymentRequired/i.test(translationReason) && <p>{lang === 'es' ? 'No hay créditos de IA disponibles para traducir.' : 'AI credits are unavailable for translation.'}</p>}
+          <Button variant="outline" className="h-auto whitespace-normal" onClick={() => setTranslationAttempt(n => n + 1)}>{lang === 'es' ? 'Reintentar traducción' : 'Retry translation'}</Button>
+        </div>}
         {translating && (
           <p role="status" className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> {t('courses.translating')}
           </p>
         )}
         {!translating && <>
-        {isStudent && exercises.length > 0 && (
+        {isStudent && (
           <div className="space-y-2">
             <p className="text-muted-foreground">{t('courses.yourProgress')}: {percentage}%</p>
             <Progress value={percentage} />
+            <p className="break-words text-muted-foreground">{lang === 'es' ? `Ejercicios correctos: ${correctCount} de ${exercises.length}. También puedes finalizar con «Marcar completada». El porcentaje del audio indica solo la lectura de ese bloque.` : `Correct exercises: ${correctCount} of ${exercises.length}. You can also finish with “Mark completed”. The audio percentage tracks only the reading of that block.`}</p>
           </div>
         )}
 

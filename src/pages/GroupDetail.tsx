@@ -88,6 +88,11 @@ export default function GroupDetailPage() {
         .select('lesson_id, student_id, progress_percentage, completed, time_spent_seconds')
         .eq('group_id', groupId);
       setProgressRows(((p as any[]) || []) as ProgressRow[]);
+    } else if (currentUser?.id) {
+      const { data: p } = await supabase.from('lesson_progress')
+        .select('lesson_id, student_id, progress_percentage, completed, time_spent_seconds')
+        .eq('group_id', groupId).eq('student_id', currentUser.id);
+      setProgressRows((p || []) as ProgressRow[]);
     }
     setIsLoading(false);
   };
@@ -275,7 +280,16 @@ export default function GroupDetailPage() {
                   <CardDescription className="break-words">{lesson.description}</CardDescription>
                 )}
               </CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
+              <CardContent className="space-y-3">
+                {!isTeacher && (() => {
+                  const row = progressRows.find(p => p.lesson_id === lesson.id);
+                  const pct = row?.completed ? 100 : row?.progress_percentage || 0;
+                  return <div className="space-y-2">
+                    <p>{t('courses.yourProgress')}: <strong>{pct}%</strong></p>
+                    <Progress value={pct} aria-label={t('courses.yourProgress')} />
+                  </div>;
+                })()}
+                <div className="flex flex-wrap gap-2">
                 <Button
                   variant="secondary"
                   onClick={() => navigate(`/courses/${groupId}/lessons/${lesson.id}`)}
@@ -301,6 +315,7 @@ export default function GroupDetailPage() {
                     </Button>
                   </>
                 )}
+                </div>
               </CardContent>
             </Card>
           ))}

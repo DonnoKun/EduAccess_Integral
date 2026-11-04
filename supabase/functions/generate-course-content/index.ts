@@ -7,7 +7,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { validateTranslation } from './translation.ts';
+import { validateTranslation, translationSchema } from './translation.ts';
+import { generateChatCompletion, GatewayError } from 'npm:@lovable.dev/ai-gateway@0.1.11';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -34,10 +35,6 @@ serve(async (req) => {
     const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '');
     const { data: auth } = await client.auth.getUser(token || '');
     if (!auth.user) return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
 
     const body: ContentRequest = await req.json();
     const { title, description, contentType, source, language = "es" } = body;
@@ -109,16 +106,7 @@ CRITICAL: For each section, include image_prompt and image_alt describing an edu
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000);
 
-    const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
+    const aiResponse = await generateChatCompletion({
           model: "google/gemini-2.5-flash",
           temperature: body.originalContent ? 0.1 : 0.5,
           messages: [
@@ -131,7 +119,7 @@ CRITICAL: For each section, include image_prompt and image_alt describing an edu
               function: {
                 name: "course_content",
                 description: "Return structured educational course content",
-                parameters: {
+                parameters: body.originalContent ? translationSchema(body.originalContent) : {
                   type: "object",
                   properties: {
                     introduction: {
@@ -252,37 +240,9 @@ CRITICAL: For each section, include image_prompt and image_alt describing an edu
             type: "function",
             function: { name: "course_content" },
           },
-        }),
-      }
-    );
-
+    }, { signal: controller.signal });
     clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ success: false, error: "Rate limit exceeded" }),
-          {
-            status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ success: false, error: "AI credits exhausted" }),
-          {
-            status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway returned ${response.status}`);
-    }
-
-    const aiResponse = await response.json();
     const toolCall = aiResponse.choices?.[0]?.message?.tool_calls?.[0];
 
     if (!toolCall?.function?.arguments) {
@@ -305,6 +265,9 @@ CRITICAL: For each section, include image_prompt and image_alt describing an edu
     );
   } catch (error) {
     console.error("Content generation error:", error);
+    if (error instanceof GatewayError) {
+      return new Response(JSON.stringify({ success: false, error: error.message, code: error.code }), { status: error.httpStatus || 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     if (error instanceof DOMException && error.name === "AbortError") {
       return new Response(
