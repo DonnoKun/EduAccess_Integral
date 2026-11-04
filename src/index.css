@@ -908,6 +908,11 @@
     gap: 0.75em;
   }
   .site-header-nav { grid-row: 2; grid-column: 1 / -1; }
+  .site-header-layout > div:first-child { min-width: 0; flex-wrap: wrap; }
+  .site-header-layout > a,
+  .site-header-layout > div:first-child > a { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+  .site-header-layout > a span,
+  .site-header-layout > div:first-child > a span { min-width: 0; overflow-wrap: anywhere; }
   .site-header-actions { justify-content: flex-end; min-width: 0; }
   html[data-user-profile] .site-header-layout,
   html[data-user-profile] .site-header-layout span,

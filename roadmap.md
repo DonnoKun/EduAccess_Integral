@@ -17,4 +17,4 @@
 - [ ] Truly human-sounding voice on every device — browser voices depend on the device; an AI voice would cost credits (awaiting user decision).
 - [x] Reconfigure visual profile starts setup from defaults; back-to-top hides at the top; water-cycle sample drawn in-app (no video file); all icons scale with profile text (v1.10.0).
 
-- [ ] Fix automatic modality preview, proportional enrollment/edit fields, stable bilingual headers, installation icon and search layout; verify at large text sizes.
+- [x] Fix automatic modality preview, proportional enrollment/edit fields, stable bilingual headers, installation icon and search layout. Automatic motion/pause and teacher edit form verified; search fits at 48px; four tests passed. Student-specific enrollment remains unverified without a student session.
