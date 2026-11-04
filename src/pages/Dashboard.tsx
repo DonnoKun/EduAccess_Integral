@@ -247,7 +247,7 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          <nav className="site-header-nav hidden md:flex flex-wrap items-center gap-4" aria-label="Main navigation">
+          <nav className="site-header-nav hidden md:flex flex-wrap items-center gap-2" aria-label="Main navigation">
             {role !== 'teacher' ? (
               <Link 
                 to="/search" 

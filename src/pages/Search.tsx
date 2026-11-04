@@ -517,7 +517,7 @@ export default function SearchPage() {
                         
                         {/* LIST VIEW: Thumbnail without badge */}
                         {viewMode === 'list' && (
-                          <div className="relative overflow-hidden rounded-lg bg-muted w-32 h-24 flex-shrink-0">
+                          <div className="relative overflow-hidden search-list-thumb rounded-lg bg-muted flex-shrink-0">
                             {result.thumbnail ? (
                               <img src={result.thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                             ) : (
