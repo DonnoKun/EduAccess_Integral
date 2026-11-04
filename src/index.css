@@ -359,16 +359,16 @@
     line-height: inherit !important;
   }
   /* Every icon follows the surrounding text size so tabs, cards and stats stay proportional */
-  html[data-user-profile] svg.lucide {
+  html[data-user-profile] .lucide {
     width: max(16px, 1em, calc(var(--profile-font-size) * 0.75)) !important;
     height: max(16px, 1em, calc(var(--profile-font-size) * 0.75)) !important;
     flex-shrink: 0;
   }
   /* Radio dots and checkbox ticks keep the size of their control */
-  html[data-user-profile] [role="radio"] svg.lucide,
-  html[data-user-profile] [role="checkbox"] svg.lucide,
-  html[data-user-profile] [role="menuitemradio"] svg.lucide,
-  html[data-user-profile] [role="option"] > span svg.lucide {
+  html[data-user-profile] [role="radio"] .lucide,
+  html[data-user-profile] [role="checkbox"] .lucide,
+  html[data-user-profile] [role="menuitemradio"] .lucide,
+  html[data-user-profile] [role="option"] > span .lucide {
     width: 60% !important;
     height: 60% !important;
   }
