@@ -629,6 +629,15 @@
     overflow: visible !important;
     text-overflow: clip !important;
   }
+  html[data-user-profile] .language-btn,
+  html[data-user-profile] .language-btn .language-text {
+    font-size: clamp(16px, calc(var(--profile-font-size) * 0.65), 28px) !important;
+    line-height: 1.25 !important;
+  }
+  html[data-user-profile] .language-btn svg {
+    width: 1em;
+    height: 1em;
+  }
 
   .language-dropdown {
     min-width: 180px !important;

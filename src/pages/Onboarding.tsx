@@ -254,7 +254,7 @@ export default function Onboarding() {
       </a>
 
       {/* Language selector */}
-      <div className="absolute top-4 right-4">
+      <div className="w-full max-w-2xl flex justify-end mb-4">
         <LanguageSelector />
       </div>
 
