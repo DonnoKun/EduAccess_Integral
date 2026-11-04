@@ -8,3 +8,4 @@
 - Translate original structured lesson content rather than regenerating a topic; validate structure and preserve source URLs and image prompts to prevent changed exercises and unnecessary image generation.
 - Manual lesson players remain available independently of automatic TTS preference; shared Button markers scale control dimensions and icons with profile text across roles.- Teacher-written short texts (group/lesson descriptions) are translated once per language via the generate-course-content `texts` mode and stored in the shared AI cache, so viewing never re-spends credits.
 - Profile CSS inside Tailwind @layer must target third-party classes via attribute selectors (e.g. svg[class~="lucide"]); class selectors not present in src are purged.
+- Shared form and dialog markers own accessible dimensions; headers use stable grid rows and search uses font-aware minimum tracks to avoid language-dependent overlap.
