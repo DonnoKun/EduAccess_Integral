@@ -41,3 +41,12 @@ describe('natural narration for both roles', () => {
     expect(await waitForSpeechVoices(synth, 5)).toEqual([]);
   });
 });
+import { detectTextLanguage } from '@/lib/speech';
+describe('detectTextLanguage', () => {
+  it('reads Spanish lesson text with a Spanish voice even if the interface is English', () => {
+    expect(detectTextLanguage('El ciclo del agua es el proceso por el que la lluvia vuelve a los ríos y al mar.', 'en')).toBe('es');
+  });
+  it('reads English text with an English voice even if the interface is Spanish', () => {
+    expect(detectTextLanguage('The water cycle is the process by which rain returns to the rivers and the sea.', 'es')).toBe('en');
+  });
+});
