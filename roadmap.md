@@ -9,4 +9,5 @@
 - [x] Keep tutorial close controls visible and language selector proportional at large font sizes.
 - [x] Add Courses to the student's top navigation.
 - [ ] Verify student top navigation with a student session — current available session is a teacher.
-- [ ] Make lesson notices audible, diagnose translation failure, wrap audio controls for both roles, and show saved progress on student lesson cards.
+- [x] Make lesson notices audible, fix translation array counts, wrap audio controls for both roles, and show saved progress on student lesson cards. Live translation and 48px desktop/mobile widths verified; progress tests passed.
+- [ ] Verify saved card percentage and notice narration with a student account — current session is teacher; device audio is not available in headless checks.

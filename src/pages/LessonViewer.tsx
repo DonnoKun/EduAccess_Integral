@@ -246,12 +246,18 @@ export default function LessonViewerPage() {
             <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
             {t('courses.backToLessons')}
           </Button>
-          <h1 className="break-words font-bold">{lesson.title}</h1>
+          <h1 className="min-w-0 max-w-full break-words font-bold">{lesson.title}</h1>
         </div>
       </header>
 
       <main className="container mx-auto max-w-3xl space-y-6 px-4 py-6" aria-busy={translating}>
         {isStudent && <p className="text-muted-foreground">{t('courses.pinnedVersion')}</p>}
+        {notice && ttsEnabled && <Button variant="outline" className="h-auto whitespace-normal" onClick={() => {
+          window.speechSynthesis?.cancel();
+          const utterance = new SpeechSynthesisUtterance(notice);
+          configureSpeech(utterance, lang);
+          window.speechSynthesis?.speak(utterance);
+        }}>{lang === 'es' ? 'Escuchar avisos' : 'Listen to notices'}</Button>}
         {translationFailed && <div className="space-y-3">
           <p role="alert" className="text-foreground">{t('courses.translationFailed')}</p>
           {/402|credits|PaymentRequired/i.test(translationReason) && <p>{lang === 'es' ? 'No hay créditos de IA disponibles para traducir.' : 'AI credits are unavailable for translation.'}</p>}
