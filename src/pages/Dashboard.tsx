@@ -282,7 +282,7 @@ export default function Dashboard() {
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" aria-label={t('navigation.changeTheme')}>
+                <Button variant="outline" size="icon" className="dashboard-icon-control" aria-label={t('navigation.changeTheme')}>
                   {currentTheme === 'dark' ? (
                     <Moon className="h-4 w-4" />
                   ) : currentTheme === 'high-contrast' ? (
@@ -318,6 +318,7 @@ export default function Dashboard() {
                 <Button 
                   variant={readingGuideEnabled ? 'default' : 'ghost'} 
                   size="icon" 
+                  className="dashboard-icon-control"
                   onClick={handleToggleReadingGuide}
                   aria-label={t('dashboard.toggleReadingGuide')}
                   aria-pressed={readingGuideEnabled}
@@ -333,7 +334,7 @@ export default function Dashboard() {
             {/* User Menu with Logout */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 px-3">
+                <Button variant="ghost" className="dashboard-user-control flex items-center gap-2 px-3">
                   <User className="h-4 w-4" />
                   <span className="hidden md:inline max-w-[120px] truncate">
                     {visualProfile?.userName || currentUser?.name || t('navigation.user')}
@@ -393,8 +394,8 @@ export default function Dashboard() {
           <motion.div variants={item}>
             <Card className="glass-card border-primary/20">
               <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div>
+                <div className="dashboard-welcome-layout">
+                  <div className="min-w-0">
                     <h1 className="text-2xl md:text-3xl font-bold mb-2">
                       {t('dashboard.welcome', { name: visualProfile.userName })}
                     </h1>
@@ -406,7 +407,7 @@ export default function Dashboard() {
                       })}
                     </p>
                   </div>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="dashboard-quick-actions">
                     {role !== 'teacher' && (
                       <>
                         <Button onClick={() => navigate('/search')} className="touch-target">

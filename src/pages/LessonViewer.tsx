@@ -107,14 +107,16 @@ export default function LessonViewerPage() {
   const notice = [isStudent ? t('courses.pinnedVersion') : '', translating ? t('courses.translating') : '', translationFailed ? t('courses.translationFailed') : ''].filter(Boolean).join('. ');
   useEffect(() => {
     if (!notice || isLoading || !ttsEnabled || !window.speechSynthesis) return;
-    const timer = window.setTimeout(() => {
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
       const synth = window.speechSynthesis;
       if (synth.speaking) return;
       const utterance = new SpeechSynthesisUtterance(notice);
-      configureSpeech(utterance, lang);
+      await configureSpeech(utterance, lang);
+      if (cancelled || synth.speaking) return;
       synth.speak(utterance);
     }, 400);
-    return () => window.clearTimeout(timer);
+    return () => { cancelled = true; window.clearTimeout(timer); };
   }, [notice, lang, isLoading, ttsEnabled]);
 
   useEffect(() => {
@@ -252,10 +254,10 @@ export default function LessonViewerPage() {
 
       <main className="container mx-auto max-w-3xl space-y-6 px-4 py-6" aria-busy={translating}>
         {isStudent && <p className="text-muted-foreground">{t('courses.pinnedVersion')}</p>}
-        {notice && ttsEnabled && <Button variant="outline" className="h-auto whitespace-normal" onClick={() => {
+        {notice && ttsEnabled && <Button variant="outline" className="h-auto whitespace-normal" onClick={async () => {
           window.speechSynthesis?.cancel();
           const utterance = new SpeechSynthesisUtterance(notice);
-          configureSpeech(utterance, lang);
+          await configureSpeech(utterance, lang);
           window.speechSynthesis?.speak(utterance);
         }}>{lang === 'es' ? 'Escuchar avisos' : 'Listen to notices'}</Button>}
         {translationFailed && <div className="space-y-3">

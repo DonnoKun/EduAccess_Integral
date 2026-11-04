@@ -656,6 +656,53 @@
     font-size: 1.2em !important;
   }
 
+  .dashboard-icon-control {
+    width: max(48px, calc(var(--profile-font-size) * 1.5));
+    height: max(48px, calc(var(--profile-font-size) * 1.5));
+    flex-shrink: 0;
+  }
+  .dashboard-icon-control svg, .dashboard-user-control svg {
+    width: max(24px, calc(var(--profile-font-size) * 0.75)) !important;
+    height: max(24px, calc(var(--profile-font-size) * 0.75)) !important;
+  }
+  .dashboard-user-control {
+    height: auto;
+    min-height: max(48px, calc(var(--profile-font-size) * 1.5));
+  }
+  .dashboard-welcome-layout {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5em;
+  }
+  .dashboard-welcome-layout > div {
+    flex: 1 1 28em;
+    min-width: 0;
+  }
+  .dashboard-welcome-layout h1, .dashboard-welcome-layout p {
+    overflow-wrap: anywhere;
+  }
+  .dashboard-quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65em;
+  }
+  .dashboard-quick-actions button {
+    flex: 1 1 10em;
+    height: auto;
+    min-height: 48px;
+    max-width: 100%;
+    padding: 0.65em 0.85em;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.4 !important;
+  }
+  .dashboard-quick-actions button svg {
+    width: 1em !important;
+    height: 1em !important;
+    margin-right: 0;
+  }
+
   .dialog-close-control {
     width: max(48px, var(--profile-font-size));
     height: max(48px, var(--profile-font-size));
