@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -1480,3 +1481,60 @@ html[data-user-profile] [role="listbox"] [role="option"] {
 }
 html[data-user-profile] [role="menu"] > div:not([role]),
 html[data-user-profile] [role="menu"] [class~="font-semibold"] { font-size: 0.9em !important; }
+
+/* ===== Login: editorial brand panel ===== */
+:root {
+  --brand-ink: 222 47% 9%;
+  --brand-ink-2: 222 40% 14%;
+  --brand-paper: 40 33% 94%;
+  --brand-gold: 41 62% 58%;
+}
+.login-brand {
+  background:
+    radial-gradient(120% 80% at 100% 0%, hsl(var(--brand-gold) / 0.12), transparent 55%),
+    linear-gradient(180deg, hsl(var(--brand-ink)), hsl(var(--brand-ink-2)));
+  color: hsl(var(--brand-paper));
+}
+.login-brand-grid {
+  position: absolute; inset: 0; opacity: .07; pointer-events: none;
+  background-image:
+    linear-gradient(hsl(var(--brand-paper)) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--brand-paper)) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(180deg, transparent, black 30%, black 70%, transparent);
+}
+.login-monogram {
+  display: inline-grid; place-items: center; width: 2.25rem; height: 2.25rem;
+  border: 1px solid hsl(var(--brand-gold)); color: hsl(var(--brand-gold));
+  font-family: 'Fraunces', Georgia, serif; font-style: italic; font-size: 1.25rem; border-radius: 2px;
+}
+.login-brand-name { font-weight: 600; letter-spacing: .02em; }
+.login-eyebrow {
+  font-size: .75rem; letter-spacing: .22em; text-transform: uppercase;
+  color: hsl(var(--brand-gold)); margin-bottom: 1.5rem;
+}
+.login-display {
+  font-family: 'Fraunces', Georgia, serif; font-weight: 400;
+  font-size: clamp(2.5rem, 3.6vw, 3.75rem); line-height: 1.05; letter-spacing: -0.02em;
+}
+.login-display em { font-style: italic; color: hsl(var(--brand-gold)); }
+.login-pillar {
+  display: grid; grid-template-columns: 2.5rem 1fr; gap: 1rem;
+  padding-top: 1.25rem; border-top: 1px solid hsl(var(--brand-paper) / 0.14);
+}
+.login-pillar-num { font-family: 'Fraunces', Georgia, serif; color: hsl(var(--brand-gold)); font-size: .95rem; }
+.login-pillar-title { font-weight: 600; }
+.login-pillar-body { font-size: .9rem; color: hsl(var(--brand-paper) / 0.65); margin-top: .25rem; }
+.login-brand-foot { font-size: .75rem; letter-spacing: .08em; color: hsl(var(--brand-paper) / 0.45); }
+.login-title {
+  font-family: 'Fraunces', Georgia, serif; font-weight: 500;
+  font-size: 2.25em; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: .5rem;
+}
+.login-form input { border-radius: 4px; }
+.login-form button[class*="w-full"] { border-radius: 4px; }
+:root:not(.high-contrast):not([data-theme="high-contrast"]) .login-form button.bg-primary {
+  background: hsl(var(--brand-ink)); color: hsl(var(--brand-paper));
+}
+:root:not(.high-contrast):not([data-theme="high-contrast"]) .login-form button.bg-primary:hover { background: hsl(var(--brand-ink-2)); }
+:root:not(.high-contrast):not([data-theme="high-contrast"]) .login-form button.bg-primary:disabled { opacity: .35; }
+.dark .login-form button.bg-primary { background: hsl(var(--brand-gold)) !important; color: hsl(var(--brand-ink)) !important; }
