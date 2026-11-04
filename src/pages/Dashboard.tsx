@@ -236,7 +236,7 @@ export default function Dashboard() {
 
       {/* Header */}
       <header className="sticky top-0 z-50 glass-card border-b">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="container mx-auto px-4 min-h-16 py-3 flex flex-wrap gap-4 items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" className="md:hidden" aria-label={t('navigation.menu')}>
               <Menu className="h-5 w-5" />
@@ -247,7 +247,7 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          <nav className="hidden md:flex items-center gap-6" aria-label="Main navigation">
+          <nav className="hidden md:flex flex-wrap items-center gap-4" aria-label="Main navigation">
             {role !== 'teacher' ? (
               <Link 
                 to="/search" 
@@ -263,6 +263,11 @@ export default function Dashboard() {
                 {t('navigation.myGroups')}
               </Link>
             )}
+            {role !== 'teacher' && (
+              <Link to="/courses" className="text-muted-foreground hover:text-foreground transition-colors">
+                {t('navigation.courses')}
+              </Link>
+            )}
             <Link 
               to="/dashboard" 
               className="text-foreground font-medium"
@@ -272,7 +277,7 @@ export default function Dashboard() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <LanguageSelector />
             
             <DropdownMenu>

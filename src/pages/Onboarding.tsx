@@ -42,12 +42,14 @@ import type {
   BrightnessSensitivity 
 } from '@/types';
 import { snellenToLogMAR, getSeverityFromLogMAR } from '@/types';
+import { configureSpeech, warmSpeechVoices } from '@/lib/speech';
+import { LearningModalitySample } from '@/components/LearningModalitySample';
 
 const snellenOptions: SnellenNotation[] = ['6/6', '6/12', '6/18', '6/24', '6/36', '6/60'];
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { setVisualProfile, completeOnboarding, setTheme } = useStore();
   const { currentUser, updateUserName, isAuthenticated } = useAuthStore();
   
@@ -65,17 +67,18 @@ export default function Onboarding() {
   // TTS demo function using browser speechSynthesis
   const playTTSDemo = (modalityValue: PreferredModality) => {
     if (modalityValue === 'visual') return;
+    if (!window.speechSynthesis) return;
     
     // Cancel any ongoing speech
     window.speechSynthesis.cancel();
     
-    const lang = t('onboarding.step4.title').startsWith('Modalidad') ? 'es' : 'en';
+    const lang = i18n.language.startsWith('es') ? 'es' : 'en';
     const demoText = lang === 'es' 
-      ? 'Esta es una demostración de texto a voz. Así se escuchará el contenido educativo cuando elijas esta modalidad.'
-      : 'This is a text-to-speech demo. This is how educational content will sound when you choose this modality.';
+      ? 'El sol calienta el agua, que se evapora y forma nubes. Cuando se enfría, cae como lluvia y vuelve a los ríos y al mar.'
+      : 'The sun warms the water, which evaporates and forms clouds. As it cools, it falls as rain and returns to rivers and the sea.';
     
     const utterance = new SpeechSynthesisUtterance(demoText);
-    utterance.lang = lang === 'es' ? 'es-ES' : 'en-US';
+    configureSpeech(utterance, lang);
     utterance.rate = 0.9;
     utterance.pitch = 1;
     
@@ -160,18 +163,23 @@ export default function Onboarding() {
 
   // Cleanup speech synthesis on unmount
   useEffect(() => {
+    warmSpeechVoices();
     return () => {
-      window.speechSynthesis.cancel();
+      window.speechSynthesis?.cancel();
     };
   }, []);
 
   const handleNext = () => {
+    window.speechSynthesis?.cancel();
+    setIsPlayingDemo(false);
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     }
   };
 
   const handleBack = () => {
+    window.speechSynthesis?.cancel();
+    setIsPlayingDemo(false);
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
@@ -597,6 +605,9 @@ export default function Onboarding() {
                   </RadioGroup>
 
                   {/* Audio demo feedback */}
+                  <LearningModalitySample modality={modality} playing={isPlayingDemo}
+                    onPlay={() => playTTSDemo(modality)}
+                    onStop={() => { window.speechSynthesis?.cancel(); setIsPlayingDemo(false); }} />
                   {isPlayingDemo && (modality === 'audio' || modality === 'mixed') && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
@@ -628,17 +639,8 @@ export default function Onboarding() {
                   </div>
 
                   <div className="space-y-6" style={{ fontSize: '1em' }}>
-                    <div 
-                      className="rounded-lg border-2 border-border bg-card"
-                      style={{ 
-                        display: 'grid',
-                        gridTemplateColumns: '1fr auto',
-                        gap: '2rem',
-                        padding: '1.25em',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <div style={{ minWidth: 0 }}>
+                    <div className="flex flex-wrap items-center gap-5 rounded-lg border-2 border-border bg-card p-5">
+                      <div className="min-w-0 flex-1 basis-64">
                         <Label 
                           htmlFor="animations" 
                           className="font-semibold block cursor-pointer"
@@ -657,20 +659,19 @@ export default function Onboarding() {
                           {t('onboarding.step5.animationsDesc')}
                         </p>
                       </div>
-                      <div 
-                        style={{ 
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'flex-end',
-                          transform: `scale(${Math.max(1.2, fontSize / 16 * 1.2)})`,
-                          transformOrigin: 'center right',
-                        }}
-                      >
+                      <div className="shrink-0 p-3">
                         <Switch
                           id="animations"
                           checked={enableAnimations}
                           onCheckedChange={setEnableAnimations}
                         />
+                      </div>
+                    </div>
+
+                    <div className="animation-sample border-y border-border py-5" data-animated={enableAnimations}>
+                      <div className="flex items-center gap-3 font-semibold">
+                        <Check className="animation-sample-icon text-primary shrink-0" aria-hidden="true" />
+                        <span>{i18n.language.startsWith('es') ? 'Lección completada' : 'Lesson completed'}</span>
                       </div>
                     </div>
 

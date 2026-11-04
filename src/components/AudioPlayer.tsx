@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
 import { useStore } from '@/store/useStore';
+import { configureSpeech, warmSpeechVoices } from '@/lib/speech';
 
 interface AudioPlayerProps {
   text: string;
@@ -60,6 +61,7 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
 
   useEffect(() => {
     synthRef.current = window.speechSynthesis;
+    warmSpeechVoices();
     return () => { synthRef.current?.cancel(); };
   }, []);
 
@@ -133,7 +135,7 @@ export default function AudioPlayer({ text, lang, disabled, onChunkChange, onChu
       }
 
       const utterance = new SpeechSynthesisUtterance(chunks[chunkIndex]);
-      utterance.lang = lang === 'es' ? 'es-ES' : 'en-US';
+      configureSpeech(utterance, lang);
       utterance.rate = speedRef.current;
 
       utterance.onstart = () => {

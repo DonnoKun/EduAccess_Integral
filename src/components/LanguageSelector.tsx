@@ -14,7 +14,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { changeLanguage, getCurrentLanguage } from '@/lib/i18n';
-import { useStore } from '@/store/useStore';
 import { cn } from '@/lib/utils';
 
 const languages = [
@@ -25,7 +24,6 @@ const languages = [
 export default function LanguageSelector() {
   const { i18n } = useTranslation();
   const currentLang = getCurrentLanguage();
-  const { visualProfile } = useStore();
 
   const handleLanguageChange = (lang: 'en' | 'es') => {
     changeLanguage(lang);
@@ -40,11 +38,11 @@ export default function LanguageSelector() {
           variant="outline" 
           size="sm" 
           className="language-btn h-auto gap-2 px-3 py-2" 
-          aria-label="Select language"
+          aria-label={i18n.language.startsWith('es') ? 'Seleccionar idioma' : 'Select language'}
         >
           <Globe className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
           <span className="language-text whitespace-nowrap">
-            {currentLanguage.flag} {currentLanguage.code.toUpperCase()}
+            {currentLanguage.code.toUpperCase()}
           </span>
         </Button>
       </DropdownMenuTrigger>
@@ -61,9 +59,6 @@ export default function LanguageSelector() {
               currentLang === lang.code && "bg-accent"
             )}
           >
-            <span className="flag-icon flex-shrink-0 text-lg" aria-hidden="true">
-              {lang.flag}
-            </span>
             <span className="flex-1">{lang.label}</span>
             {currentLang === lang.code && (
               <Check className="h-4 w-4 text-primary ml-auto" />
