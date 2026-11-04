@@ -236,7 +236,7 @@ export default function Dashboard() {
 
       {/* Header */}
       <header className="sticky top-0 z-50 glass-card border-b">
-        <div className="container mx-auto px-4 min-h-16 py-3 flex flex-wrap gap-4 items-center justify-between">
+        <div className="site-header-layout container mx-auto px-4 min-h-16 py-3">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" className="md:hidden" aria-label={t('navigation.menu')}>
               <Menu className="h-5 w-5" />
@@ -247,7 +247,7 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          <nav className="hidden md:flex flex-wrap items-center gap-4" aria-label="Main navigation">
+          <nav className="site-header-nav hidden md:flex flex-wrap items-center gap-4" aria-label="Main navigation">
             {role !== 'teacher' ? (
               <Link 
                 to="/search" 
@@ -277,7 +277,7 @@ export default function Dashboard() {
             </Link>
           </nav>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="site-header-actions flex flex-wrap items-center gap-2">
             <LanguageSelector />
             
             <DropdownMenu>

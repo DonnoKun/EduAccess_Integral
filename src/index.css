@@ -310,7 +310,7 @@
   }
 
   html[data-user-profile] h2 { 
-    font-size: calc(var(--profile-font-size) * 1.5) !important;
+    font-size: calc(var(--profile-font-size) * 1.2) !important;
     line-height: 1.4 !important;
   }
 
@@ -413,6 +413,34 @@
   html[data-user-profile] select,
   html[data-user-profile] textarea {
     font-size: var(--profile-font-size) !important;
+  }
+  html[data-user-profile] .app-input {
+    height: auto !important;
+    min-height: max(44px, 2.4em);
+    line-height: 1.3 !important;
+    padding: 0.45em 0.65em;
+    min-width: 0;
+  }
+  html[data-user-profile] label {
+    display: inline-block;
+    line-height: 1.4 !important;
+  }
+  html[data-user-profile] textarea {
+    min-height: 3.5em;
+    line-height: 1.5 !important;
+  }
+  .app-dialog {
+    width: min(calc(100% - 2rem), max(32rem, calc(var(--profile-font-size) * 19))) !important;
+    max-width: calc(100% - 2rem) !important;
+    max-height: calc(100dvh - 2rem) !important;
+    overflow-y: auto;
+  }
+  .app-dialog-header { padding-right: max(40px, var(--profile-font-size)); }
+  html[data-user-profile] .app-dialog p { line-height: 1.5 !important; }
+  html[data-user-profile] .app-card-title {
+    font-size: calc(var(--profile-font-size) * 1.1) !important;
+    line-height: 1.35 !important;
+    overflow-wrap: anywhere;
   }
 
   /* Tabs scale with user preference */
@@ -821,16 +849,16 @@
     object-fit: contain;
   }
   /* Water-cycle sample: 9s loop — evaporation, condensation, precipitation */
-  .water-cycle-anim * { animation-duration: 9s; animation-iteration-count: infinite; animation-timing-function: ease-in-out; transform-box: fill-box; transform-origin: center; }
+  html .learning-sample .water-cycle-anim * { animation-duration: 9s !important; animation-iteration-count: infinite !important; animation-timing-function: ease-in-out; transform-box: fill-box; transform-origin: center; }
   .water-cycle-anim[data-running="false"] * { animation-play-state: paused; }
   .water-cycle-anim .wc-sun { animation-name: wc-sun; }
   .water-cycle-anim .wc-vapor { animation-name: wc-vapor; }
   .water-cycle-anim .wc-cloud { animation-name: wc-cloud; }
   .water-cycle-anim .wc-rain { animation-name: wc-rain; }
   .water-cycle-anim .wc-label { opacity: 0; }
-  .water-cycle-anim .wc-label-0 { animation-name: wc-label-0; }
-  .water-cycle-anim .wc-label-1 { animation-name: wc-label-1; }
-  .water-cycle-anim .wc-label-2 { animation-name: wc-label-2; }
+  .water-cycle-anim [class~="wc-label-0"] { animation-name: wc-label-0; }
+  .water-cycle-anim [class~="wc-label-1"] { animation-name: wc-label-1; }
+  .water-cycle-anim [class~="wc-label-2"] { animation-name: wc-label-2; }
   @keyframes wc-sun { 0%, 33%, 100% { transform: scale(1); } 15% { transform: scale(1.15); } }
   @keyframes wc-vapor { 0% { transform: translateY(20px); opacity: 0; } 15% { opacity: 0.8; } 33% { transform: translateY(-90px); opacity: 0; } 100% { opacity: 0; } }
   @keyframes wc-cloud { 0%, 30% { transform: translateX(0); } 60%, 90% { transform: translateX(190px); } 100% { transform: translateX(0); } }
@@ -838,7 +866,10 @@
   @keyframes wc-label-0 { 0%, 30% { opacity: 1; } 33%, 100% { opacity: 0; } }
   @keyframes wc-label-1 { 0%, 33% { opacity: 0; } 36%, 63% { opacity: 1; } 66%, 100% { opacity: 0; } }
   @keyframes wc-label-2 { 0%, 66% { opacity: 0; } 69%, 97% { opacity: 1; } 100% { opacity: 0; } }
-  html.reduce-motion .water-cycle-anim .wc-label-0 { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) {
+    .water-cycle-anim * { animation: none !important; }
+    .water-cycle-anim [class~="wc-label-0"] { opacity: 1; }
+  }
   .learning-sample p, .learning-sample figcaption {
     overflow-wrap: anywhere;
   }
@@ -863,13 +894,44 @@
   html[data-user-profile] .badge-partial {
     font-size: calc(var(--profile-font-size, 16px) * 0.75) !important;
     padding: 0.25em 0.75em !important;
-    white-space: nowrap !important;
+    white-space: normal !important;
   }
 
   /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   /* HEADER NAVIGATION */
   /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
+  .site-header-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75em;
+  }
+  .site-header-nav { grid-row: 2; grid-column: 1 / -1; }
+  .site-header-layout > div:first-child { min-width: 0; flex-wrap: wrap; }
+  .site-header-layout > a,
+  .site-header-layout > div:first-child > a { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+  .site-header-layout > a span,
+  .site-header-layout > div:first-child > a span { min-width: 0; overflow-wrap: anywhere; }
+  .site-header-actions { justify-content: flex-end; min-width: 0; }
+  html[data-user-profile] .site-header-layout,
+  html[data-user-profile] .site-header-layout span,
+  html[data-user-profile] .site-header-layout nav,
+  html[data-user-profile] .site-header-layout nav a { line-height: 1.3 !important; }
+  .install-banner-message { flex-basis: 14em; }
+  html[data-user-profile] .install-banner p { font-size: max(16px, calc(var(--profile-font-size) * 0.75)) !important; line-height: 1.4 !important; }
+  .install-banner-message svg { width: 1em !important; height: 1em !important; }
+  .search-field { flex-basis: 12em; }
+  html[data-user-profile] .search-query-input { padding-left: 1.8em; padding-right: 1.8em; }
+  .search-status { display: inline-flex; align-items: center; gap: 0.4em; border-radius: 6px; max-width: 100%; padding: 0.25em 0.5em; line-height: 1.3 !important; }
+  html[data-user-profile] .search-status span { font-size: inherit !important; line-height: 1.3 !important; overflow-wrap: anywhere; }
+  html[data-user-profile] .search-status svg { width: 1em !important; height: 1em !important; }
+  .search-card-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, max(18rem, calc(var(--profile-font-size) * 13))), 1fr)); }
+  @media (max-width: 800px) {
+    .site-header-layout { grid-template-columns: minmax(0, 1fr); }
+    .site-header-nav { grid-row: auto; }
+    .site-header-actions { justify-content: flex-start; }
+  }
   .app-header {
     display: flex;
     align-items: center;
