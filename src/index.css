@@ -358,6 +358,12 @@
     font-size: inherit !important;
     line-height: inherit !important;
   }
+  /* Every icon follows the surrounding text size so tabs, cards and stats stay proportional */
+  html[data-user-profile] svg.lucide {
+    width: max(16px, 1em) !important;
+    height: max(16px, 1em) !important;
+    flex-shrink: 0;
+  }
   /* Icons beside headings grow with the heading instead of staying 20px */
   html[data-user-profile] h1 > svg,
   html[data-user-profile] h2 > svg,
@@ -824,6 +830,7 @@
   @keyframes wc-label-0 { 0%, 30% { opacity: 1; } 33%, 100% { opacity: 0; } }
   @keyframes wc-label-1 { 0%, 33% { opacity: 0; } 36%, 63% { opacity: 1; } 66%, 100% { opacity: 0; } }
   @keyframes wc-label-2 { 0%, 66% { opacity: 0; } 69%, 97% { opacity: 1; } 100% { opacity: 0; } }
+  html.reduce-motion .water-cycle-anim .wc-label-0 { opacity: 1; }
   .learning-sample p, .learning-sample figcaption {
     overflow-wrap: anywhere;
   }
