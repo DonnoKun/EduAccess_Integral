@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "asset_id": "a3d5a21f-c8d9-475c-8a66-2ad4acb3a99f",
+  "asset_id": "61686012-d1a4-4e70-8da2-a682e19bfbc6",
   "project_id": "808ac305-4297-4264-a4f7-b2ddc509c687",
-  "url": "/__l5e/assets-v1/a3d5a21f-c8d9-475c-8a66-2ad4acb3a99f/learning-water-cycle.mp4",
-  "r2_key": "a/v1/808ac305-4297-4264-a4f7-b2ddc509c687/a3d5a21f-c8d9-475c-8a66-2ad4acb3a99f/learning-water-cycle.mp4",
-  "original_filename": "learning-water-cycle.mp4",
-  "size": 79992,
-  "content_type": "video/mp4",
-  "created_at": "2026-11-04T05:11:51Z"
+  "url": "/__l5e/assets-v1/61686012-d1a4-4e70-8da2-a682e19bfbc6/learning-water-cycle.webm",
+  "r2_key": "a/v1/808ac305-4297-4264-a4f7-b2ddc509c687/61686012-d1a4-4e70-8da2-a682e19bfbc6/learning-water-cycle.webm",
+  "original_filename": "learning-water-cycle.webm",
+  "size": 162680,
+  "content_type": "video/webm",
+  "created_at": "2026-11-04T05:13:51Z"
 }
