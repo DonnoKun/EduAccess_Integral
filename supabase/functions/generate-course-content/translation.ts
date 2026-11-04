@@ -1,3 +1,17 @@
+/** Schema mirrors the original tree, including paragraph and array lengths. */
+export function translationSchema(value: unknown, key = ''): Record<string, unknown> {
+  if (typeof value === 'string') {
+    if (key === 'image_prompt' || key === 'url' || key === 'language') return { type: 'string', enum: [value] };
+    return { type: 'string' };
+  }
+  if (Array.isArray(value)) return { type: 'array', minItems: value.length, maxItems: value.length, items: value.length ? translationSchema(value[0]) : { type: 'string' } };
+  if (value && typeof value === 'object') {
+    const fields = Object.entries(value);
+    return { type: 'object', properties: Object.fromEntries(fields.map(([k, v]) => [k, translationSchema(v, k)])), required: fields.map(([k]) => k), additionalProperties: false };
+  }
+  return { type: typeof value === 'number' ? 'number' : typeof value === 'boolean' ? 'boolean' : 'null' };
+}
+
 export function validateTranslation(original: Record<string, unknown>, translated: Record<string, unknown>) {
   const paragraphs = (text: string) => text.trim().split(/\n\s*\n/).length;
   for (const key of ['introduction', 'summary']) {
