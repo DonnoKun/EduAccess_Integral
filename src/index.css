@@ -1445,3 +1445,38 @@
 .tutorial-dialog-scrollbar::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary) / 0.6);
 }
+
+/* Header nav as visible tabs */
+@layer components {
+  .site-header-nav { gap: 0.4em; padding-top: 0.25em; }
+  .site-header-nav > a {
+    display: inline-flex; align-items: center;
+    padding: 0.35em 0.9em; border-radius: 0.6em;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--muted) / 0.5);
+    line-height: 1.3; text-decoration: none;
+    transition: background-color .2s, border-color .2s, color .2s;
+  }
+  .site-header-nav > a:hover { background: hsl(var(--accent)); color: hsl(var(--accent-foreground)); }
+  .site-header-nav > a:focus-visible { outline: 3px solid hsl(var(--ring)); outline-offset: 2px; }
+  .site-header-nav > a[aria-current="page"] {
+    background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+    border-color: hsl(var(--primary)); font-weight: 600;
+  }
+  .search-list-thumb { width: clamp(8rem, 8em, 40%); height: clamp(6rem, 6em, 30vw); }
+}
+
+/* Dropdown / select menus scale with the profile font */
+html[data-user-profile] [role="menu"],
+html[data-user-profile] [role="listbox"] {
+  font-size: var(--profile-font-size) !important;
+  max-width: min(92vw, 30em);
+}
+html[data-user-profile] [role="menu"] [role="menuitem"],
+html[data-user-profile] [role="menu"] [role="menuitemcheckbox"],
+html[data-user-profile] [role="menu"] [role="menuitemradio"],
+html[data-user-profile] [role="listbox"] [role="option"] {
+  font-size: 1em !important; padding-top: 0.45em; padding-bottom: 0.45em; gap: 0.5em; line-height: 1.3;
+}
+html[data-user-profile] [role="menu"] > div:not([role]),
+html[data-user-profile] [role="menu"] [class~="font-semibold"] { font-size: 0.9em !important; }

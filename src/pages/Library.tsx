@@ -159,7 +159,7 @@ export default function LibraryPage() {
 
       {/* Header */}
       <header className="sticky top-0 z-50 glass-card border-b">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="site-header-layout container mx-auto px-4 min-h-16 py-3">
           <div className="flex items-center gap-4">
             <Link to="/dashboard" className="flex items-center gap-2">
               <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />
@@ -167,7 +167,7 @@ export default function LibraryPage() {
             </Link>
           </div>
 
-          <nav className="hidden md:flex items-center gap-6" aria-label="Main navigation">
+          <nav className="site-header-nav hidden md:flex flex-wrap items-center gap-2" aria-label="Main navigation">
             <Link to="/search" className="text-muted-foreground hover:text-foreground transition-colors">
               {t('navigation.search')}
             </Link>
@@ -182,7 +182,7 @@ export default function LibraryPage() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="site-header-actions flex flex-wrap items-center gap-2">
             <LanguageSelector />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
