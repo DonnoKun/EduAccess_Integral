@@ -1,7 +1,6 @@
 /**
- * Floating "back to top" button, shown after scrolling down.
+ * Always-available return control for both roles.
  */
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
