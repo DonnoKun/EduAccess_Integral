@@ -1532,3 +1532,9 @@ html[data-user-profile] [role="menu"] [class~="font-semibold"] { font-size: 0.9e
 }
 .login-form input { border-radius: 4px; }
 .login-form button[class*="w-full"] { border-radius: 4px; }
+:root:not(.high-contrast):not([data-theme="high-contrast"]) .login-form button.bg-primary {
+  background: hsl(var(--brand-ink)); color: hsl(var(--brand-paper));
+}
+:root:not(.high-contrast):not([data-theme="high-contrast"]) .login-form button.bg-primary:hover { background: hsl(var(--brand-ink-2)); }
+:root:not(.high-contrast):not([data-theme="high-contrast"]) .login-form button.bg-primary:disabled { opacity: .35; }
+.dark .login-form button.bg-primary { background: hsl(var(--brand-gold)) !important; color: hsl(var(--brand-ink)) !important; }
