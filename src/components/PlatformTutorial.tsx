@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/useAuthStore';
+import { configureSpeech, warmSpeechVoices } from '@/lib/speech';
 import { Users as TUsers, BookOpen as TBook, BarChart3 as TChart, Sparkles as TSpark } from 'lucide-react';
 import {
   Dialog,
@@ -226,6 +227,7 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
 
   useEffect(() => {
     synthRef.current = window.speechSynthesis;
+    warmSpeechVoices();
     return () => { synthRef.current?.cancel(); };
   }, []);
 
@@ -246,11 +248,11 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
     const narration = buildNarrationText(stepData, stepIdx, steps.length, isES);
 
     const utterance = new SpeechSynthesisUtterance(narration);
-    utterance.lang = isES ? 'es-ES' : 'en-US';
+    configureSpeech(utterance, lang);
     utterance.rate = 0.95;
 
     synth.speak(utterance);
-  }, [isES]);
+  }, [isES, steps]);
 
   /** Auto-narrate when step changes or dialog opens */
   useEffect(() => {
@@ -328,15 +330,15 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
     <Dialog open={open} onOpenChange={(o) => !o && handleFinish()}>
       <DialogContent
         ref={dialogContentRef}
-        className="sm:max-w-lg max-h-[90vh] overflow-x-hidden tutorial-dialog-scrollbar"
+        className="sm:max-w-3xl max-h-[90vh] overflow-x-hidden tutorial-dialog-scrollbar"
         style={{
           fontSize: '16px',
           lineHeight: '1.5',
           overflowY: 'auto',
         }}
       >
-        <DialogHeader>
-          <div className="flex items-center justify-between">
+        <DialogHeader className="pr-16">
+          <div className="flex flex-wrap gap-3 items-center justify-between">
             <DialogTitle className="flex items-center gap-2" style={{ fontSize: '18px', lineHeight: '1.4' }}>
               <Sparkles className="h-5 w-5 text-primary flex-shrink-0" />
               {isES ? 'Guía de la Plataforma' : 'Platform Guide'}
@@ -417,7 +419,7 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
         </AnimatePresence>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex flex-wrap gap-3 items-center justify-between pt-2 tutorial-navigation">
           <Button
             variant="ghost"
             onClick={handlePrev}
