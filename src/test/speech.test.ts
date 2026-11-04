@@ -18,6 +18,14 @@ describe('natural narration for both roles', () => {
     const natural = voice('Microsoft Elvira Natural', 'es-ES');
     expect(selectSpeechVoice([voice('Google español', 'es-ES'), natural], 'es')).toBe(natural);
   });
+  it('prefers Google Spanish over the robotic Windows desktop Spanish voice', () => {
+    const google = voice('Google español de Estados Unidos', 'es-US');
+    expect(selectSpeechVoice([voice('Microsoft Sabina - Spanish (Mexico)', 'es-MX'), google], 'es')).toBe(google);
+  });
+  it('prefers an Edge online natural English voice over classic desktop voices', () => {
+    const online = voice('Microsoft Aria Online (Natural) - English (United States)', 'en-US');
+    expect(selectSpeechVoice([voice('Microsoft Zira - English (United States)', 'en-US'), online], 'en')).toBe(online);
+  });
   it('waits for device voices instead of immediately using the robotic default', async () => {
     const events = new EventTarget();
     let available: SpeechSynthesisVoice[] = [];

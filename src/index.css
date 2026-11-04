@@ -349,9 +349,29 @@
     gap: 0.4em;
   }
   html[data-user-profile] .app-button svg {
-    width: 1em !important;
-    height: 1em !important;
+    width: 1.1em !important;
+    height: 1.1em !important;
     margin-right: 0;
+  }
+  /* Text inside buttons uses the button's size so label, icon and box stay proportional */
+  html[data-user-profile] .app-button span:not(.sr-only) {
+    font-size: inherit !important;
+    line-height: inherit !important;
+  }
+  /* Icons beside headings grow with the heading instead of staying 20px */
+  html[data-user-profile] h1 > svg,
+  html[data-user-profile] h2 > svg,
+  html[data-user-profile] h3 > svg {
+    width: 0.85em !important;
+    height: 0.85em !important;
+    flex-shrink: 0;
+  }
+  /* Status labels (Published, Draft…) stay readable at large text sizes */
+  html[data-user-profile] .app-badge {
+    font-size: max(14px, calc(var(--profile-font-size) * 0.6)) !important;
+    line-height: 1.3 !important;
+    padding: 0.2em 0.7em !important;
+    white-space: normal;
   }
   html[data-user-profile] .app-icon-button {
     width: max(44px, 2.4em) !important;

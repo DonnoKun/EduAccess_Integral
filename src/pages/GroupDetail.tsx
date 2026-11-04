@@ -9,6 +9,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, BookOpen, Copy, Loader2, Plus, Send, Trash2, Users, EyeOff, Pencil } from 'lucide-react';
 import { useCourseCache } from '@/hooks/useCourseCache';
+import { useTranslatedTexts } from '@/hooks/useTranslatedTexts';
 import LessonEditor, { type LessonDraft } from '@/components/LessonEditor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -71,6 +72,7 @@ export default function GroupDetailPage() {
   const [addingStudent, setAddingStudent] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, LessonDraft>>({});
   const [editing, setEditing] = useState<GroupLesson | null>(null);
+  const translatedText = useTranslatedTexts([group?.description, ...lessons.map(l => l.description)]);
   const [publishing, setPublishing] = useState<string | null>(null);
 
   const load = async () => {
@@ -277,7 +279,7 @@ export default function GroupDetailPage() {
                 </div>
                 {isTeacher && <p className="break-words text-muted-foreground">{t(lesson.status === 'published' ? 'courses.visibleToStudents' : 'courses.hiddenFromStudents')}</p>}
                 {lesson.description && (
-                  <CardDescription className="break-words">{lesson.description}</CardDescription>
+                  <CardDescription className="break-words">{translatedText[lesson.description] || lesson.description}</CardDescription>
                 )}
               </CardHeader>
               <CardContent className="space-y-3">

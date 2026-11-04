@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Plus, Users, GraduationCap, Copy, RefreshCw, Loader2, Pencil, Trash2 } from 'lucide-react';
+import { useTranslatedTexts } from '@/hooks/useTranslatedTexts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -65,6 +66,7 @@ export default function CoursesPage() {
   // Teacher edit / delete
   const [editing, setEditing] = useState<Group | null>(null);
   const [deleting, setDeleting] = useState<Group | null>(null);
+  const translatedText = useTranslatedTexts(groups.map(g => g.description));
   const [saving, setSaving] = useState(false);
 
   const handleSaveEdit = async () => {
@@ -244,7 +246,7 @@ export default function CoursesPage() {
                   <CardHeader>
                     <CardTitle className="break-words">{group.name}</CardTitle>
                     {group.description && (
-                      <CardDescription className="break-words">{group.description}</CardDescription>
+                      <CardDescription className="break-words">{translatedText[group.description] || group.description}</CardDescription>
                     )}
                   </CardHeader>
                   <CardContent className="space-y-3">
