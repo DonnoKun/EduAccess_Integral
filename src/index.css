@@ -806,6 +806,24 @@
     border-radius: 8px;
     object-fit: contain;
   }
+  /* Water-cycle sample: 9s loop — evaporation, condensation, precipitation */
+  .water-cycle-anim * { animation-duration: 9s; animation-iteration-count: infinite; animation-timing-function: ease-in-out; transform-box: fill-box; transform-origin: center; }
+  .water-cycle-anim[data-running="false"] * { animation-play-state: paused; }
+  .water-cycle-anim .wc-sun { animation-name: wc-sun; }
+  .water-cycle-anim .wc-vapor { animation-name: wc-vapor; }
+  .water-cycle-anim .wc-cloud { animation-name: wc-cloud; }
+  .water-cycle-anim .wc-rain { animation-name: wc-rain; }
+  .water-cycle-anim .wc-label { opacity: 0; }
+  .water-cycle-anim .wc-label-0 { animation-name: wc-label-0; }
+  .water-cycle-anim .wc-label-1 { animation-name: wc-label-1; }
+  .water-cycle-anim .wc-label-2 { animation-name: wc-label-2; }
+  @keyframes wc-sun { 0%, 33%, 100% { transform: scale(1); } 15% { transform: scale(1.15); } }
+  @keyframes wc-vapor { 0% { transform: translateY(20px); opacity: 0; } 15% { opacity: 0.8; } 33% { transform: translateY(-90px); opacity: 0; } 100% { opacity: 0; } }
+  @keyframes wc-cloud { 0%, 30% { transform: translateX(0); } 60%, 90% { transform: translateX(190px); } 100% { transform: translateX(0); } }
+  @keyframes wc-rain { 0%, 62% { opacity: 0; transform: translateY(0); } 70% { opacity: 1; } 95% { opacity: 1; transform: translateY(110px); } 100% { opacity: 0; transform: translateY(110px); } }
+  @keyframes wc-label-0 { 0%, 30% { opacity: 1; } 33%, 100% { opacity: 0; } }
+  @keyframes wc-label-1 { 0%, 33% { opacity: 0; } 36%, 63% { opacity: 1; } 66%, 100% { opacity: 0; } }
+  @keyframes wc-label-2 { 0%, 66% { opacity: 0; } 69%, 97% { opacity: 1; } 100% { opacity: 0; } }
   .learning-sample p, .learning-sample figcaption {
     overflow-wrap: anywhere;
   }
