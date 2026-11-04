@@ -430,9 +430,9 @@
     line-height: 1.5 !important;
   }
   .app-dialog {
-    width: min(calc(100% - 2rem), max(32rem, calc(var(--profile-font-size) * 19)));
-    max-width: calc(100% - 2rem);
-    max-height: calc(100dvh - 2rem);
+    width: min(calc(100% - 2rem), max(32rem, calc(var(--profile-font-size) * 19))) !important;
+    max-width: calc(100% - 2rem) !important;
+    max-height: calc(100dvh - 2rem) !important;
     overflow-y: auto;
   }
   .app-dialog-header { padding-right: max(40px, var(--profile-font-size)); }
@@ -849,7 +849,7 @@
     object-fit: contain;
   }
   /* Water-cycle sample: 9s loop — evaporation, condensation, precipitation */
-  .water-cycle-anim * { animation-duration: 9s !important; animation-iteration-count: infinite !important; animation-timing-function: ease-in-out; transform-box: fill-box; transform-origin: center; }
+  html .learning-sample .water-cycle-anim * { animation-duration: 9s !important; animation-iteration-count: infinite !important; animation-timing-function: ease-in-out; transform-box: fill-box; transform-origin: center; }
   .water-cycle-anim[data-running="false"] * { animation-play-state: paused; }
   .water-cycle-anim .wc-sun { animation-name: wc-sun; }
   .water-cycle-anim .wc-vapor { animation-name: wc-vapor; }
