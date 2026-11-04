@@ -360,8 +360,8 @@
   }
   /* Every icon follows the surrounding text size so tabs, cards and stats stay proportional */
   html[data-user-profile] svg.lucide:not([role="radio"] svg, [role="checkbox"] svg, [role="switch"] svg, [data-radix-collection-item] [data-state] > svg) {
-    width: max(16px, 1em) !important;
-    height: max(16px, 1em) !important;
+    width: max(16px, 1em, calc(var(--profile-font-size) * 0.75)) !important;
+    height: max(16px, 1em, calc(var(--profile-font-size) * 0.75)) !important;
     flex-shrink: 0;
   }
   /* Icons beside headings grow with the heading instead of staying 20px */
