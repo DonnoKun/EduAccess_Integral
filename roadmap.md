@@ -18,3 +18,5 @@
 - [x] Reconfigure visual profile starts setup from defaults; back-to-top hides at the top; water-cycle sample drawn in-app (no video file); all icons scale with profile text (v1.10.0).
 
 - [x] Fix automatic modality preview, proportional enrollment/edit fields, stable bilingual headers, installation icon and search layout. Automatic motion/pause and teacher edit form verified; search fits at 48px; four tests passed. Student-specific enrollment remains unverified without a student session.
+
+- [x] Shared page links (/dashboard, /courses, /courses/x/lessons/y, /settings...) must open the app, not a 404, for both roles: vercel.json catch-all rewrite to index.html with static files rewritten to themselves; signed-out visitors land on login. 4 tests pass; every page checked signed-out in preview.
