@@ -186,7 +186,7 @@ export default function LibraryPage() {
             <LanguageSelector />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" aria-label={t('navigation.changeTheme')}>
+                <Button variant="outline" size="icon" className="dashboard-icon-control" aria-label={t('navigation.changeTheme')}>
                   {currentTheme === 'dark' ? <Moon className="h-4 w-4" /> : currentTheme === 'high-contrast' ? <Contrast className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
                 </Button>
               </DropdownMenuTrigger>
@@ -204,6 +204,7 @@ export default function LibraryPage() {
               variant={readingGuideEnabled ? 'default' : 'ghost'}
               size="icon"
               onClick={() => toggleReadingGuide()}
+              className="dashboard-icon-control"
               aria-label={lang === 'es' ? 'Guía de lectura' : 'Reading guide'}
             >
               <Eye className="h-4 w-4" />

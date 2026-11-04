@@ -8,17 +8,6 @@ import { Button } from '@/components/ui/button';
 
 export default function ScrollToTopButton() {
   const { t } = useTranslation();
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY > 400);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  if (!visible) return null;
-
   const goTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     const main = document.querySelector<HTMLElement>('main, h1');
@@ -28,7 +17,7 @@ export default function ScrollToTopButton() {
   return (
     <Button
       onClick={goTop}
-      className="fixed bottom-20 right-4 z-50 h-auto rounded-full px-4 py-3 shadow-lg md:bottom-6"
+      className="back-to-top-control fixed bottom-20 right-4 z-50 h-auto rounded-full px-4 py-3 shadow-lg md:bottom-6"
       aria-label={t('courses.backToTop')}
     >
       <ArrowUp className="mr-2 h-5 w-5" aria-hidden="true" />
