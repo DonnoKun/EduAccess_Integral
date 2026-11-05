@@ -3,6 +3,7 @@
  * Educational content discovery with filters and accessibility badges
  */
 
+import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -83,10 +84,61 @@ export default function SearchPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isListening, setIsListening] = useState(false);
 
-  const handleVoiceSearch = () => {
-    const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognitionAPI) {
+  const applyTranscript = (transcript: string) => {
+    setLocalQuery(transcript);
+    setSearchParams({ q: transcript });
+    performSearch(transcript);
+  };
+
+  // Fallback for browsers whose built-in recognizer fails (Brave, Opera, Firefox...):
+  // record a short clip and transcribe it on the backend.
+  const recordAndTranscribe = async () => {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       toast.error(lang === 'es' ? 'Tu navegador no soporta búsqueda por voz' : 'Voice search not supported');
+      return;
+    }
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      toast.error(lang === 'es' ? 'Permiso de micrófono denegado. Actívalo en la configuración del navegador.' : 'Microphone permission denied.');
+      return;
+    }
+    const mime = ['audio/webm', 'audio/mp4', 'audio/ogg'].find((m) => MediaRecorder.isTypeSupported(m)) || '';
+    const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+    const chunks: Blob[] = [];
+    recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+    setIsListening(true);
+    toast.info(lang === 'es' ? '🎤 Habla ahora (5 segundos)...' : '🎤 Speak now (5 seconds)...');
+    recorder.onstop = async () => {
+      stream.getTracks().forEach((t) => t.stop());
+      try {
+        const blob = new Blob(chunks, { type: recorder.mimeType || mime });
+        const buf = new Uint8Array(await blob.arrayBuffer());
+        let bin = '';
+        for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+        const format = (recorder.mimeType || mime).includes('mp4') ? 'mp4' : (recorder.mimeType || mime).includes('ogg') ? 'ogg' : 'webm';
+        const { data, error } = await supabase.functions.invoke('transcribe-audio', { body: { audio: btoa(bin), format, lang } });
+        const text = (data as any)?.text?.trim();
+        if (error || !text) {
+          toast.error(lang === 'es' ? 'No se entendió la voz. Intenta de nuevo.' : 'Could not understand. Try again.');
+        } else applyTranscript(text);
+      } catch {
+        toast.error(lang === 'es' ? 'No se pudo procesar la voz.' : 'Could not process voice.');
+      } finally {
+        setIsListening(false);
+      }
+    };
+    recorder.start();
+    setTimeout(() => recorder.state !== 'inactive' && recorder.stop(), 5000);
+  };
+
+  const handleVoiceSearch = () => {
+    if (isListening) return;
+    const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const isBrave = !!(navigator as any).brave;
+    if (!SpeechRecognitionAPI || isBrave) {
+      recordAndTranscribe();
       return;
     }
     const recognition = new SpeechRecognitionAPI();
@@ -111,8 +163,10 @@ export default function SearchPage() {
           msg = lang === 'es' ? 'No se detectó voz. Intenta de nuevo.' : 'No speech detected.';
           break;
         case 'network':
-          msg = lang === 'es' ? 'Error de red en reconocimiento de voz.' : 'Network error in voice recognition.';
-          break;
+        case 'language-not-supported':
+          setIsListening(false);
+          recordAndTranscribe();
+          return;
         case 'aborted':
           msg = lang === 'es' ? 'Reconocimiento de voz cancelado.' : 'Voice recognition cancelled.';
           break;
