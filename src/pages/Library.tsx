@@ -111,10 +111,9 @@ export default function LibraryPage() {
     loadLibrary();
   }, [currentUser?.id]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast.success(t('auth.logoutSuccess'));
-    setTimeout(() => navigate('/login'), 100);
   };
 
   const handleContentClick = (item: LibraryItemWithProgress) => {

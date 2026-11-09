@@ -18,7 +18,8 @@ export function resetVisualSettingsToDefault() {
   
   // 3. Reset theme to light
   root.setAttribute('data-theme', 'light');
-  root.classList.remove('dark', 'high-contrast', 'inverted');
+  root.classList.remove('dark', 'high-contrast', 'inverted', 'reduce-motion');
+  root.style.removeProperty('--brightness-filter');
   
   // 4. Remove user profile attribute
   root.removeAttribute('data-user-profile');
@@ -50,6 +51,7 @@ export function clearAllUserData() {
     'authToken',
     'onboardingCompleted',
     'readingGuideEnabled',
+    'tutorial_seen',
   ];
   
   keysToRemove.forEach(key => {

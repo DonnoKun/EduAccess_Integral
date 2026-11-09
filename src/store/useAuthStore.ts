@@ -7,6 +7,8 @@
 
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
+import { brokeredPreviewStorage } from '@/integrations/supabase/previewAuthStorage';
+import { clearAllUserData, resetVisualSettingsToDefault } from '@/lib/resetVisualSettings';
 import { useStore } from '@/store/useStore';
 import { createVisualProfile } from '@/store/useStore';
 import type { ContrastMode, PreferredModality, BrightnessSensitivity, ThemeMode, SnellenNotation } from '@/types';
@@ -32,7 +34,7 @@ interface AuthState {
   login: (email: string, token: string) => Promise<boolean>;
   register: (email: string, role?: AppRole) => Promise<{ success: boolean; token?: string; error?: string }>;
   resetToken: (email: string) => Promise<{ success: boolean; token?: string; error?: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   clearError: () => void;
   updateUserName: (name: string) => Promise<void>;
 }
@@ -42,6 +44,8 @@ interface AuthState {
  * from the DB profile into the global Zustand store so the user has full
  * continuity on any device/session.
  */
+let logoutInProgress = false;
+
 async function restoreProfileFromDB(profileData: any, userId: string) {
   try {
     if (!profileData) return;
@@ -173,7 +177,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // ONGOING auth changes listener — fire-and-forget, does NOT control initialized
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (!isMounted) return;
+        if (!isMounted || logoutInProgress) return;
         console.log('🔐 Auth state change (ongoing):', event);
 
         // Skip INITIAL_SESSION — handled by initializeAuth below
@@ -189,11 +193,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           }
           // For other SIGNED_IN triggers (e.g. re-auth)
           fetchProfile(session.user.id).then(async (profile) => {
-            if (!isMounted) return;
+            if (!isMounted || logoutInProgress) return;
             if (profile) {
               await restoreProfileFromDB(profile, session.user.id);
             }
             const role = await fetchUserRole(session.user.id);
+            if (logoutInProgress) return;
             set({
               currentUser: {
                 id: session.user.id,
@@ -205,7 +210,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             });
           });
         } else if (event === 'SIGNED_OUT') {
-          set({ currentUser: null, isAuthenticated: false });
+          set({ currentUser: null, role: null, isAuthenticated: false });
         } else if (event === 'TOKEN_REFRESHED' && session?.user) {
           // Just update session, no heavy operations
           set((s) => ({
@@ -272,6 +277,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   login: async (email: string, token: string) => {
+    logoutInProgress = false;
     set({ isLoading: true, error: null });
 
     try {
@@ -385,18 +391,29 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
   },
 
-  logout: () => {
+  logout: async () => {
+    if (logoutInProgress) return;
+    logoutInProgress = true;
     console.log('🚪 Logging out user...');
-    supabase.auth.signOut();
-    set({
-      currentUser: null,
-      role: null,
-      isAuthenticated: false,
-      error: null,
-    });
-    setTimeout(() => {
+    try {
+      // Await storage/broker cleanup; reloading early restores the old session.
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      if (error) console.warn('Remote sign-out unavailable; clearing this device.');
+    } catch {
+      console.warn('Sign-out unavailable; clearing this device.');
+    } finally {
+      // Also clear via the configured preview broker if the remote request failed.
+      const storageKey = `sb-${new URL(supabase.supabaseUrl).hostname.split('.')[0]}-auth-token`;
+      const storage = brokeredPreviewStorage();
+      await storage?.removeItem(storageKey);
+      await storage?.removeItem(`${storageKey}-code-verifier`);
+      window.speechSynthesis?.cancel();
+      useStore.setState(useStore.getInitialState());
+      clearAllUserData();
+      resetVisualSettingsToDefault();
+      set({ currentUser: null, role: null, isAuthenticated: false, isLoading: false, error: null });
       window.location.replace('/login');
-    }, 100);
+    }
   },
 
   clearError: () => set({ error: null }),

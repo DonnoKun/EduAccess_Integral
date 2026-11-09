@@ -214,12 +214,10 @@ export default function SearchPage() {
     performSearch(localQuery);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     console.log('🚪 Logging out user from Search...');
-    logout();
+    await logout();
     toast.success(t('auth.logoutSuccess'));
-    // Navigate after a brief delay to allow state cleanup
-    setTimeout(() => navigate('/login'), 100);
   };
 
   const handleContentClick = (contentId: string) => {
