@@ -172,12 +172,10 @@ export default function Dashboard() {
     toast.success(!readingGuideEnabled ? t('dashboard.readingGuideEnabled') : t('dashboard.readingGuideDisabled'));
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     console.log('🚪 Logging out user from Dashboard...');
-    logout();
+    await logout();
     toast.success(t('auth.logoutSuccess'));
-    // Navigate after a brief delay to allow state cleanup
-    setTimeout(() => navigate('/login'), 100);
   };
 
   useEffect(() => {

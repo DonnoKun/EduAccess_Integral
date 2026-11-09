@@ -223,16 +223,12 @@ export default function Settings() {
     setShowLogoutDialog(true);
   };
 
-  const confirmLogout = () => {
+  const confirmLogout = async () => {
     console.log('🚪 User confirmed logout');
-    logout();
+    await logout();
     toast({
       description: t('auth.logoutSuccess'),
     });
-    // Navigate after a brief delay to allow state cleanup
-    setTimeout(() => {
-      navigate('/login');
-    }, 100);
   };
 
   return (
