@@ -403,7 +403,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       console.warn('Sign-out unavailable; clearing this device.');
     } finally {
       // Also clear via the configured preview broker if the remote request failed.
-      const storageKey = `sb-${new URL(supabase.supabaseUrl).hostname.split('.')[0]}-auth-token`;
+      const storageKey = `sb-${new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0]}-auth-token`;
       const storage = brokeredPreviewStorage();
       await storage?.removeItem(storageKey);
       await storage?.removeItem(`${storageKey}-code-verifier`);

@@ -2,16 +2,16 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ signOut: vi.fn(), removeItem: vi.fn() }));
 vi.mock('@/integrations/supabase/client', () => ({
-  supabase: { auth: { signOut: mocks.signOut }, supabaseUrl: 'https://test.supabase.co' },
+  supabase: { auth: { signOut: mocks.signOut } },
 }));
 vi.mock('@/integrations/supabase/previewAuthStorage', () => ({
   brokeredPreviewStorage: () => ({ removeItem: mocks.removeItem }),
 }));
-import { useAuthStore } from '@/store/useAuthStore';
-import { useStore } from '@/store/useStore';
 
 describe('logout for both roles', () => {
   beforeEach(() => {
+    vi.resetModules();
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://test.supabase.co');
     vi.useFakeTimers();
     mocks.signOut.mockReset();
     mocks.removeItem.mockReset().mockResolvedValue(undefined);
@@ -19,6 +19,8 @@ describe('logout for both roles', () => {
   afterEach(() => vi.useRealTimers());
 
   it.each(['student', 'teacher'] as const)('%s waits for session removal before redirecting', async (role) => {
+    const { useAuthStore } = await import('@/store/useAuthStore');
+    const { useStore } = await import('@/store/useStore');
     useAuthStore.setState({ role, currentUser: { id: 'user', email: 'user@example.test', name: 'User' }, isAuthenticated: true });
     let finish: ((result: { error: null }) => void) | undefined;
     mocks.signOut.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
