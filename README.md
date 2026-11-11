@@ -1,24 +1,24 @@
 # EduAccess Integral
 
-Implement exactly the screenshot and nothing else
+Plataforma educativa accesible con perfiles de estudiante y docente, grupos, lecciones, ejercicios y seguimiento del progreso.
 
-This project was built with [Lovable](https://lovable.dev).
+## Accesibilidad
 
-## Build with Lovable
+- Preferencias visuales adaptables: tamaño de texto, contraste y espaciado.
+- Lectura por voz y modalidades visual, auditiva y mixta.
+- Interfaz disponible en español e inglés.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/808ac305-4297-4264-a4f7-b2ddc509c687).
+## Cursos y grupos
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+- Gestión de grupos y matrícula de estudiantes.
+- Creación, edición y publicación de lecciones.
+- Biblioteca personal y seguimiento del aprendizaje.
 
-## Development
+## Desarrollo local
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Requiere Node.js y npm. Desde la carpeta del proyecto:
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+npm install
 npm run dev
 ```
