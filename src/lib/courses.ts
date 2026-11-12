@@ -160,24 +160,15 @@ export async function joinGroupByCode(
   const clean = code.trim().toUpperCase();
   if (!clean) return { errorKey: 'not_found' };
 
-  const { data, error } = await supabase.rpc('find_group_by_code', { _code: clean });
+  const { data, error } = await supabase.rpc('join_group_by_code' as any, { _code: clean });
   if (error) return { errorKey: 'unknown' };
-
-  const found = (data as any[])?.[0];
-  if (!found) return { errorKey: 'not_found' };
-  if (found.owner_id === studentId) return { errorKey: 'own_group' };
-
-  const { error: insertError } = await supabase.from('group_enrollments').insert({
-    group_id: found.id,
-    student_id: studentId,
-    teacher_id: found.owner_id,
-  });
-
-  if (insertError) {
-    if (insertError.message?.toLowerCase().includes('duplicate')) return { errorKey: 'already' };
-    return { errorKey: 'unknown' };
+  const res = data as any;
+  if (!res?.success) {
+    const k = res?.error;
+    return { errorKey: k === 'not_found' || k === 'already' || k === 'own_group' ? k : 'unknown' };
   }
-
+  const found = { id: res.id, name: res.name, description: res.description, level: res.level, owner_id: res.owner_id };
+  void studentId;
   return { group: { ...found, join_code: clean, created_at: new Date().toISOString() } as Group };
 }
 

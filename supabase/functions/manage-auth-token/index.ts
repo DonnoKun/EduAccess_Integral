@@ -18,13 +18,28 @@ function generateToken(): string {
   return (array[0] % 90000000 + 10000000).toString();
 }
 
+function generateRecoveryCode(): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  const chars = Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("");
+  return `${chars.slice(0, 4)}-${chars.slice(4, 8)}-${chars.slice(8, 12)}`;
+}
+
+async function hashCode(code: string): Promise<string> {
+  const norm = code.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(norm));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { action, email, role } = await req.json();
+    const { action, email: rawEmail, role, recoveryCode } = await req.json();
+    const email = typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : "";
 
     if (!email || !action) {
       return new Response(
@@ -68,15 +83,26 @@ serve(async (req) => {
         if (roleError) console.error("Role assignment error:", roleError.message);
       }
 
-      console.log("✅ User registered:", email, "as", chosenRole);
+      const newRecovery = generateRecoveryCode();
+      if (data?.user?.id) {
+        await supabaseAdmin.from("account_recovery").upsert({
+          user_id: data.user.id, code_hash: await hashCode(newRecovery), updated_at: new Date().toISOString(),
+        });
+      }
+      console.log("User registered with role", chosenRole);
 
       return new Response(
-        JSON.stringify({ success: true, token }),
+        JSON.stringify({ success: true, token, recoveryCode: newRecovery }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     if (action === "reset-token") {
+      const invalid = () => new Response(
+        JSON.stringify({ error: "Correo o código de recuperación incorrecto." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+      if (typeof recoveryCode !== "string" || !recoveryCode.trim()) return invalid();
       // Find user by listing (works for small user bases)
       const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers({
         page: 1,
@@ -85,14 +111,12 @@ serve(async (req) => {
 
       if (listError) throw listError;
 
-      const user = users?.find((u: any) => u.email === email);
+      const user = users?.find((u: any) => (u.email || "").toLowerCase() === email);
+      if (!user) return invalid();
 
-      if (!user) {
-        return new Response(
-          JSON.stringify({ error: "No se encontró una cuenta con ese correo." }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      const { data: rec } = await supabaseAdmin
+        .from("account_recovery").select("code_hash").eq("user_id", user.id).maybeSingle();
+      if (!rec || rec.code_hash !== await hashCode(recoveryCode)) return invalid();
 
       const token = generateToken();
 
@@ -102,10 +126,14 @@ serve(async (req) => {
 
       if (updateError) throw updateError;
 
-      console.log("✅ Token reset for:", email);
+      const newRecovery = generateRecoveryCode();
+      await supabaseAdmin.from("account_recovery").upsert({
+        user_id: user.id, code_hash: await hashCode(newRecovery), updated_at: new Date().toISOString(),
+      });
+      console.log("Token reset completed");
 
       return new Response(
-        JSON.stringify({ success: true, token }),
+        JSON.stringify({ success: true, token, recoveryCode: newRecovery }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -116,7 +144,7 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("Auth token error:", error);
-    const msg = error instanceof Error ? error.message : "Error desconocido";
+    const msg = "Error del servidor";
     return new Response(
       JSON.stringify({ error: msg }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
