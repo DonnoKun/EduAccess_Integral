@@ -1,3 +1,4 @@
+import { requireUser } from "../_shared/require-user.ts";
 /**
  * EduAccess - AI Content Remediation Edge Function
  * Uses Lovable AI Gateway for real AI processing:
@@ -29,6 +30,9 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const authError = await requireUser(req, corsHeaders);
+  if (authError) return authError;
 
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
