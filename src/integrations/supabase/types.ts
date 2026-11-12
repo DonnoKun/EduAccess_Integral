@@ -14,11 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_recovery: {
+        Row: {
+          code_hash: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          code_hash: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          code_hash?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       course_cache: {
         Row: {
           cache_key: string
           content: Json
           created_at: string
+          created_by: string | null
           id: string
           language: string
           title: string
@@ -28,6 +47,7 @@ export type Database = {
           cache_key: string
           content: Json
           created_at?: string
+          created_by?: string | null
           id?: string
           language?: string
           title: string
@@ -37,6 +57,7 @@ export type Database = {
           cache_key?: string
           content?: Json
           created_at?: string
+          created_by?: string | null
           id?: string
           language?: string
           title?: string
@@ -470,6 +491,7 @@ export type Database = {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
+      join_group_by_code: { Args: { _code: string }; Returns: Json }
     }
     Enums: {
       app_role: "teacher" | "student"

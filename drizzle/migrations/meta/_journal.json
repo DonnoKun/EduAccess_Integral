@@ -8,6 +8,13 @@
       "when": 1792463298008,
       "tag": "0000_lesson_drafts_and_student_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794501942919,
+      "tag": "0001_security_hardening_enrollment_progress_cache",
+      "breakpoints": true
     }
   ]
 }
