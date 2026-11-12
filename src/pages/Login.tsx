@@ -43,6 +43,8 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
   const [generatedToken, setGeneratedToken] = useState('');
+  const [recoveryCode, setRecoveryCode] = useState('');
+  const [generatedRecovery, setGeneratedRecovery] = useState('');
   const [tokenCopied, setTokenCopied] = useState(false);
   const [selectedRole, setSelectedRole] = useState<AppRole>('student');
 
@@ -101,6 +103,7 @@ export default function Login() {
     const result = await register(email, selectedRole);
     if (result.success && result.token) {
       setGeneratedToken(result.token);
+      setGeneratedRecovery(result.recoveryCode || '');
       setStep('register-success');
       toast.success(lang === 'es' ? '¡Cuenta creada exitosamente!' : 'Account created successfully!');
     } else {
@@ -114,9 +117,11 @@ export default function Login() {
       return;
     }
 
-    const result = await resetToken(email);
+    const result = await resetToken(email, recoveryCode);
     if (result.success && result.token) {
       setGeneratedToken(result.token);
+      setGeneratedRecovery(result.recoveryCode || '');
+      setRecoveryCode('');
       setStep('forgot-success');
       toast.success(lang === 'es' ? '¡Token actualizado!' : 'Token updated!');
     } else {
@@ -419,6 +424,15 @@ export default function Login() {
                     </p>
                   </div>
 
+                  {generatedRecovery && (
+                    <div className="bg-card border border-border rounded-xl p-4 text-center">
+                      <p className="text-sm text-muted-foreground mb-1">
+                        {lang === 'es' ? 'Código de recuperación (úsalo si olvidas tu token):' : 'Recovery code (use it if you forget your token):'}
+                      </p>
+                      <p className="text-2xl font-bold font-mono tracking-widest text-foreground break-all">{generatedRecovery}</p>
+                    </div>
+                  )}
+
                   <Button
                     onClick={handleCopyToken}
                     variant="outline"
@@ -479,13 +493,27 @@ export default function Login() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="estudiante@correo.com"
                       className="text-lg h-12"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="forgot-recovery">
+                      {lang === 'es' ? 'Código de recuperación' : 'Recovery code'}
+                    </Label>
+                    <Input
+                      id="forgot-recovery"
+                      value={recoveryCode}
+                      onChange={(e) => setRecoveryCode(e.target.value)}
+                      placeholder="XXXX-XXXX-XXXX"
+                      autoComplete="off"
+                      className="text-lg h-12 font-mono"
                       onKeyDown={(e) => e.key === 'Enter' && handleResetToken()}
                     />
                   </div>
 
                   <Button
                     onClick={handleResetToken}
-                    disabled={isLoading || !email}
+                    disabled={isLoading || !email || !recoveryCode.trim()}
                     className="w-full h-12 text-lg"
                   >
                     {isLoading ? (
@@ -529,6 +557,15 @@ export default function Login() {
                       {generatedToken}
                     </p>
                   </div>
+
+                  {generatedRecovery && (
+                    <div className="bg-card border border-border rounded-xl p-4 text-center">
+                      <p className="text-sm text-muted-foreground mb-1">
+                        {lang === 'es' ? 'Código de recuperación (úsalo si olvidas tu token):' : 'Recovery code (use it if you forget your token):'}
+                      </p>
+                      <p className="text-2xl font-bold font-mono tracking-widest text-foreground break-all">{generatedRecovery}</p>
+                    </div>
+                  )}
 
                   <Button
                     onClick={handleCopyToken}

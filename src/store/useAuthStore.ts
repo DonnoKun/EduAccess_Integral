@@ -32,7 +32,7 @@ interface AuthState {
   // Actions
   initialize: () => Promise<void>;
   login: (email: string, token: string) => Promise<boolean>;
-  register: (email: string, role?: AppRole) => Promise<{ success: boolean; token?: string; error?: string }>;
+  register: (email: string, role?: AppRole) => Promise<{ success: boolean; token?: string; recoveryCode?: string; error?: string }>;
   resetToken: (email: string, recoveryCode: string) => Promise<{ success: boolean; token?: string; recoveryCode?: string; error?: string }>;
   logout: () => Promise<void>;
   clearError: () => void;
