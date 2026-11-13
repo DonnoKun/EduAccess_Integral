@@ -24,20 +24,16 @@ export default function SplashScreen({ visible }: SplashScreenProps) {
           aria-live="polite"
         >
           <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-            {Array.from({ length: 20 }, (_, i) => (
-              <motion.div key={i} className={`eduaccess-splash-particle eduaccess-particle-${i % 5}`}
-                style={{ left: `${(i * 37 + 13) % 100}%`, top: `${(i * 23 + 9) % 100}%` }}
-                animate={reducedMotion ? {} : { y: [0, -30, 0], opacity: [0.2, 0.8, 0.2] }}
-                transition={{ duration: 2 + (i % 3), repeat: Infinity, delay: i * 0.1 }} />
+            {Array.from({ length: 24 }, (_, i) => (
+              <div key={i} className={`eduaccess-splash-particle eduaccess-particle-${i % 5}`}
+                style={{ left: `${(i * 37 + 13) % 100}%`, top: `${(i * 23 + 9) % 100}%`, animationDuration: `${2.4 + (i % 3)}s`, animationDelay: `${-(i * 0.37)}s` }} />
             ))}
           </div>
-          <motion.div className="eduaccess-splash-ring eduaccess-splash-ring-inner" aria-hidden="true"
-            animate={reducedMotion ? {} : { scale: [1, 1.1, 1], rotate: 360 }} transition={{ duration: 8, repeat: Infinity, ease: 'linear' }} />
-          <motion.div className="eduaccess-splash-ring eduaccess-splash-ring-outer" aria-hidden="true"
-            animate={reducedMotion ? {} : { scale: [1.1, 1, 1.1], rotate: -360 }} transition={{ duration: 12, repeat: Infinity, ease: 'linear' }} />
+          <div className="eduaccess-splash-ring eduaccess-splash-ring-inner" aria-hidden="true" />
+          <div className="eduaccess-splash-ring eduaccess-splash-ring-outer" aria-hidden="true" />
           <div className="relative flex w-full max-w-sm flex-col items-center gap-8 text-center">
             <motion.div className="relative" initial={reducedMotion ? false : { scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}>
-              <motion.div className="eduaccess-splash-glow absolute inset-0" aria-hidden="true" animate={reducedMotion ? {} : { opacity: [0.3, 0.6, 0.3], scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }} />
+              <div className="eduaccess-splash-glow absolute inset-0" aria-hidden="true" />
               <img src={logo} alt="" width={512} height={512} className="eduaccess-splash-logo relative" decoding="sync" fetchPriority="high" />
             </motion.div>
             <div className="eduaccess-splash-name flex items-baseline">
