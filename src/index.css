@@ -1484,9 +1484,13 @@ html[data-user-profile] [role="menu"] [class~="font-semibold"] { font-size: 0.9e
 /* ===== Login: editorial brand panel ===== */
 :root {
   --brand-ink: 222 47% 9%;
-  --logo-surface: 158 100% 10%;
-  --logo-foreground: 45 40% 94%;
-  --logo-accent: 42 60% 62%;
+  --logo-surface: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  --logo-foreground: 269 100% 92%;
+  --logo-accent: 258 90% 66%;
+  --logo-blue: 217 91% 60%;
+  --logo-pink: 330 81% 60%;
+  --logo-title: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+  --logo-glow: linear-gradient(135deg, #3b82f6, #8b5cf6);
   --brand-ink-2: 222 40% 14%;
   --brand-paper: 40 33% 94%;
   --brand-gold: 41 62% 58%;
@@ -1542,11 +1546,20 @@ html[data-user-profile] [role="menu"] [class~="font-semibold"] { font-size: 0.9e
 .dark .login-form button.bg-primary { background: hsl(var(--brand-gold)) !important; color: hsl(var(--brand-ink)) !important; }
 
 /* Loading artwork uses its full-resolution source, never the tiny favicon. */
-.eduaccess-splash { background: hsl(var(--logo-surface)); color: hsl(var(--logo-foreground)); }
-.eduaccess-splash-logo { width: 160px; height: 160px; object-fit: contain; border-radius: 8px; flex-shrink: 0; }
-.eduaccess-splash-name { font-family: 'Fraunces', Georgia, serif; font-size: 2.5rem; line-height: 1.2; letter-spacing: 0; }
+.eduaccess-splash { background: var(--logo-surface); color: hsl(var(--logo-foreground)); }
+.eduaccess-splash-logo { width: 128px; height: 128px; object-fit: contain; border-radius: 24px; flex-shrink: 0; }
+.eduaccess-splash-name { font-family: inherit; font-weight: 700; font-size: 2.25rem; line-height: 1.2; letter-spacing: 0; }
+.eduaccess-splash-name span { background: var(--logo-title); background-clip: text; -webkit-background-clip: text; color: transparent; }
+.eduaccess-splash-glow { background: var(--logo-glow); filter: blur(24px); border-radius: 24px; opacity: 0.5; }
+.eduaccess-splash-ring { position: absolute; border-radius: 50%; pointer-events: none; aspect-ratio: 1; }
+.eduaccess-splash-ring-inner { width: min(300px, 80vw); border: 1px solid hsl(var(--logo-accent) / 0.2); }
+.eduaccess-splash-ring-outer { width: min(400px, 95vw); border: 1px solid hsl(var(--logo-blue) / 0.15); }
+.eduaccess-splash-particle { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: hsl(var(--logo-accent) / 0.5); }
+.eduaccess-particle-1, .eduaccess-particle-3 { width: 6px; height: 6px; }
+.eduaccess-particle-2 { width: 3px; height: 3px; }
+@media (max-width: 640px) { .eduaccess-splash-logo { width: 96px; height: 96px; } .eduaccess-splash-name { font-size: 1.875rem; } }
 .eduaccess-splash-tagline { color: hsl(var(--logo-foreground)); margin: 0; max-width: 100%; overflow-wrap: anywhere; }
-.eduaccess-splash-track { width: min(192px, 100%); height: 2px; margin-top: 12px; overflow: hidden; background: hsl(var(--logo-foreground) / 0.2); }
-.eduaccess-splash-progress { width: 50%; height: 100%; background: hsl(var(--logo-accent)); animation: eduaccess-loading 1.4s ease-in-out infinite; }
+.eduaccess-splash-track { width: min(192px, 100%); height: 4px; border-radius: 8px; margin-top: 12px; overflow: hidden; background: hsl(var(--logo-foreground) / 0.1); }
+.eduaccess-splash-progress { width: 100%; height: 100%; border-radius: 8px; background: linear-gradient(90deg, hsl(var(--logo-blue)), hsl(var(--logo-accent)), hsl(var(--logo-pink))); animation: eduaccess-loading 1.2s ease-in-out infinite; }
 @keyframes eduaccess-loading { from { transform: translateX(-100%); } to { transform: translateX(200%); } }
 @media (prefers-reduced-motion: reduce) { .eduaccess-splash-progress { animation: none; transform: translateX(50%); } }
