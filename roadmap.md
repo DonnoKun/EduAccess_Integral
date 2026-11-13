@@ -1,4 +1,4 @@
-- [ ] Restore original purple loading effects and original E/eye logo without redesign; use highest available original resolution and verify.
+- [x] Restore original purple loading effects and E/eye logo; recovered 512px original (not true 4K), verified loaded at 128px desktop and 96px mobile; build OK.
 - [x] Translate existing lessons faithfully with Spanish/English proofreading instructions and structure checks; Spanish live translation verified.
 - [x] Add teacher lesson editing with unpublished drafts and explicit visibility states; teacher flow verified.
 - [x] Keep a return control available while reading.
