@@ -43,6 +43,10 @@ import {
   fetchStudentGroups,
   fetchTeacherGroups,
   joinGroupByCode,
+  fetchMyInvitations,
+  acceptInvitation,
+  declineInvitation,
+  type GroupInvitation,
   regenerateJoinCode,
   type Group,
 } from '@/lib/courses';
@@ -93,6 +97,18 @@ export default function CoursesPage() {
   // Student join form
   const [code, setCode] = useState('');
   const [joining, setJoining] = useState(false);
+  const [invitations, setInvitations] = useState<GroupInvitation[]>([]);
+
+  const handleInvitation = async (inv: GroupInvitation, accept: boolean) => {
+    if (accept) {
+      if (!(await acceptInvitation(inv.id))) { toast.error(t('courses.addStudentError')); return; }
+      toast.success(t('courses.joined', { name: inv.group_name }));
+    } else {
+      await declineInvitation(inv.id);
+      toast.success(t('courses.invitationDeclined'));
+    }
+    load();
+  };
 
   const load = async () => {
     if (!currentUser?.id) return;
@@ -101,6 +117,7 @@ export default function CoursesPage() {
       ? await fetchTeacherGroups(currentUser.id)
       : await fetchStudentGroups(currentUser.id);
     setGroups(data);
+    if (!isTeacher) setInvitations(await fetchMyInvitations());
     setIsLoading(false);
   };
 
@@ -209,6 +226,27 @@ export default function CoursesPage() {
             </DialogContent>
           </Dialog>
         ) : (
+          {invitations.length > 0 && (
+            <Card className="mb-6" aria-live="polite">
+              <CardHeader>
+                <CardTitle>{t('courses.invitationsTitle')}</CardTitle>
+                <CardDescription>{t('courses.invitationsDesc')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3">
+                  {invitations.map((inv) => (
+                    <li key={inv.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3">
+                      <span className="font-medium break-words">{inv.group_name}{inv.group_level ? ` · ${inv.group_level}` : ''}</span>
+                      <span className="flex flex-wrap gap-2">
+                        <Button onClick={() => handleInvitation(inv, true)}>{t('courses.acceptInvitation')}</Button>
+                        <Button variant="outline" onClick={() => handleInvitation(inv, false)}>{t('courses.declineInvitation')}</Button>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
           <Card>
             <CardHeader>
               <CardTitle>{t('courses.joinTitle')}</CardTitle>

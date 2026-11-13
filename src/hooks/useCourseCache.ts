@@ -69,6 +69,7 @@ export function useCourseCache() {
             title,
             language,
             content: content as any,
+            is_shared: true,
           },
           { onConflict: 'cache_key', ignoreDuplicates: true }
         );

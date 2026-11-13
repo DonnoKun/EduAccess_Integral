@@ -381,7 +381,7 @@
     "addByEmailDesc": "Enter the email the student registered with and they will be enrolled in this group.",
     "studentEmail": "Student email",
     "addStudent": "Add student",
-    "studentAdded": "Student added to the group",
+    "studentAdded": "Invitation sent. The student must accept it in My courses.",
     "emailNotFound": "No account exists with that email",
     "alreadyEnrolled": "That student is already enrolled in this group",
     "addStudentError": "Could not add the student",
@@ -481,6 +481,11 @@
       "imagePlaceholder": "E.g. children counting coins at a shop",
       "imageAlt": "Description for screen readers",
       "imageCredits": "The image is created once when the lesson opens and is saved; changing this text creates a new one."
-    }
+    },
+    "invitationsTitle": "Pending invitations",
+    "invitationsDesc": "A teacher invited you to their group. Accept only if you know them.",
+    "acceptInvitation": "Accept",
+    "declineInvitation": "Decline",
+    "invitationDeclined": "Invitation declined"
   }
 }
