@@ -100,7 +100,7 @@ export default function Login() {
       return;
     }
 
-    const result = await register(email, selectedRole);
+    const result = await register(email, selectedRole, teacherCode);
     if (result.success && result.token) {
       setGeneratedToken(result.token);
       setGeneratedRecovery(result.recoveryCode || '');
@@ -376,6 +376,23 @@ export default function Login() {
                       ))}
                     </div>
                   </fieldset>
+
+                  {selectedRole === 'teacher' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="teacher-code">{lang === 'es' ? 'Código de institución' : 'Institution code'}</Label>
+                      <Input
+                        id="teacher-code"
+                        value={teacherCode}
+                        onChange={(e) => setTeacherCode(e.target.value)}
+                        className="text-lg h-12"
+                        autoComplete="off"
+                        aria-describedby="teacher-code-hint"
+                      />
+                      <p id="teacher-code-hint" className="text-xs text-muted-foreground">
+                        {lang === 'es' ? 'Pídelo a la administración de tu institución.' : 'Ask your institution administrator for it.'}
+                      </p>
+                    </div>
+                  )}
 
                   <Button
                     onClick={handleRegister}

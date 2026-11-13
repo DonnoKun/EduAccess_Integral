@@ -38,7 +38,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, email: rawEmail, role, recoveryCode } = await req.json();
+    const { action, email: rawEmail, role, recoveryCode, teacherCode } = await req.json();
     const email = typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : "";
 
     if (!email || !action) {
@@ -55,6 +55,17 @@ serve(async (req) => {
     );
 
     if (action === "register") {
+      // Teacher accounts require the institution code kept on the server.
+      if (role === "teacher") {
+        const expected = Deno.env.get("TEACHER_SIGNUP_CODE") ?? "";
+        const given = typeof teacherCode === "string" ? teacherCode.trim() : "";
+        if (!expected || given !== expected) {
+          return new Response(
+            JSON.stringify({ error: "Código de institución inválido. / Invalid institution code." }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
       const token = generateToken();
 
       const { data, error } = await supabaseAdmin.auth.admin.createUser({
@@ -75,7 +86,7 @@ serve(async (req) => {
       }
 
       // Assign the role chosen at sign-up (teacher | student)
-      const chosenRole = role === "teacher" ? "teacher" : "student";
+      const chosenRole = role === "teacher" ? "teacher" : "student"; // teacher already verified above
       if (data?.user?.id) {
         const { error: roleError } = await supabaseAdmin
           .from("user_roles")
