@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -1485,6 +1484,9 @@ html[data-user-profile] [role="menu"] [class~="font-semibold"] { font-size: 0.9e
 /* ===== Login: editorial brand panel ===== */
 :root {
   --brand-ink: 222 47% 9%;
+  --logo-surface: 158 100% 10%;
+  --logo-foreground: 45 40% 94%;
+  --logo-accent: 42 60% 62%;
   --brand-ink-2: 222 40% 14%;
   --brand-paper: 40 33% 94%;
   --brand-gold: 41 62% 58%;
@@ -1538,3 +1540,13 @@ html[data-user-profile] [role="menu"] [class~="font-semibold"] { font-size: 0.9e
 :root:not(.high-contrast):not([data-theme="high-contrast"]) .login-form button.bg-primary:hover { background: hsl(var(--brand-ink-2)); }
 :root:not(.high-contrast):not([data-theme="high-contrast"]) .login-form button.bg-primary:disabled { opacity: .35; }
 .dark .login-form button.bg-primary { background: hsl(var(--brand-gold)) !important; color: hsl(var(--brand-ink)) !important; }
+
+/* Loading artwork uses its full-resolution source, never the tiny favicon. */
+.eduaccess-splash { background: hsl(var(--logo-surface)); color: hsl(var(--logo-foreground)); }
+.eduaccess-splash-logo { width: 160px; height: 160px; object-fit: contain; border-radius: 8px; flex-shrink: 0; }
+.eduaccess-splash-name { font-family: 'Fraunces', Georgia, serif; font-size: 2.5rem; line-height: 1.2; letter-spacing: 0; }
+.eduaccess-splash-tagline { color: hsl(var(--logo-foreground)); margin: 0; max-width: 100%; overflow-wrap: anywhere; }
+.eduaccess-splash-track { width: min(192px, 100%); height: 2px; margin-top: 12px; overflow: hidden; background: hsl(var(--logo-foreground) / 0.2); }
+.eduaccess-splash-progress { width: 50%; height: 100%; background: hsl(var(--logo-accent)); animation: eduaccess-loading 1.4s ease-in-out infinite; }
+@keyframes eduaccess-loading { from { transform: translateX(-100%); } to { transform: translateX(200%); } }
+@media (prefers-reduced-motion: reduce) { .eduaccess-splash-progress { animation: none; transform: translateX(50%); } }

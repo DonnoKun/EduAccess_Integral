@@ -1,3 +1,4 @@
+- [ ] Replace blurry loading artwork and unify browser/install icons with a refined high-resolution logo; verify desktop/mobile rendering.
 - [x] Translate existing lessons faithfully with Spanish/English proofreading instructions and structure checks; Spanish live translation verified.
 - [x] Add teacher lesson editing with unpublished drafts and explicit visibility states; teacher flow verified.
 - [x] Keep a return control available while reading.
