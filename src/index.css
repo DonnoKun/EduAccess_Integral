@@ -1563,3 +1563,22 @@ html[data-user-profile] [role="menu"] [class~="font-semibold"] { font-size: 0.9e
 .eduaccess-splash-progress { width: 100%; height: 100%; border-radius: 8px; background: linear-gradient(90deg, hsl(var(--logo-blue)), hsl(var(--logo-accent)), hsl(var(--logo-pink))); animation: eduaccess-loading 1.2s ease-in-out infinite; }
 @keyframes eduaccess-loading { from { transform: translateX(-100%); } to { transform: translateX(200%); } }
 @media (prefers-reduced-motion: reduce) { .eduaccess-splash-progress { animation: none; transform: translateX(50%); } }
+
+/* Splash: CSS animations run on the compositor so they keep moving on phones while the app loads */
+.eduaccess-splash .eduaccess-splash-particle { width: 6px; height: 6px; background: hsl(var(--logo-accent) / 0.85); box-shadow: 0 0 8px hsl(var(--logo-accent) / 0.8); will-change: transform, opacity; animation: eduaccess-float 3s ease-in-out infinite !important; }
+.eduaccess-splash .eduaccess-particle-1, .eduaccess-splash .eduaccess-particle-3 { width: 8px; height: 8px; background: hsl(var(--logo-blue) / 0.85); }
+.eduaccess-splash .eduaccess-particle-2 { width: 5px; height: 5px; background: hsl(var(--logo-pink) / 0.85); }
+.eduaccess-splash .eduaccess-splash-ring-inner { will-change: transform; animation: eduaccess-spin 8s linear infinite !important; }
+.eduaccess-splash .eduaccess-splash-ring-outer { will-change: transform; animation: eduaccess-spin-rev 12s linear infinite !important; }
+.eduaccess-splash .eduaccess-splash-glow { will-change: transform, opacity; animation: eduaccess-glow 2s ease-in-out infinite !important; }
+.eduaccess-splash .eduaccess-splash-progress { animation: eduaccess-loading 1.2s ease-in-out infinite !important; animation-duration: 1.2s !important; }
+.eduaccess-splash .eduaccess-splash-particle, .eduaccess-splash .eduaccess-splash-ring, .eduaccess-splash .eduaccess-splash-glow { animation-iteration-count: infinite !important; }
+@keyframes eduaccess-float { 0%,100% { transform: translate3d(0,0,0); opacity: .25; } 50% { transform: translate3d(0,-30px,0); opacity: 1; } }
+@keyframes eduaccess-spin { from { transform: rotate(0) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } to { transform: rotate(360deg) scale(1); } }
+@keyframes eduaccess-spin-rev { from { transform: rotate(0) scale(1.1); } 50% { transform: rotate(-180deg) scale(1); } to { transform: rotate(-360deg) scale(1.1); } }
+@keyframes eduaccess-glow { 0%,100% { opacity: .3; transform: scale(1); } 50% { opacity: .6; transform: scale(1.2); } }
+@keyframes eduaccess-twinkle { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .eduaccess-splash .eduaccess-splash-particle { animation-name: eduaccess-twinkle !important; }
+  .eduaccess-splash .eduaccess-splash-ring { animation: none !important; }
+}
