@@ -1,4 +1,4 @@
-- [x] Replace blurry loading artwork and unify browser/install icons with a refined high-resolution logo; desktop/mobile render a loaded 1024px source at 160px, build OK.
+- [ ] Restore original purple loading effects and original E/eye logo without redesign; use highest available original resolution and verify.
 - [x] Translate existing lessons faithfully with Spanish/English proofreading instructions and structure checks; Spanish live translation verified.
 - [x] Add teacher lesson editing with unpublished drafts and explicit visibility states; teacher flow verified.
 - [x] Keep a return control available while reading.
