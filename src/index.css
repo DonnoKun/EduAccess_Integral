@@ -461,9 +461,9 @@
   }
 
   /* User turned animations off in Settings */
-  html.reduce-motion *,
-  html.reduce-motion *::before,
-  html.reduce-motion *::after {
+  html.reduce-motion *:not(.eduaccess-splash *),
+  html.reduce-motion *:not(.eduaccess-splash *)::before,
+  html.reduce-motion *:not(.eduaccess-splash *)::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -472,7 +472,7 @@
 
   /* Respect reduced motion preferences */
   @media (prefers-reduced-motion: reduce) {
-    * {
+    *:not(.eduaccess-splash *) {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
