@@ -226,6 +226,7 @@ export default function CoursesPage() {
             </DialogContent>
           </Dialog>
         ) : (
+          <>
           {invitations.length > 0 && (
             <Card className="mb-6" aria-live="polite">
               <CardHeader>
@@ -269,6 +270,7 @@ export default function CoursesPage() {
               </Button>
             </CardContent>
           </Card>
+          </>
         )}
 
         <section aria-label={t('courses.myGroups')} className="space-y-4">
