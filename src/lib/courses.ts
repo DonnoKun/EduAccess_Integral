@@ -198,6 +198,22 @@ export async function enrollStudentByEmail(
   return { success: !!res.success, error: res.error };
 }
 
+export interface GroupInvitation { id: string; group_id: string; group_name: string; group_level: string; created_at: string }
+
+export async function fetchMyInvitations(): Promise<GroupInvitation[]> {
+  const { data } = await supabase.rpc('list_my_invitations' as any);
+  return ((data as any[]) || []) as GroupInvitation[];
+}
+
+export async function acceptInvitation(id: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('accept_group_invitation' as any, { _invitation_id: id });
+  return !error && !!(data as any)?.success;
+}
+
+export async function declineInvitation(id: string) {
+  return supabase.from('group_invitations' as any).delete().eq('id', id);
+}
+
 export async function removeStudent(groupId: string, studentId: string) {
   return supabase.from('group_enrollments').delete().eq('group_id', groupId).eq('student_id', studentId);
 }
