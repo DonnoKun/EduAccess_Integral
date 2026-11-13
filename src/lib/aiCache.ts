@@ -17,8 +17,8 @@ export function aiCacheKey(...parts: unknown[]): string {
 }
 
 export async function readAICache<T>(key: string): Promise<T | null> {
-  const { data } = await supabase.from('course_cache').select('content').eq('cache_key', key).maybeSingle();
-  return (data?.content as T) ?? null;
+  const { data } = await supabase.rpc('get_course_cache', { _key: key });
+  return (data as T) ?? null;
 }
 
 export async function writeAICache(key: string, title: string, language: string, content: unknown) {

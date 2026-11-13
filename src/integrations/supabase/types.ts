@@ -468,6 +468,7 @@ export type Database = {
           owner_id: string
         }[]
       }
+      get_course_cache: { Args: { _key: string }; Returns: Json }
       get_group_roster: {
         Args: { _group_id: string }
         Returns: {

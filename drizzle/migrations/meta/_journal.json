@@ -22,6 +22,13 @@
       "when": 1794536204785,
       "tag": "0002_server_graded_progress_and_private_cache",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794537249091,
+      "tag": "0003_course_cache_exact_key_lookup",
+      "breakpoints": true
     }
   ]
 }
