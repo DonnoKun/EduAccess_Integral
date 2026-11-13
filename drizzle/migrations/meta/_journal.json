@@ -29,6 +29,13 @@
       "when": 1794537249091,
       "tag": "0003_course_cache_exact_key_lookup",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794537345561,
+      "tag": "0004_course_images_server_only",
+      "breakpoints": true
     }
   ]
 }
