@@ -36,6 +36,13 @@
       "when": 1794537345561,
       "tag": "0004_course_images_server_only",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794548574019,
+      "tag": "0005_invitations_and_private_cache",
+      "breakpoints": true
     }
   ]
 }

@@ -39,6 +39,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          is_shared: boolean
           language: string
           title: string
           updated_at: string
@@ -49,6 +50,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_shared?: boolean
           language?: string
           title: string
           updated_at?: string
@@ -59,6 +61,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_shared?: boolean
           language?: string
           title?: string
           updated_at?: string
@@ -117,6 +120,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "group_enrollments_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_invitations: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          student_id: string
+          teacher_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          student_id: string
+          teacher_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          student_id?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_invitations_group_id_fkey"
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "groups"
@@ -454,6 +489,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_group_invitation: {
+        Args: { _invitation_id: string }
+        Returns: Json
+      }
       enroll_student_by_email: {
         Args: { _email: string; _group_id: string }
         Returns: Json
@@ -497,6 +536,16 @@ export type Database = {
         Returns: boolean
       }
       join_group_by_code: { Args: { _code: string }; Returns: Json }
+      list_my_invitations: {
+        Args: never
+        Returns: {
+          created_at: string
+          group_id: string
+          group_level: string
+          group_name: string
+          id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "teacher" | "student"
