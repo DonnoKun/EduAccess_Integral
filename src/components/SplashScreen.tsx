@@ -1,6 +1,6 @@
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import logo from '@/assets/eduaccess-original-logo.png.asset.json';
+import logo from '@/assets/eduaccess-original-logo.png';
 
 interface SplashScreenProps {
   visible: boolean;
@@ -38,7 +38,7 @@ export default function SplashScreen({ visible }: SplashScreenProps) {
           <div className="relative flex w-full max-w-sm flex-col items-center gap-8 text-center">
             <motion.div className="relative" initial={reducedMotion ? false : { scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}>
               <motion.div className="eduaccess-splash-glow absolute inset-0" aria-hidden="true" animate={reducedMotion ? {} : { opacity: [0.3, 0.6, 0.3], scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }} />
-              <img src={logo.url} alt="" width={512} height={512} className="eduaccess-splash-logo relative" decoding="sync" fetchPriority="high" />
+              <img src={logo} alt="" width={512} height={512} className="eduaccess-splash-logo relative" decoding="sync" fetchPriority="high" />
             </motion.div>
             <div className="eduaccess-splash-name flex items-baseline">
               {'EduAccess'.split('').map((char, i) => <motion.span key={i} initial={reducedMotion ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.05, duration: 0.4 }}>{char}</motion.span>)}
