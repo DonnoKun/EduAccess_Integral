@@ -32,11 +32,8 @@ export function useCourseCache() {
     try {
       const cacheKey = generateCacheKey(title, language);
       
-      const { data, error } = await supabase
-        .from('course_cache')
-        .select('content')
-        .eq('cache_key', cacheKey)
-        .maybeSingle();
+      const { data: content, error } = await supabase.rpc('get_course_cache', { _key: cacheKey });
+      const data = content ? { content } : null;
 
       if (error) {
         console.warn('Cache lookup error:', error);
