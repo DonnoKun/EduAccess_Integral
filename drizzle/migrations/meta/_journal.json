@@ -15,6 +15,13 @@
       "when": 1794501942919,
       "tag": "0001_security_hardening_enrollment_progress_cache",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794536204785,
+      "tag": "0002_server_graded_progress_and_private_cache",
+      "breakpoints": true
     }
   ]
 }

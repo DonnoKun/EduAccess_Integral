@@ -32,7 +32,7 @@ interface AuthState {
   // Actions
   initialize: () => Promise<void>;
   login: (email: string, token: string) => Promise<boolean>;
-  register: (email: string, role?: AppRole) => Promise<{ success: boolean; token?: string; recoveryCode?: string; error?: string }>;
+  register: (email: string, role?: AppRole, teacherCode?: string) => Promise<{ success: boolean; token?: string; recoveryCode?: string; error?: string }>;
   resetToken: (email: string, recoveryCode: string) => Promise<{ success: boolean; token?: string; recoveryCode?: string; error?: string }>;
   logout: () => Promise<void>;
   clearError: () => void;
@@ -331,12 +331,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
   },
 
-  register: async (email: string, role: AppRole = 'student') => {
+  register: async (email: string, role: AppRole = 'student', teacherCode?: string) => {
     set({ isLoading: true, error: null });
 
     try {
       const { data, error } = await supabase.functions.invoke('manage-auth-token', {
-        body: { action: 'register', email, role },
+        body: { action: 'register', email, role, teacherCode },
       });
 
       if (error) {

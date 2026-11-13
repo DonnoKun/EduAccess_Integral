@@ -476,6 +476,10 @@ export type Database = {
           student_name: string
         }[]
       }
+      grade_lesson_answer: {
+        Args: { _answer: string; _keywords: string; _solution: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
