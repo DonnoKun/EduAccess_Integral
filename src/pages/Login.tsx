@@ -47,6 +47,7 @@ export default function Login() {
   const [generatedRecovery, setGeneratedRecovery] = useState('');
   const [tokenCopied, setTokenCopied] = useState(false);
   const [selectedRole, setSelectedRole] = useState<AppRole>('student');
+  const [teacherCode, setTeacherCode] = useState('');
 
   const emailInputRef = useRef<HTMLInputElement>(null);
   const tokenInputRef = useRef<HTMLInputElement>(null);
