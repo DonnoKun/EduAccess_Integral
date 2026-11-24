@@ -32,6 +32,69 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_cache: {
+        Row: {
+          function_name: string
+          request_hash: string
+          response: Json
+          updated_at: string
+        }
+        Insert: {
+          function_name: string
+          request_hash: string
+          response: Json
+          updated_at?: string
+        }
+        Update: {
+          function_name?: string
+          request_hash?: string
+          response?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_rate_limits: {
+        Row: {
+          count: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          user_id: string
+          window_start: string
+        }
+        Update: {
+          count?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      circuit_breaker_state: {
+        Row: {
+          consecutive_failures: number
+          opened_at: string | null
+          service: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          consecutive_failures?: number
+          opened_at?: string | null
+          service: string
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          consecutive_failures?: number
+          opened_at?: string | null
+          service?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       course_cache: {
         Row: {
           cache_key: string
@@ -370,6 +433,93 @@ export type Database = {
         }
         Relationships: []
       }
+      remediation_jobs: {
+        Row: {
+          attempts: number
+          completed_steps: string[]
+          created_at: string
+          error: string | null
+          id: string
+          locked_until: string | null
+          payload: Json
+          result: Json | null
+          status: string
+          step: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          completed_steps?: string[]
+          created_at?: string
+          error?: string | null
+          id?: string
+          locked_until?: string | null
+          payload?: Json
+          result?: Json | null
+          status?: string
+          step?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          completed_steps?: string[]
+          created_at?: string
+          error?: string | null
+          id?: string
+          locked_until?: string | null
+          payload?: Json
+          result?: Json | null
+          status?: string
+          step?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      resilience_metrics: {
+        Row: {
+          created_at: string
+          degraded: boolean
+          function_name: string
+          http_status: number | null
+          id: string
+          latency_ms: number
+          path: string
+          provider_used: string | null
+          request_hash: string | null
+          success: boolean
+          tokens: number | null
+        }
+        Insert: {
+          created_at?: string
+          degraded?: boolean
+          function_name: string
+          http_status?: number | null
+          id?: string
+          latency_ms?: number
+          path: string
+          provider_used?: string | null
+          request_hash?: string | null
+          success: boolean
+          tokens?: number | null
+        }
+        Update: {
+          created_at?: string
+          degraded?: boolean
+          function_name?: string
+          http_status?: number | null
+          id?: string
+          latency_ms?: number
+          path?: string
+          provider_used?: string | null
+          request_hash?: string | null
+          success?: boolean
+          tokens?: number | null
+        }
+        Relationships: []
+      }
       session_analytics: {
         Row: {
           content_viewed: number
@@ -492,6 +642,33 @@ export type Database = {
       accept_group_invitation: {
         Args: { _invitation_id: string }
         Returns: Json
+      }
+      claim_remediation_jobs: {
+        Args: { _limit: number }
+        Returns: {
+          attempts: number
+          completed_steps: string[]
+          created_at: string
+          error: string | null
+          id: string
+          locked_until: string | null
+          payload: Json
+          result: Json | null
+          status: string
+          step: string | null
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "remediation_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      consume_ai_rate_limit: {
+        Args: { _limit: number; _user_id: string }
+        Returns: boolean
       }
       enroll_student_by_email: {
         Args: { _email: string; _group_id: string }

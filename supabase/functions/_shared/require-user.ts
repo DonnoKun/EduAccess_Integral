@@ -18,3 +18,14 @@ export async function requireUser(req: Request, corsHeaders: Record<string, stri
   if (error || !data?.user) return unauthorized();
   return null;
 }
+
+/** Returns the signed-in user's id, or a 401 Response. */
+export async function getUserOr401(req: Request, corsHeaders: Record<string, string>): Promise<{ userId: string } | { error: Response }> {
+  const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+  const fail = { error: new Response(JSON.stringify({ success: false, error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }) };
+  if (!token) return fail;
+  const client = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { auth: { persistSession: false } });
+  const { data, error } = await client.auth.getUser(token);
+  if (error || !data?.user) return fail;
+  return { userId: data.user.id };
+}

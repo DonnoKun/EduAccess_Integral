@@ -43,6 +43,13 @@
       "when": 1794548574019,
       "tag": "0005_invitations_and_private_cache",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795544044231,
+      "tag": "0006_resilience_infrastructure",
+      "breakpoints": true
     }
   ]
 }

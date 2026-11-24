@@ -1,3 +1,5 @@
+import { gatewayFetch } from "../_shared/ai-gateway.ts";
+const gatewayFetchNoFallback = (f: string, u: string, i: any) => gatewayFetch(f, u, i, { secondary: null });
 import { requireUser } from "../_shared/require-user.ts";
 /**
  * EduAccess - AI Course Image Generator Edge Function
@@ -90,8 +92,7 @@ serve(async (req) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-    const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
+    const response = await gatewayFetchNoFallback("generate-course-image", "chat",
       {
         method: "POST",
         headers: {

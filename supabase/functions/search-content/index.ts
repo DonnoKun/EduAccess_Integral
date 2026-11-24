@@ -1,3 +1,4 @@
+import { gatewayFetch } from "../_shared/ai-gateway.ts";
 import { requireUser } from "../_shared/require-user.ts";
 /**
  * EduAccess - AI Educational Content Search Edge Function
@@ -103,8 +104,7 @@ First, classify this query, then return results accordingly. Remember: NEVER inv
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-    const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
+    const response = await gatewayFetch("search-content", "chat",
       {
         method: "POST",
         headers: {
