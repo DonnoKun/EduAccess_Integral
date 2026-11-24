@@ -6,6 +6,7 @@
  */
 import { authenticateCronRequest } from "../_shared/cron-auth.ts";
 import { admin, resilientChat, CONFIG } from "../_shared/ai-gateway.ts";
+import { batchBenchmark } from "./batch.ts";
 
 const PROMPTS = [
   "Define accessibility in one short sentence.",
@@ -40,6 +41,7 @@ Deno.serve(async (req) => {
   const authFailure = authenticateCronRequest(req);
   if (authFailure) return authFailure;
   const body = await req.json().catch(() => ({}));
+  if (body.batch_run_id || body.repetitions !== undefined || body.scenario === "both" || body.scenario === "primary_failure" || body.action === "summarize") return batchBenchmark(body);
   const db = admin();
 
   if (body.action === "export") {

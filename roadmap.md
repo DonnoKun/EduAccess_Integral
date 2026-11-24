@@ -21,3 +21,5 @@
 - [x] Fix automatic modality preview, proportional enrollment/edit fields, stable bilingual headers, installation icon and search layout. Automatic motion/pause and teacher edit form verified; search fits at 48px; four tests passed. Student-specific enrollment remains unverified without a student session.
 
 - [x] Shared page links (/dashboard, /courses, /courses/x/lessons/y, /settings...) must open the app, not a 404, for both roles: vercel.json catch-all rewrite to index.html with static files rewritten to themselves; signed-out visitors land on login. 4 tests pass; every page checked signed-out in preview.
+- [x] Add durable independent benchmark repetitions, stored-row statistics and JSON/CSV export; four statistical tests passed and protected endpoint rejects unauthenticated requests.
+- [x] Run both live scenarios five times: batch 8604fe3b-edcc-4147-ad8c-f2da7d423d48 completed all 60 phases and stored 2,400 measured calls; aggregate retrieved through summarize.

@@ -71,6 +71,143 @@ export type Database = {
         }
         Relationships: []
       }
+      benchmark_batches: {
+        Row: {
+          concurrency: number
+          cooldown_ms: number
+          created_at: string
+          id: string
+          pause_reason: string | null
+          repetitions: number
+          requests_per_phase: number
+          scenario: string
+          status: string
+        }
+        Insert: {
+          concurrency?: number
+          cooldown_ms?: number
+          created_at?: string
+          id: string
+          pause_reason?: string | null
+          repetitions?: number
+          requests_per_phase?: number
+          scenario: string
+          status?: string
+        }
+        Update: {
+          concurrency?: number
+          cooldown_ms?: number
+          created_at?: string
+          id?: string
+          pause_reason?: string | null
+          repetitions?: number
+          requests_per_phase?: number
+          scenario?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      benchmark_call_checkpoints: {
+        Row: {
+          batch_run_id: string
+          call_index: number
+          completed_at: string | null
+          config: string
+          phase: string
+          rep_index: number
+          scenario: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          batch_run_id: string
+          call_index: number
+          completed_at?: string | null
+          config: string
+          phase: string
+          rep_index: number
+          scenario: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          batch_run_id?: string
+          call_index?: number
+          completed_at?: string | null
+          config?: string
+          phase?: string
+          rep_index?: number
+          scenario?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      benchmark_leases: {
+        Row: {
+          expires_at: string
+          name: string
+          owner: string
+        }
+        Insert: {
+          expires_at: string
+          name: string
+          owner: string
+        }
+        Update: {
+          expires_at?: string
+          name?: string
+          owner?: string
+        }
+        Relationships: []
+      }
+      benchmark_phases: {
+        Row: {
+          batch_run_id: string
+          breaker_reset_at: string | null
+          completed_at: string | null
+          config: string
+          phase: string
+          recovery_time_s: number | null
+          rep_index: number
+          scenario: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          batch_run_id: string
+          breaker_reset_at?: string | null
+          completed_at?: string | null
+          config: string
+          phase: string
+          recovery_time_s?: number | null
+          rep_index: number
+          scenario: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          batch_run_id?: string
+          breaker_reset_at?: string | null
+          completed_at?: string | null
+          config?: string
+          phase?: string
+          recovery_time_s?: number | null
+          rep_index?: number
+          scenario?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "benchmark_phases_batch_run_id_fkey"
+            columns: ["batch_run_id"]
+            isOneToOne: false
+            referencedRelation: "benchmark_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       circuit_breaker_state: {
         Row: {
           consecutive_failures: number
@@ -480,7 +617,9 @@ export type Database = {
       }
       resilience_metrics: {
         Row: {
+          batch_run_id: string | null
           benchmark_run_id: string | null
+          call_index: number | null
           config: string | null
           created_at: string
           degraded: boolean
@@ -491,12 +630,16 @@ export type Database = {
           path: string
           phase: string | null
           provider_used: string | null
+          rep_index: number | null
           request_hash: string | null
+          scenario: string | null
           success: boolean
           tokens: number | null
         }
         Insert: {
+          batch_run_id?: string | null
           benchmark_run_id?: string | null
+          call_index?: number | null
           config?: string | null
           created_at?: string
           degraded?: boolean
@@ -507,12 +650,16 @@ export type Database = {
           path: string
           phase?: string | null
           provider_used?: string | null
+          rep_index?: number | null
           request_hash?: string | null
+          scenario?: string | null
           success: boolean
           tokens?: number | null
         }
         Update: {
+          batch_run_id?: string | null
           benchmark_run_id?: string | null
+          call_index?: number | null
           config?: string | null
           created_at?: string
           degraded?: boolean
@@ -523,7 +670,9 @@ export type Database = {
           path?: string
           phase?: string | null
           provider_used?: string | null
+          rep_index?: number | null
           request_hash?: string | null
+          scenario?: string | null
           success?: boolean
           tokens?: number | null
         }
@@ -652,6 +801,7 @@ export type Database = {
         Args: { _invitation_id: string }
         Returns: Json
       }
+      claim_benchmark_lease: { Args: { _owner: string }; Returns: boolean }
       claim_remediation_jobs: {
         Args: { _limit: number }
         Returns: {

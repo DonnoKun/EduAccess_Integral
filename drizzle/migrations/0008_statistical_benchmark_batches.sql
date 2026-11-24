@@ -1,0 +1,18 @@
+CREATE TABLE public.benchmark_batches (id uuid PRIMARY KEY, scenario text NOT NULL CHECK (scenario IN ('both','primary_failure','graceful_degradation')), repetitions integer NOT NULL DEFAULT 5 CHECK (repetitions BETWEEN 1 AND 30), requests_per_phase integer NOT NULL DEFAULT 40 CHECK (requests_per_phase BETWEEN 1 AND 100), concurrency integer NOT NULL DEFAULT 4 CHECK (concurrency BETWEEN 1 AND 10), cooldown_ms integer NOT NULL DEFAULT 10000, status text NOT NULL DEFAULT 'running', pause_reason text, created_at timestamptz NOT NULL DEFAULT now());
+GRANT ALL ON public.benchmark_batches TO service_role;
+ALTER TABLE public.benchmark_batches ENABLE ROW LEVEL SECURITY;
+CREATE TABLE public.benchmark_phases (batch_run_id uuid NOT NULL REFERENCES public.benchmark_batches(id), rep_index integer NOT NULL, scenario text NOT NULL, config text NOT NULL, phase text NOT NULL, status text NOT NULL DEFAULT 'pending', started_at timestamptz, completed_at timestamptz, recovery_time_s double precision, breaker_reset_at timestamptz, PRIMARY KEY(batch_run_id,rep_index,scenario,config,phase));
+GRANT ALL ON public.benchmark_phases TO service_role;
+ALTER TABLE public.benchmark_phases ENABLE ROW LEVEL SECURITY;
+CREATE TABLE public.benchmark_call_checkpoints (batch_run_id uuid NOT NULL, rep_index integer NOT NULL, scenario text NOT NULL, config text NOT NULL, phase text NOT NULL, call_index integer NOT NULL, status text NOT NULL DEFAULT 'running', started_at timestamptz NOT NULL DEFAULT now(), completed_at timestamptz, PRIMARY KEY(batch_run_id,rep_index,scenario,config,phase,call_index));
+GRANT ALL ON public.benchmark_call_checkpoints TO service_role;
+ALTER TABLE public.benchmark_call_checkpoints ENABLE ROW LEVEL SECURITY;
+CREATE TABLE public.benchmark_leases (name text PRIMARY KEY, owner uuid NOT NULL, expires_at timestamptz NOT NULL);
+GRANT ALL ON public.benchmark_leases TO service_role;
+ALTER TABLE public.benchmark_leases ENABLE ROW LEVEL SECURITY;
+CREATE FUNCTION public.claim_benchmark_lease(_owner uuid) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$ BEGIN INSERT INTO public.benchmark_leases(name,owner,expires_at) VALUES ('benchmark',_owner,now()+interval '180 seconds') ON CONFLICT(name) DO UPDATE SET owner=EXCLUDED.owner,expires_at=EXCLUDED.expires_at WHERE benchmark_leases.expires_at < now(); RETURN FOUND; END; $$;
+REVOKE ALL ON FUNCTION public.claim_benchmark_lease(uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.claim_benchmark_lease(uuid) TO service_role;
+ALTER TABLE public.resilience_metrics ADD COLUMN batch_run_id uuid, ADD COLUMN rep_index integer, ADD COLUMN scenario text, ADD COLUMN call_index integer;
+CREATE UNIQUE INDEX resilience_metrics_batch_call ON public.resilience_metrics(batch_run_id,rep_index,scenario,config,phase,call_index) WHERE batch_run_id IS NOT NULL;
+CREATE INDEX resilience_metrics_batch_lookup ON public.resilience_metrics(batch_run_id,rep_index);

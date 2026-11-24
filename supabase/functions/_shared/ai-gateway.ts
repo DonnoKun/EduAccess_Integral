@@ -109,6 +109,7 @@ export async function hashRequest(fn: string, req: unknown): Promise<string> {
 
 async function logMetric(m: Record<string, unknown>) {
   const { error } = await admin().from("resilience_metrics").insert(m);
+  if (error && m.batch_run_id) throw new Error(`Benchmark metric persistence failed: ${error.message}`);
   if (error) console.error("metric insert failed", error.message);
 }
 
@@ -126,6 +127,7 @@ export interface BenchOptions {
   /** Both providers down when combined with forcePrimaryFail → only cache can answer. */
   forceSecondaryFail?: boolean;
   runId: string; config: string; phase: string;
+  batchRunId?: string; repIndex?: number; scenario?: string; callIndex?: number;
   cooldownMs?: number;
   onTransition?: (t: { at: string; from: string | null; to: string }) => void;
 }
@@ -142,7 +144,8 @@ export async function resilientChat(functionName: string, req: ChatRequest, opts
   // benchmark uses an isolated breaker so real users are never affected
   const service = bench ? `bench:ai:${primaryModel}` : `ai:${primaryModel}`;
   const primaryAdapter = bench?.forcePrimaryFail ? forcedFailAdapter(primaryModel) : gatewayAdapter(primaryModel);
-  const tags = bench ? { benchmark_run_id: bench.runId, config: bench.config, phase: bench.phase } : {};
+  const tags = bench ? { benchmark_run_id: bench.runId, config: bench.config, phase: bench.phase,
+    ...(bench.batchRunId ? { batch_run_id: bench.batchRunId, rep_index: bench.repIndex, scenario: bench.scenario, call_index: bench.callIndex } : {}) } : {};
   const cooldown = bench?.cooldownMs ?? CONFIG.cooldownMs;
   const writeB = async (prev: BreakerRow | null, next: Omit<BreakerRow, "service">) => {
     if (bench && (prev?.state ?? "CLOSED") !== next.state) bench.onTransition?.({ at: new Date().toISOString(), from: prev?.state ?? "CLOSED", to: next.state });
