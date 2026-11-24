@@ -50,6 +50,13 @@
       "when": 1795544044231,
       "tag": "0006_resilience_infrastructure",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795550916040,
+      "tag": "0007_resilience_benchmark_tags",
+      "breakpoints": true
     }
   ]
 }

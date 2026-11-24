@@ -116,38 +116,81 @@ async function logMetric(m: Record<string, unknown>) {
  * Resilient call: primary (guarded by breaker) → secondary → cache → failed.
  * Writes exactly one resilience_metrics row.
  */
-export async function resilientChat(functionName: string, req: ChatRequest, opts: { primary?: string; secondary?: string | null; cacheKey?: unknown } = {}): Promise<AIResult> {
+/**
+ * Benchmark-only options. Never parsed from HTTP bodies: only the cron-auth
+ * protected resilience-benchmark runner constructs this object in code.
+ */
+export interface BenchOptions {
+  mode: "resilient" | "baseline";
+  forcePrimaryFail?: boolean;
+  runId: string; config: string; phase: string;
+  cooldownMs?: number;
+  onTransition?: (t: { at: string; from: string | null; to: string }) => void;
+}
+export const forcedFailAdapter = (model: string): ProviderAdapter => ({
+  name: model,
+  async call() { throw new TransientError(`${model} injected outage`, 503); },
+});
+
+export async function resilientChat(functionName: string, req: ChatRequest, opts: { primary?: string; secondary?: string | null; cacheKey?: unknown; bench?: BenchOptions } = {}): Promise<AIResult> {
   const start = Date.now();
+  const bench = opts.bench;
   const primaryModel = opts.primary ?? CONFIG.primaryModel;
   const secondaryModel = opts.secondary === undefined ? CONFIG.secondaryModel : opts.secondary;
-  const service = `ai:${primaryModel}`;
+  // benchmark uses an isolated breaker so real users are never affected
+  const service = bench ? `bench:ai:${primaryModel}` : `ai:${primaryModel}`;
+  const primaryAdapter = bench?.forcePrimaryFail ? forcedFailAdapter(primaryModel) : gatewayAdapter(primaryModel);
+  const tags = bench ? { benchmark_run_id: bench.runId, config: bench.config, phase: bench.phase } : {};
+  const cooldown = bench?.cooldownMs ?? CONFIG.cooldownMs;
+  const writeB = async (prev: BreakerRow | null, next: Omit<BreakerRow, "service">) => {
+    if (bench && (prev?.state ?? "CLOSED") !== next.state) bench.onTransition?.({ at: new Date().toISOString(), from: prev?.state ?? "CLOSED", to: next.state });
+    await writeBreaker(service, next);
+  };
   const hash = await hashRequest(functionName, opts.cacheKey ?? req);
   const finish = async (r: AIResult): Promise<AIResult> => {
     const usage = r.data?.usage?.total_tokens ?? null;
-    await logMetric({ function_name: functionName, provider_used: r.provider, path: r.path, latency_ms: Date.now() - start, success: r.path !== "failed", http_status: r.status, tokens: usage, degraded: r.degraded, request_hash: hash });
-    if (r.path === "primary" || r.path === "secondary") {
+    await logMetric({ function_name: functionName, provider_used: r.provider, path: r.path, latency_ms: Date.now() - start, success: r.path !== "failed", http_status: r.status, tokens: usage, degraded: r.degraded, request_hash: hash, ...tags });
+    if (bench?.mode !== "baseline" && (r.path === "primary" || r.path === "secondary")) {
       await admin().from("ai_cache").upsert({ request_hash: hash, function_name: functionName, response: r.data, updated_at: new Date().toISOString() });
     }
     return r;
   };
 
+  // Baseline: one direct primary call, no retry/breaker/secondary/cache.
+  if (bench?.mode === "baseline") {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), CONFIG.timeoutMs);
+    try {
+      const { json, status } = await primaryAdapter.call(req, ctrl.signal);
+      return finish({ data: json, path: "primary", provider: primaryModel, degraded: false, status });
+    } catch (e) {
+      return finish({ data: null, path: "failed", provider: primaryModel, degraded: false, status: (e as TransientError).status || 503 });
+    } finally { clearTimeout(t); }
+  }
+
   let lastStatus = 0;
   // 1) primary, if breaker allows
   const row = await readBreaker(service).catch(() => null);
-  const dec = breakerDecision(row, Date.now());
+  const dec = breakerDecision(row, Date.now(), cooldown);
   let tryPrimary = dec.allow;
-  if (dec.transitionTo === "HALF_OPEN") tryPrimary = await claimHalfOpen(service, row?.opened_at ?? null);
+  if (dec.transitionTo === "HALF_OPEN") {
+    tryPrimary = await claimHalfOpen(service, row?.opened_at ?? null);
+    if (tryPrimary && bench) bench.onTransition?.({ at: new Date().toISOString(), from: "OPEN", to: "HALF_OPEN" });
+  }
   if (tryPrimary) {
     const isTrial = dec.transitionTo === "HALF_OPEN";
     try {
-      const { json, status } = await callWithRetry(gatewayAdapter(primaryModel), req);
-      await writeBreaker(service, breakerAfter(row, true));
+      const { json, status } = await callWithRetry(primaryAdapter, req);
+      await writeB(isTrial ? { ...(row as BreakerRow), state: "HALF_OPEN" } : row, breakerAfter(row, true));
       return finish({ data: json, path: "primary", provider: primaryModel, degraded: false, status });
     } catch (e) {
       if (e instanceof TerminalError) { await finish({ data: null, path: "failed", provider: primaryModel, degraded: false, status: e.status }); throw e; }
       lastStatus = (e as TransientError).status ?? 0;
       console.warn(`[${functionName}] primary failed:`, (e as Error).message);
-      await writeBreaker(service, breakerAfter(isTrial ? { ...(row as BreakerRow), state: "HALF_OPEN" } : row, false));
+      // re-read so concurrent failures accumulate instead of overwriting each other
+      const fresh = isTrial ? null : await readBreaker(service).catch(() => row);
+      const prev = isTrial ? { ...(row as BreakerRow), state: "HALF_OPEN" as const } : (fresh ?? row);
+      await writeB(prev, breakerAfter(prev, false));
     }
   }
   // 2) secondary

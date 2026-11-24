@@ -480,6 +480,8 @@ export type Database = {
       }
       resilience_metrics: {
         Row: {
+          benchmark_run_id: string | null
+          config: string | null
           created_at: string
           degraded: boolean
           function_name: string
@@ -487,12 +489,15 @@ export type Database = {
           id: string
           latency_ms: number
           path: string
+          phase: string | null
           provider_used: string | null
           request_hash: string | null
           success: boolean
           tokens: number | null
         }
         Insert: {
+          benchmark_run_id?: string | null
+          config?: string | null
           created_at?: string
           degraded?: boolean
           function_name: string
@@ -500,12 +505,15 @@ export type Database = {
           id?: string
           latency_ms?: number
           path: string
+          phase?: string | null
           provider_used?: string | null
           request_hash?: string | null
           success: boolean
           tokens?: number | null
         }
         Update: {
+          benchmark_run_id?: string | null
+          config?: string | null
           created_at?: string
           degraded?: boolean
           function_name?: string
@@ -513,6 +521,7 @@ export type Database = {
           id?: string
           latency_ms?: number
           path?: string
+          phase?: string | null
           provider_used?: string | null
           request_hash?: string | null
           success?: boolean
@@ -684,6 +693,7 @@ export type Database = {
           owner_id: string
         }[]
       }
+      get_benchmark_metrics: { Args: { _run_id: string }; Returns: Json }
       get_course_cache: { Args: { _key: string }; Returns: Json }
       get_group_roster: {
         Args: { _group_id: string }
