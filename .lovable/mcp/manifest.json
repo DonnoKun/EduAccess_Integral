@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "sdk_version": "3.6.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://mflfznpwwwkyfedfgnwl.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "eduaccess-integral",
+      "version": "0.1.0",
+      "title": "EduAccess Integral"
+    },
+    "tools": [
+      {
+        "name": "list_my_groups",
+        "title": "List my groups",
+        "description": "List the course groups the signed-in user teaches or is enrolled in.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_group_lessons",
+        "title": "List group lessons",
+        "description": "List the lessons in one of the signed-in user's groups (students see only published lessons).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "group_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Group id from list_my_groups."
+            }
+          },
+          "required": [
+            "group_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
