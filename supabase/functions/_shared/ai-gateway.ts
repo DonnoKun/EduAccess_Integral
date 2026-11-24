@@ -123,6 +123,8 @@ async function logMetric(m: Record<string, unknown>) {
 export interface BenchOptions {
   mode: "resilient" | "baseline";
   forcePrimaryFail?: boolean;
+  /** Both providers down when combined with forcePrimaryFail → only cache can answer. */
+  forceSecondaryFail?: boolean;
   runId: string; config: string; phase: string;
   cooldownMs?: number;
   onTransition?: (t: { at: string; from: string | null; to: string }) => void;
@@ -148,7 +150,8 @@ export async function resilientChat(functionName: string, req: ChatRequest, opts
   };
   const hash = await hashRequest(functionName, opts.cacheKey ?? req);
   const finish = async (r: AIResult): Promise<AIResult> => {
-    const usage = r.data?.usage?.total_tokens ?? null;
+    // a cache hit spends no tokens; don't count the cached response's original usage
+    const usage = r.path === "cache" ? null : r.data?.usage?.total_tokens ?? null;
     await logMetric({ function_name: functionName, provider_used: r.provider, path: r.path, latency_ms: Date.now() - start, success: r.path !== "failed", http_status: r.status, tokens: usage, degraded: r.degraded, request_hash: hash, ...tags });
     if (bench?.mode !== "baseline" && (r.path === "primary" || r.path === "secondary")) {
       await admin().from("ai_cache").upsert({ request_hash: hash, function_name: functionName, response: r.data, updated_at: new Date().toISOString() });
@@ -196,7 +199,7 @@ export async function resilientChat(functionName: string, req: ChatRequest, opts
   // 2) secondary
   if (secondaryModel) {
     try {
-      const { json, status } = await callWithRetry(gatewayAdapter(secondaryModel), req);
+      const { json, status } = await callWithRetry(bench?.forceSecondaryFail ? forcedFailAdapter(secondaryModel) : gatewayAdapter(secondaryModel), req);
       return finish({ data: json, path: "secondary", provider: secondaryModel, degraded: false, status });
     } catch (e) {
       lastStatus = (e as TransientError).status ?? lastStatus;
