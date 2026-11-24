@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { useAuthStore, type AppRole } from '@/store/useAuthStore';
 import { useStore } from '@/store/useStore';
 import LanguageSelector from '@/components/LanguageSelector';
+import { oauthReturnPath } from '@/lib/oauth-return-path';
 
 type Step = 'login' | 'register' | 'register-success' | 'forgot' | 'forgot-success';
 
@@ -55,7 +56,10 @@ export default function Login() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      if (hasCompletedOnboarding) {
+      const next = new URLSearchParams(window.location.search).get('next');
+      if (next) {
+        navigate(oauthReturnPath(next), { replace: true });
+      } else if (hasCompletedOnboarding) {
         navigate('/dashboard');
       } else {
         navigate('/onboarding');

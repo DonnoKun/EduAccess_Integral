@@ -1,3 +1,5 @@
+import OAuthConsent from './pages/OAuthConsent';
+import { oauthReturnPath } from './lib/oauth-return-path';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -95,9 +97,10 @@ function AppContent() {
           ? (hasCompletedOnboarding ? <Navigate to="/dashboard" replace /> : <Navigate to="/onboarding" replace />)
           : <Navigate to="/login" replace />
       } />
+      <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
       <Route path="/login" element={
         isAuthenticated 
-          ? (hasCompletedOnboarding ? <Navigate to="/dashboard" replace /> : <Navigate to="/onboarding" replace />)
+          ? (new URLSearchParams(window.location.search).get('next') ? <Navigate to={oauthReturnPath(new URLSearchParams(window.location.search).get('next'))} replace /> : hasCompletedOnboarding ? <Navigate to="/dashboard" replace /> : <Navigate to="/onboarding" replace />)
           : <Login />
       } />
       <Route path="/onboarding" element={
