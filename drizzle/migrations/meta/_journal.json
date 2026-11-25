@@ -78,6 +78,13 @@
       "when": 1795564799758,
       "tag": "0010_benchmark_sweep_metric_uniqueness",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795565522867,
+      "tag": "0011_idempotent_benchmark_metrics",
+      "breakpoints": true
     }
   ]
 }

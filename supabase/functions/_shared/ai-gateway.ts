@@ -108,7 +108,10 @@ export async function hashRequest(fn: string, req: unknown): Promise<string> {
 }
 
 async function logMetric(m: Record<string, unknown>) {
-  const { error } = await admin().from("resilience_metrics").insert(m);
+  // The RPC matches the existing partial expression index and uses ON CONFLICT DO NOTHING.
+  const { error } = m.batch_run_id
+    ? await admin().rpc("persist_benchmark_metric", { _metric: m })
+    : await admin().from("resilience_metrics").insert(m);
   if (error && m.batch_run_id) throw new Error(`Benchmark metric persistence failed: ${error.message}`);
   if (error) console.error("metric insert failed", error.message);
 }

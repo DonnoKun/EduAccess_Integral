@@ -1,7 +1,7 @@
 import { admin } from '../_shared/ai-gateway.ts';
 import { batchBenchmark, readRows, readPhases } from './batch.ts';
 import { aggregateSweep, validLevels, type Sweep } from './sweep-statistics.ts';
-import type { Batch } from './statistics.ts';
+import { cellComplete, type Batch } from './statistics.ts';
 function checked<T>(r: { data: T; error: { message: string } | null }) { if (r.error) throw new Error(r.error.message); return r.data; }
 export async function sweepBenchmark(body: Record<string, unknown>): Promise<Response> {
   const db = admin(), action = body.action ?? 'run';
@@ -21,9 +21,14 @@ export async function sweepBenchmark(body: Record<string, unknown>): Promise<Res
   const batches = checked(await db.from('benchmark_batches').select('*').eq('sweep_id',id)) as Batch[];
   if (batches.length !== sweep.concurrency_levels.length) return Response.json({error:'Incomplete driver initialization; inspect before continuing'}, {status:409});
   if (action === 'run') {
-    if (batches.some(b => b.status === 'paused')) return Response.json({batch_run_id:id,status:'paused',reason:batches.find(b => b.status==='paused')?.pause_reason});
-    const next = sweep.concurrency_levels.map(c => batches.find(b => b.concurrency===c)).find(b => b?.status!=='completed');
-    if (next) { const response = await batchBenchmark({batch_run_id:next.id}); const progress = await response.json(); return Response.json({...progress,batch_run_id:id,child_batch_run_id:next.id,concurrency:next.concurrency}, {status:response.status}); }
+    let next: Batch | undefined;
+    for (const c of sweep.concurrency_levels) {
+      const b = batches.find(b => b.concurrency === c);
+      if (!b) continue;
+      const phases = await readPhases(b.id), rows = await readRows(b.id);
+      if (!Array.from({length:b.repetitions},(_,i)=>i+1).every(rep=>cellComplete(b,phases,rows,rep))) { next=b; break; }
+    }
+    if (next) { const response = await batchBenchmark({batch_run_id:next.id,restart_incomplete_cell:body.restart_incomplete_cell === true}); const progress = await response.json(); return Response.json({...progress,batch_run_id:id,child_batch_run_id:next.id,concurrency:next.concurrency}, {status:response.status}); }
   }
   const cells = await Promise.all(sweep.concurrency_levels.map(async c => { const batch = batches.find(b => b.concurrency===c); if (!batch) throw new Error('Missing load level'); return {batch,phases:await readPhases(batch.id),rows:await readRows(batch.id)}; }));
   if (action === 'export') {

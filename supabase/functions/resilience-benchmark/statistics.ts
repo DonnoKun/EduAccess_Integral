@@ -20,6 +20,10 @@ export function phasePlan(scenario: string) {
   if (scenario !== "primary_failure") for (const config of ["resilient", "baseline"]) for (const phase of config === "resilient" ? ["W", "Dhit", "Dmiss", "R"] : ["W", "Dhit"]) plan.push({ scenario: "graceful_degradation", config, phase });
   return plan;
 }
+/** A cell is complete only with every planned phase and every distinct stored call. */
+export function cellComplete(batch: Batch, phases: PhaseRow[], rows: MetricRow[], rep: number, scenario = batch.scenario) {
+  return phasePlan(scenario).every(p => phases.some(x => x.rep_index === rep && keyOf(x) === keyOf(p) && x.status === 'completed') && new Set(rows.filter(r => r.rep_index === rep && keyOf(r) === keyOf(p)).map(r => r.call_index)).size === batch.requests_per_phase);
+}
 const percentile = (xs: number[], p: number) => {
   if (!xs.length) return null;
   const sorted = [...xs].sort((a, b) => a - b);
@@ -34,7 +38,7 @@ export function aggregateBatch(batch: Batch, phases: PhaseRow[], rows: MetricRow
     const scenarioPlan = plan.filter((p) => p.scenario === scenario);
     const complete: number[] = [];
     for (let rep = 1; rep <= batch.repetitions; rep++) {
-      if (scenarioPlan.every((p) => phases.some((x) => x.rep_index === rep && keyOf(x) === keyOf(p) && x.status === "completed") && rows.filter((r) => r.rep_index === rep && keyOf(r) === keyOf(p)).length === batch.requests_per_phase)) complete.push(rep);
+      if (cellComplete(batch, phases, rows, rep, scenario)) complete.push(rep);
     }
     totalComplete += complete.length;
     const groups: Record<string, unknown> = {};

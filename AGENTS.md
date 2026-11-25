@@ -17,4 +17,4 @@
 - Benchmark fault injection/baseline flags (BenchOptions) are only constructed in code by the cron-auth protected resilience-benchmark runner, which uses an isolated bench:* breaker; never parse them from request bodies so public AI endpoints cannot reach them.
 - Benchmark batches checkpoint calls and phases under a database lease; aggregate only completed stored repetitions with Student-t intervals, and pause uncertain in-flight calls instead of replaying potentially billed inference.
 
-- Concurrency sweeps use immutable parent manifests and independent resumable child batches per load level; benchmark-only atomic failure observations keep sweep faults and state isolated from user-facing behavior.
+- Concurrency sweeps use immutable parents, stored-phase/call completion checks and idempotent metric writes; explicitly authorized incomplete-cell restarts clean only that exact cell under a lease, while completed cells are never replayed to avoid rebilling.

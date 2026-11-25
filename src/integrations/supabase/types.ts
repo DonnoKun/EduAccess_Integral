@@ -931,6 +931,7 @@ export type Database = {
           id: string
         }[]
       }
+      persist_benchmark_metric: { Args: { _metric: Json }; Returns: undefined }
     }
     Enums: {
       app_role: "teacher" | "student"

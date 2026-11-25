@@ -1,5 +1,5 @@
 import { admin, CONFIG, resilientChat } from "../_shared/ai-gateway.ts";
-import { aggregateBatch, phasePlan, keyOf, type Batch, type PhaseRow, type MetricRow } from "./statistics.ts";
+import { aggregateBatch, cellComplete, phasePlan, keyOf, type Batch, type PhaseRow, type MetricRow } from "./statistics.ts";
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const topics = ["photosynthesis", "fractions", "the water cycle", "gravity", "volcanoes", "the solar system", "verbs", "ecosystems", "electric circuits", "the human heart"];
@@ -53,7 +53,7 @@ export async function batchBenchmark(body: Record<string, unknown>): Promise<Res
   const cooldown = Number(body.cooldownMs ?? batch?.cooldown_ms ?? 10000);
   if (!["both", "primary_failure", "graceful_degradation"].includes(scenario) || !Number.isInteger(repetitions) || repetitions < 1 || repetitions > 30 || !Number.isInteger(n) || n < 1 || n > 100 || !Number.isInteger(concurrency) || concurrency < 1 || concurrency > 20 || !Number.isInteger(cooldown) || cooldown < 1000 || cooldown > 60000 || (body.live !== undefined && body.live !== true)) return Response.json({ error: "Invalid batch settings; only live evaluation is supported" }, { status: 400 });
   if (batch && (batch.scenario !== scenario || batch.repetitions !== repetitions || batch.requests_per_phase !== n || batch.concurrency !== concurrency || batch.cooldown_ms !== cooldown)) return Response.json({ error: "Existing batch settings are immutable" }, { status: 409 });
-  if (batch?.status === "paused" || batch?.status === "completed") return Response.json(aggregateBatch(batch, await readPhases(id), await readRows(id)));
+  if (batch?.status === "paused" && body.restart_incomplete_cell !== true) return Response.json(aggregateBatch(batch, await readPhases(id), await readRows(id)));
   const owner = crypto.randomUUID();
   if (!checked(await db.rpc("claim_benchmark_lease", { _owner: owner }))) return Response.json({ batch_run_id: id, status: "busy", retry_after_s: 10 }, { status: 409 });
   try {
@@ -62,11 +62,27 @@ export async function batchBenchmark(body: Record<string, unknown>): Promise<Res
     }
     const plan = phasePlan(scenario);
     checked(await db.from("benchmark_phases").upsert(Array.from({ length: repetitions }, (_, r) => plan.map((p) => ({ batch_run_id: id, rep_index: r + 1, ...p }))).flat(), { onConflict: "batch_run_id,rep_index,scenario,config,phase", ignoreDuplicates: true }));
-    const phases = await readPhases(id);
+    let phases = await readPhases(id);
+    let rows = await readRows(id);
+    const unfinishedRep = Array.from({ length: repetitions }, (_, i) => i + 1).find(rep => !cellComplete(batch, phases, rows, rep));
+    if (unfinishedRep !== undefined && body.restart_incomplete_cell === true) {
+      // Explicit owner-authorized restart, once per cell, under the shared lease.
+      // Never erase or repeat a complete repetition or another load level.
+      checked(await db.from('resilience_metrics').delete().match({ batch_run_id: batch.sweep_id ?? id, concurrency, rep_index: unfinishedRep, scenario }));
+      checked(await db.from('benchmark_call_checkpoints').delete().match({ batch_run_id: id, rep_index: unfinishedRep, scenario }));
+      checked(await db.from('benchmark_phases').update({ status: 'pending', started_at: null, completed_at: null, breaker_reset_at: null, recovery_time_s: null, breaker_observation: null }).match({ batch_run_id: id, rep_index: unfinishedRep, scenario }));
+      phases = await readPhases(id);
+      rows = await readRows(id);
+    }
+    if (batch.status !== 'running') {
+      checked(await db.from('benchmark_batches').update({ status: 'running', pause_reason: null }).eq('id', id));
+      batch.status = 'running'; batch.pause_reason = null;
+    }
     const pending = phases.filter((p) => p.status !== "completed").sort((a, b) => a.rep_index - b.rep_index || plan.findIndex((x) => keyOf(x) === keyOf(a)) - plan.findIndex((x) => keyOf(x) === keyOf(b)))[0];
     if (pending) await runPhase(batch, pending);
     const freshPhases = await readPhases(id);
-    if (freshPhases.every((p) => p.status === "completed")) {
+    const freshRows = await readRows(id);
+    if (Array.from({ length: repetitions }, (_, i) => i + 1).every(rep => cellComplete(batch, freshPhases, freshRows, rep))) {
       checked(await db.from("benchmark_batches").update({ status: "completed" }).eq("id", id));
       batch.status = "completed";
     }
