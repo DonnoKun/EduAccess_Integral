@@ -23,3 +23,5 @@
 - [x] Shared page links (/dashboard, /courses, /courses/x/lessons/y, /settings...) must open the app, not a 404, for both roles: vercel.json catch-all rewrite to index.html with static files rewritten to themselves; signed-out visitors land on login. 4 tests pass; every page checked signed-out in preview.
 - [x] Add durable independent benchmark repetitions, stored-row statistics and JSON/CSV export; four statistical tests passed and protected endpoint rejects unauthenticated requests.
 - [x] Run both live scenarios five times: batch 8604fe3b-edcc-4147-ad8c-f2da7d423d48 completed all 60 phases and stored 2,400 measured calls; aggregate retrieved through summarize.
+- [x] Implement protected resumable primary-failure sweep [1,5,10,20], three repetitions per level; seven tests pass, JSON/CSV exports verified, load-level uniqueness conflict corrected.
+- [ ] Finish live sweep d4b06465-43d7-42b7-a9ab-ab1323c87cb1: 3/12 cells and 720 calls stored; concurrency 1 passed, concurrency 5 paused after five potentially billed calls could not persist metrics. Blocked on provider-log reconciliation or explicit authorization for a fresh run; no uncertain inference replay.

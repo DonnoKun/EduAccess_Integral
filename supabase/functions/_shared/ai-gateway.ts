@@ -129,7 +129,8 @@ export interface BenchOptions {
   runId: string; config: string; phase: string;
   batchRunId?: string; repIndex?: number; scenario?: string; callIndex?: number;
   cooldownMs?: number;
-  onTransition?: (t: { at: string; from: string | null; to: string }) => void;
+  concurrency?: number;
+  onTransition?: (t: { at: string; from: string | null; to: string; consecutive_failures?: number }) => void;
 }
 export const forcedFailAdapter = (model: string): ProviderAdapter => ({
   name: model,
@@ -145,7 +146,7 @@ export async function resilientChat(functionName: string, req: ChatRequest, opts
   const service = bench ? `bench:ai:${primaryModel}` : `ai:${primaryModel}`;
   const primaryAdapter = bench?.forcePrimaryFail ? forcedFailAdapter(primaryModel) : gatewayAdapter(primaryModel);
   const tags = bench ? { benchmark_run_id: bench.runId, config: bench.config, phase: bench.phase,
-    ...(bench.batchRunId ? { batch_run_id: bench.batchRunId, rep_index: bench.repIndex, scenario: bench.scenario, call_index: bench.callIndex } : {}) } : {};
+    ...(bench.batchRunId ? { batch_run_id: bench.batchRunId, rep_index: bench.repIndex, scenario: bench.scenario, call_index: bench.callIndex, concurrency: bench.concurrency } : {}) } : {};
   const cooldown = bench?.cooldownMs ?? CONFIG.cooldownMs;
   const writeB = async (prev: BreakerRow | null, next: Omit<BreakerRow, "service">) => {
     if (bench && (prev?.state ?? "CLOSED") !== next.state) bench.onTransition?.({ at: new Date().toISOString(), from: prev?.state ?? "CLOSED", to: next.state });
@@ -196,7 +197,11 @@ export async function resilientChat(functionName: string, req: ChatRequest, opts
       // re-read so concurrent failures accumulate instead of overwriting each other
       const fresh = isTrial ? null : await readBreaker(service).catch(() => row);
       const prev = isTrial ? { ...(row as BreakerRow), state: "HALF_OPEN" as const } : (fresh ?? row);
-      await writeB(prev, breakerAfter(prev, false));
+      if (bench) {
+        const { data, error } = await admin().rpc("benchmark_record_failure", { _service: service, _threshold: CONFIG.failureThreshold });
+        if (error) throw new Error(`Benchmark counter failed: ${error.message}`);
+        if (data.previous_state !== data.state) bench.onTransition?.({ at: new Date().toISOString(), from: data.previous_state, to: data.state, consecutive_failures: data.consecutive_failures });
+      } else await writeB(prev, breakerAfter(prev, false));
     }
   }
   // 2) secondary

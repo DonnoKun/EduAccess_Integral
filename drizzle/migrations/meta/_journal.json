@@ -64,6 +64,20 @@
       "when": 1795560325832,
       "tag": "0008_statistical_benchmark_batches",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795563545955,
+      "tag": "0009_benchmark_concurrency_sweeps",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795564799758,
+      "tag": "0010_benchmark_sweep_metric_uniqueness",
+      "breakpoints": true
     }
   ]
 }

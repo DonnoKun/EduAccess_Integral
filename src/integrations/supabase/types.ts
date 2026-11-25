@@ -82,6 +82,7 @@ export type Database = {
           requests_per_phase: number
           scenario: string
           status: string
+          sweep_id: string | null
         }
         Insert: {
           concurrency?: number
@@ -93,6 +94,7 @@ export type Database = {
           requests_per_phase?: number
           scenario: string
           status?: string
+          sweep_id?: string | null
         }
         Update: {
           concurrency?: number
@@ -104,8 +106,17 @@ export type Database = {
           requests_per_phase?: number
           scenario?: string
           status?: string
+          sweep_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "benchmark_batches_sweep_id_fkey"
+            columns: ["sweep_id"]
+            isOneToOne: false
+            referencedRelation: "benchmark_sweeps"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       benchmark_call_checkpoints: {
         Row: {
@@ -164,6 +175,7 @@ export type Database = {
       benchmark_phases: {
         Row: {
           batch_run_id: string
+          breaker_observation: Json | null
           breaker_reset_at: string | null
           completed_at: string | null
           config: string
@@ -176,6 +188,7 @@ export type Database = {
         }
         Insert: {
           batch_run_id: string
+          breaker_observation?: Json | null
           breaker_reset_at?: string | null
           completed_at?: string | null
           config: string
@@ -188,6 +201,7 @@ export type Database = {
         }
         Update: {
           batch_run_id?: string
+          breaker_observation?: Json | null
           breaker_reset_at?: string | null
           completed_at?: string | null
           config?: string
@@ -207,6 +221,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      benchmark_sweeps: {
+        Row: {
+          children: Json
+          concurrency_levels: Json
+          created_at: string
+          id: string
+          reps_per_level: number
+          scenario: string
+        }
+        Insert: {
+          children: Json
+          concurrency_levels: Json
+          created_at?: string
+          id: string
+          reps_per_level: number
+          scenario: string
+        }
+        Update: {
+          children?: Json
+          concurrency_levels?: Json
+          created_at?: string
+          id?: string
+          reps_per_level?: number
+          scenario?: string
+        }
+        Relationships: []
       }
       circuit_breaker_state: {
         Row: {
@@ -620,6 +661,7 @@ export type Database = {
           batch_run_id: string | null
           benchmark_run_id: string | null
           call_index: number | null
+          concurrency: number | null
           config: string | null
           created_at: string
           degraded: boolean
@@ -640,6 +682,7 @@ export type Database = {
           batch_run_id?: string | null
           benchmark_run_id?: string | null
           call_index?: number | null
+          concurrency?: number | null
           config?: string | null
           created_at?: string
           degraded?: boolean
@@ -660,6 +703,7 @@ export type Database = {
           batch_run_id?: string | null
           benchmark_run_id?: string | null
           call_index?: number | null
+          concurrency?: number | null
           config?: string | null
           created_at?: string
           degraded?: boolean
@@ -799,6 +843,10 @@ export type Database = {
     Functions: {
       accept_group_invitation: {
         Args: { _invitation_id: string }
+        Returns: Json
+      }
+      benchmark_record_failure: {
+        Args: { _service: string; _threshold: number }
         Returns: Json
       }
       claim_benchmark_lease: { Args: { _owner: string }; Returns: boolean }

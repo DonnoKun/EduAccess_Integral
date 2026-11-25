@@ -1,0 +1,11 @@
+CREATE TABLE public.benchmark_sweeps(id uuid PRIMARY KEY, scenario text NOT NULL, concurrency_levels jsonb NOT NULL, reps_per_level integer NOT NULL, children jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+GRANT ALL ON public.benchmark_sweeps TO service_role;
+ALTER TABLE public.benchmark_sweeps ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.benchmark_batches DROP CONSTRAINT benchmark_batches_concurrency_check;
+ALTER TABLE public.benchmark_batches ADD CONSTRAINT benchmark_batches_concurrency_check CHECK(concurrency BETWEEN 1 AND 20);
+ALTER TABLE public.benchmark_batches ADD COLUMN sweep_id uuid REFERENCES public.benchmark_sweeps(id);
+ALTER TABLE public.resilience_metrics ADD COLUMN concurrency integer;
+ALTER TABLE public.benchmark_phases ADD COLUMN breaker_observation jsonb;
+CREATE FUNCTION public.benchmark_record_failure(_service text, _threshold integer) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE prev text; result public.circuit_breaker_state; BEGIN IF _service NOT LIKE 'bench:%' THEN RAISE EXCEPTION 'Benchmark service required'; END IF; SELECT state INTO prev FROM public.circuit_breaker_state WHERE service=_service FOR UPDATE; UPDATE public.circuit_breaker_state SET consecutive_failures=consecutive_failures+1,state=CASE WHEN state='HALF_OPEN' OR consecutive_failures+1>=_threshold THEN 'OPEN' ELSE state END,opened_at=CASE WHEN state<>'OPEN' AND (state='HALF_OPEN' OR consecutive_failures+1>=_threshold) THEN now() ELSE opened_at END,updated_at=now() WHERE service=_service RETURNING * INTO result; RETURN to_jsonb(result)||jsonb_build_object('previous_state',prev); END; $$;
+REVOKE ALL ON FUNCTION public.benchmark_record_failure(text,integer) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.benchmark_record_failure(text,integer) TO service_role;

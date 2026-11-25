@@ -16,3 +16,5 @@
 - Thesis service map S1-S5 = content-aggregation, visual-profiling, accessibility-remediation(+microservices), ai-orchestration (cron worker), content-delivery; new services stay thin wrappers over aiEndpoint/resilientChat.
 - Benchmark fault injection/baseline flags (BenchOptions) are only constructed in code by the cron-auth protected resilience-benchmark runner, which uses an isolated bench:* breaker; never parse them from request bodies so public AI endpoints cannot reach them.
 - Benchmark batches checkpoint calls and phases under a database lease; aggregate only completed stored repetitions with Student-t intervals, and pause uncertain in-flight calls instead of replaying potentially billed inference.
+
+- Concurrency sweeps use immutable parent manifests and independent resumable child batches per load level; benchmark-only atomic failure observations keep sweep faults and state isolated from user-facing behavior.

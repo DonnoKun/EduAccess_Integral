@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX resilience_metrics_load_call ON public.resilience_metrics(batch_run_id,coalesce(concurrency,0),rep_index,scenario,config,phase,call_index) WHERE batch_run_id IS NOT NULL;
+DROP INDEX public.resilience_metrics_batch_call;

@@ -11,8 +11,8 @@ export function distribution(values: (number | null)[]) {
   return { n, mean, sd, min: Math.min(...v), max: Math.max(...v), ci95: margin === null ? null : { lower: mean - margin, upper: mean + margin, method: "Student-t", degrees_of_freedom: n - 1 } };
 }
 export type MetricRow = { rep_index: number; scenario: string; config: string; phase: string; latency_ms: number; success: boolean; path: string; degraded: boolean; tokens: number | null; http_status: number | null; call_index: number; created_at: string };
-export type PhaseRow = { rep_index: number; scenario: string; config: string; phase: string; status: string; started_at: string | null; completed_at: string | null; recovery_time_s: number | null; breaker_reset_at: string | null };
-export type Batch = { id: string; scenario: string; repetitions: number; requests_per_phase: number; concurrency: number; cooldown_ms: number; status: string; pause_reason: string | null };
+export type PhaseRow = { rep_index: number; scenario: string; config: string; phase: string; status: string; started_at: string | null; completed_at: string | null; recovery_time_s: number | null; breaker_reset_at: string | null; breaker_observation?: { state?: string; opened?: boolean; recovered?: boolean; failures_before_open?: number; consecutive_failures?: number; threshold?: number } };
+export type Batch = { id: string; scenario: string; repetitions: number; requests_per_phase: number; concurrency: number; cooldown_ms: number; status: string; pause_reason: string | null; sweep_id?: string | null };
 export const keyOf = (p: { scenario: string; config: string; phase: string }) => `${p.scenario}/${p.config}/${p.phase}`;
 export function phasePlan(scenario: string) {
   const plan: { scenario: string; config: string; phase: string }[] = [];

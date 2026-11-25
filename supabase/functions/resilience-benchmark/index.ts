@@ -7,6 +7,7 @@
 import { authenticateCronRequest } from "../_shared/cron-auth.ts";
 import { admin, resilientChat, CONFIG } from "../_shared/ai-gateway.ts";
 import { batchBenchmark } from "./batch.ts";
+import { sweepBenchmark } from "./sweep.ts";
 
 const PROMPTS = [
   "Define accessibility in one short sentence.",
@@ -41,6 +42,7 @@ Deno.serve(async (req) => {
   const authFailure = authenticateCronRequest(req);
   if (authFailure) return authFailure;
   const body = await req.json().catch(() => ({}));
+  if (body.concurrency_levels || body.reps_per_level !== undefined || (body.batch_run_id && (await admin().from("benchmark_sweeps").select("id").eq("id", body.batch_run_id).maybeSingle()).data)) return sweepBenchmark(body);
   if (body.batch_run_id || body.repetitions !== undefined || body.scenario === "both" || body.scenario === "primary_failure" || body.action === "summarize") return batchBenchmark(body);
   const db = admin();
 
