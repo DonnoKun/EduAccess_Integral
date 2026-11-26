@@ -33,7 +33,7 @@ export default function ScrollToTopButton() {
   return (
     <Button
       onClick={goTop}
-      className="back-to-top-control fixed right-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 h-12 w-12 min-w-0 rounded-full p-0 opacity-90 shadow-lg md:right-6 md:bottom-6 md:h-auto md:w-auto md:px-4 md:py-3 md:opacity-100"
+      className="back-to-top-control fixed right-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 h-12 w-12 min-w-0 rounded-full p-0 opacity-90 shadow-lg md:right-6 md:bottom-6 md:h-auto md:w-auto md:px-4 md:py-3 md:opacity-100"
       aria-label={t('courses.backToTop')}
     >
       <ArrowUp className="h-5 w-5 md:mr-2" aria-hidden="true" />

@@ -168,7 +168,7 @@ function AppWrapper() {
   
   return (
     <MotionConfig reducedMotion={animationsOn ? "never" : "always"}>
-    <div className="pb-14 md:pb-0">
+    <div className="pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-0">
       <InstallAppBanner />
       <AppContent />
       {isAuthenticated && <MobileBottomNav />}

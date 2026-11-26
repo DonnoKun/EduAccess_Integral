@@ -203,7 +203,7 @@ export default function Onboarding() {
 
   return (
     <div 
-      className="min-h-screen bg-background flex flex-col items-center justify-center p-4 md:p-8 onboarding-page"
+      className="min-h-[100dvh] bg-background flex flex-col items-center justify-start md:justify-center p-4 pb-[calc(2rem+env(safe-area-inset-bottom))] md:p-8 onboarding-page"
       style={{
         fontSize: currentFontSizePx,
         lineHeight: currentLineHeightVal,

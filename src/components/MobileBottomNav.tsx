@@ -44,6 +44,8 @@ export default function MobileBottomNav() {
 
 
   const isActive = (path: string) => location.pathname === path;
+  // Profile setup has its own Back/Next controls at the bottom; the bar would cover them.
+  if (location.pathname.startsWith('/onboarding')) return null;
 
   return (
     <nav 
