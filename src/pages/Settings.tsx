@@ -241,15 +241,15 @@ export default function Settings() {
 
       {/* Header */}
       <header className="z-50 glass-card border-b md:sticky md:top-0">
-        <div className="container mx-auto px-4 min-h-16 py-2 flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-4">
-            <Button variant="ghost" onClick={() => navigate('/dashboard')}>
-              <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
-              {t('common.back')}
+        <div className="container mx-auto px-3 min-h-14 py-2 flex flex-wrap items-center justify-between gap-2 md:px-4 md:min-h-16 md:gap-3">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Button variant="ghost" className="shrink-0 px-2 md:px-4" onClick={() => navigate('/dashboard')} aria-label={t('common.back')}>
+              <ArrowLeft className="h-4 w-4 md:mr-2" aria-hidden="true" />
+              <span className="sr-only md:not-sr-only">{t('common.back')}</span>
             </Button>
             <Link to="/dashboard" className="flex min-w-0 items-center gap-2">
-              <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />
-              <span className="truncate text-lg font-bold sm:text-xl">{t('settings.title')}</span>
+              <Sparkles className="hidden h-6 w-6 shrink-0 text-primary sm:block" aria-hidden="true" />
+              <span className="whitespace-nowrap text-lg font-bold sm:text-xl">{t('settings.title')}</span>
             </Link>
           </div>
           <div className="shrink-0"><LanguageSelector /></div>

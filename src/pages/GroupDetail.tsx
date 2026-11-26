@@ -383,12 +383,12 @@ export default function GroupDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-        <div className="container mx-auto flex flex-wrap items-center gap-3 px-4 py-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/courses')}>
-            <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
-            {t('common.back')}
+        <div className="container mx-auto flex items-center gap-2 px-3 py-2 md:flex-wrap md:gap-3 md:px-4 md:py-4">
+          <Button variant="ghost" size="sm" className="shrink-0 px-2 md:px-3" onClick={() => navigate('/courses')} aria-label={t('common.back')}>
+            <ArrowLeft className="h-4 w-4 md:mr-2" aria-hidden="true" />
+            <span className="sr-only md:not-sr-only">{t('common.back')}</span>
           </Button>
-          <h1 className="break-words font-bold">{group?.name || t('courses.studentTitle')}</h1>
+          <h1 className="min-w-0 break-words font-bold">{group?.name || t('courses.studentTitle')}</h1>
         </div>
       </header>
 
