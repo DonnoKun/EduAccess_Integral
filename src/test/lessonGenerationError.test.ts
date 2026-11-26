@@ -13,4 +13,7 @@ describe('lesson generation recovery', () => {
   it('handles an empty error response without losing recovery', async () => {
     expect(await lessonGenerationError({ context: new Response('') }, 'Unavailable')).toBe('Unavailable');
   });
+  it('does not expose the transport error shown in the screenshot', async () => {
+    expect(await lessonGenerationError({ context: new Response(JSON.stringify({ error: 'Edge Function returned a non-2xx status code' })) }, 'Servicio temporalmente no disponible')).toBe('Servicio temporalmente no disponible');
+  });
 });

@@ -28,4 +28,4 @@
 - Long lesson generation opts into a longer bounded gateway timeout with no retries and a compatible secondary tool request; default service and benchmark policies remain unchanged.
 - Lesson generation uses an SDK primary adapter with reasoning disabled and bounded advisory checks; timeout outcomes never trigger another inference automatically, avoiding duplicate charges.
 - Every user-visible change bumps the app version (settings.about.version in es/en locales and package.json) in the same commit so About always shows the current release.
-- Only educational topics may produce search results or lessons; a cached shared topic guard (_shared/topic-guard.ts) checks new topics server-side so every client and role is covered.
+- Only educational topics may produce search results or lessons; the cached shared topic guard must explicitly approve before inference, fail closed on invalid/unavailable verdicts without retries, and search failures must never substitute demo results that trigger generation. Keep approval parsing runtime-independent in topic-policy.ts so tests do not import Deno infrastructure.

@@ -14,7 +14,7 @@ import { z } from 'npm:zod@3.25.76';
 import { controlTopics, reviewQuality, sectionSchema, structuredOperation } from './review-service.ts';
 import { replaceSection, unavailableQuality } from './quality.ts';
 import { checkRateLimit, resilientChat, TerminalError, TransientError } from '../_shared/ai-gateway.ts';
-import { checkEducationalTopic, notEducationalMessage } from '../_shared/topic-guard.ts';
+import { checkEducationalTopic, notEducationalMessage, TopicValidationUnavailable, topicValidationMessage } from '../_shared/topic-guard.ts';
 import { lessonRules, FORMAT_RULES, LEVEL_RULES } from '../_shared/low-vision.ts';
 import { isAllowedOrigin } from '../_shared/cors.ts';
 
@@ -62,6 +62,12 @@ serve(async (req) => {
       }).safeParse(body);
       if (!parsed.success) return new Response(JSON.stringify({ success: false, error: 'Invalid review request' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       const input = parsed.data;
+      if (input.operation === 'regenerate_section') {
+        let verdict;
+        try { verdict = await checkEducationalTopic(input.title, input.description, input.language); }
+        catch { return new Response(JSON.stringify({ success: false, code: 'TOPIC_VALIDATION_UNAVAILABLE', error: topicValidationMessage(input.language) }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
+        if (!verdict.educational) return new Response(JSON.stringify({ success: false, code: 'NOT_EDUCATIONAL', error: notEducationalMessage(input.language, verdict.reason) }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
       let lesson = input.lesson;
       const oldQuality = lesson.quality as { control_topics?: unknown } | undefined;
       let topics = Array.isArray(oldQuality?.control_topics) && oldQuality.control_topics.length <= 12 && oldQuality.control_topics.every(t => typeof t === 'string' && t.length <= 600) ? oldQuality.control_topics as string[] : [];
@@ -117,7 +123,9 @@ serve(async (req) => {
     const startTime = Date.now();
     // Only educational topics may become lessons (translations of existing lessons are exempt).
     if (!body.originalContent) {
-      const verdict = await checkEducationalTopic(title, description || '', language);
+      let verdict;
+      try { verdict = await checkEducationalTopic(title, description || '', language); }
+      catch { return new Response(JSON.stringify({ success: false, code: 'TOPIC_VALIDATION_UNAVAILABLE', error: topicValidationMessage(language) }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
       if (!verdict.educational) return new Response(JSON.stringify({ success: false, code: 'NOT_EDUCATIONAL', error: notEducationalMessage(language, verdict.reason), suggestions: verdict.suggestions }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -386,6 +394,10 @@ CRITICAL: For each section, include image_prompt and image_alt describing an edu
     );
   } catch (error) {
     console.error("Content generation error:", error);
+    if (error instanceof TopicValidationUnavailable) {
+      const language = req.headers.get('Accept-Language')?.startsWith('en') ? 'en' : 'es';
+      return new Response(JSON.stringify({ success: false, code: 'TOPIC_VALIDATION_UNAVAILABLE', error: topicValidationMessage(language) }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
     if (error instanceof GatewayError) {
       return new Response(JSON.stringify({ success: false, error: error.message, code: error.code }), { status: error.httpStatus || 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }

@@ -2,6 +2,7 @@ import { gatewayFetch } from "../_shared/ai-gateway.ts";
 const gatewayFetchNoFallback = (f: string, u: string, i: any) => gatewayFetch(f, u, i, { secondary: null });
 import { requireUser } from "../_shared/require-user.ts";
 import { englishImagePrompt } from './english-prompt.ts';
+import { checkEducationalTopic, notEducationalMessage, topicValidationMessage } from '../_shared/topic-guard.ts';
 /**
  * EduAccess - AI Course Image Generator Edge Function
  * Generates educational illustrations using Lovable AI image generation
@@ -68,6 +69,12 @@ serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Validate the entire requested subject before prompt translation or image inference.
+    let verdict;
+    try { verdict = await checkEducationalTopic(sectionTitle || 'Ilustración', prompt, language === 'en' ? 'en' : 'es'); }
+    catch { return new Response(JSON.stringify({ success: false, code: 'TOPIC_VALIDATION_UNAVAILABLE', error: topicValidationMessage(language) }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
+    if (!verdict.educational) return new Response(JSON.stringify({ success: false, code: 'NOT_EDUCATIONAL', error: notEducationalMessage(language, verdict.reason) }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
     console.log("🎨 Generating course image:", prompt.slice(0, 80));
 

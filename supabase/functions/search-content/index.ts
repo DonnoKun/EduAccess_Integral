@@ -1,5 +1,5 @@
 import { gatewayFetch } from "../_shared/ai-gateway.ts";
-import { checkEducationalTopic, notEducationalMessage } from "../_shared/topic-guard.ts";
+import { checkEducationalTopic, notEducationalMessage, topicValidationMessage } from "../_shared/topic-guard.ts";
 import { requireUser } from "../_shared/require-user.ts";
 /**
  * EduAccess - AI Educational Content Search Edge Function
@@ -47,8 +47,15 @@ serve(async (req) => {
     const { query, filters, language = "es" } = body;
 
     console.log("🔍 AI Search for:", query, "language:", language);
-    if (typeof query === "string" && query.trim()) {
-      const verdict = await checkEducationalTopic(query, "", language);
+    if (typeof query !== 'string' || !query.trim() || query.length > 600 || !['es', 'en'].includes(language)) {
+      return new Response(JSON.stringify({ success: false, error: 'Invalid search request' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    {
+      let verdict;
+      try { verdict = await checkEducationalTopic(query, "", language); }
+      catch {
+        return new Response(JSON.stringify({ success: true, aiUnavailable: true, results: [], totalEstimated: 0, suggestions: [], noResultsReason: topicValidationMessage(language) }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
       if (!verdict.educational) {
         return new Response(JSON.stringify({ success: true, results: [], totalEstimated: 0, queryClassification: "nonsense", suggestions: verdict.suggestions, noResultsReason: notEducationalMessage(language, verdict.reason) }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }

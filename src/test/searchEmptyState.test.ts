@@ -68,4 +68,12 @@ describe('search empty state before and after a real search', () => {
     expect(useStore.getState().hasSearched).toBe(false);
     expect(useStore.getState().searchResults).toEqual([]);
   });
+  it('does not offer demo lessons when educational verification fails', async () => {
+    mocks.invoke.mockResolvedValue({ error: new Error('Edge Function returned a non-2xx status code'), data: null });
+    const { useStore } = await import('@/store/useStore');
+    await useStore.getState().performSearch('chismes de famosos');
+    expect(useStore.getState().searchResults).toEqual([]);
+    expect(useStore.getState().searchLoading).toBe(false);
+    expect(mocks.invoke).toHaveBeenCalledTimes(1);
+  });
 });

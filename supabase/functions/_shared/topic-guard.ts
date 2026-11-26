@@ -4,6 +4,8 @@
  * Verdicts are cached globally per normalized topic so repeated checks never re-spend credits.
  */
 import { admin, hashRequest, resilientChat } from './ai-gateway.ts';
+import { educationalApproval, TopicValidationUnavailable, type TopicVerdict } from './topic-policy.ts';
+export { TopicValidationUnavailable, topicValidationMessage } from './topic-policy.ts';
 
 const schema = {
   type: 'object', additionalProperties: false,
@@ -15,17 +17,15 @@ const schema = {
   required: ['educational', 'reason', 'suggestions'],
 };
 
-export interface TopicVerdict { educational: boolean; reason: string; suggestions: string[] }
-
 export async function checkEducationalTopic(topic: string, focus: string, language: string): Promise<TopicVerdict> {
   const lang = language === 'en' ? 'English' : 'Spanish';
-  const input = { topic: topic.trim().toLowerCase().slice(0, 300), focus: focus.trim().toLowerCase().slice(0, 600) };
+  if (!topic.trim() || topic.length > 600 || focus.length > 4000) throw new TopicValidationUnavailable();
+  const input = { topic: topic.trim().toLowerCase(), focus: focus.trim().toLowerCase() };
   const name = 'topic-guard:v1';
   const key = { language, input };
   const hash = await hashRequest(name, key);
   const { data: cached } = await admin().from('ai_cache').select('response').eq('request_hash', hash).maybeSingle();
-  let response = cached?.response;
-  if (!response) {
+  return educationalApproval(async () => cached?.response, async () => {
     const result = await resilientChat(name, {
       temperature: 0.1,
       messages: [
@@ -34,15 +34,11 @@ export async function checkEducationalTopic(topic: string, focus: string, langua
       ],
       tools: [{ type: 'function', function: { name: 'result', description: 'Topic verdict', parameters: schema } }],
       tool_choice: { type: 'function', function: { name: 'result' } },
-    }, { primary: 'google/gemini-2.5-flash', cacheKey: key });
-    // Fail open on outage: the generation prompts also restrict output to educational content.
-    if (result.path === 'failed') return { educational: true, reason: '', suggestions: [] };
-    response = result.data;
-  }
-  try {
-    const v = JSON.parse(response?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments);
-    return { educational: v.educational !== false, reason: String(v.reason || ''), suggestions: Array.isArray(v.suggestions) ? v.suggestions.filter((s: unknown) => typeof s === 'string').slice(0, 5) : [] };
-  } catch { return { educational: true, reason: '', suggestions: [] }; }
+    }, { primary: 'google/gemini-2.5-flash', cacheKey: key, maxRetries: 0, secondary: null, fallbackOnTimeout: false });
+    // Never spend on lesson generation without an explicit, valid approval.
+    if (result.path === 'failed') throw new TopicValidationUnavailable();
+    return result.data;
+  });
 }
 
 export function notEducationalMessage(language: string, reason: string) {

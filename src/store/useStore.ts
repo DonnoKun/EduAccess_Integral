@@ -274,20 +274,8 @@ export const useStore = create<GlobalState>()(
           const { data, error } = await Promise.race([searchPromise, timeoutPromise]);
 
           if (error) {
-            console.warn('⚠️ AI search failed, falling back to mock data:', error);
-            const mockData = lang === 'es' ? mockSearchResultsES : mockSearchResults;
-            let results = mockData;
-            if (query.trim()) {
-              const lowerQuery = query.toLowerCase();
-              results = results.filter(
-                (r) =>
-                  r.title.toLowerCase().includes(lowerQuery) ||
-                  r.description.toLowerCase().includes(lowerQuery) ||
-                  r.metadata.tags.some((t) => t.toLowerCase().includes(lowerQuery))
-              );
-            }
-            if (results.length === 0) results = mockData.slice(0, 6);
-            update({ searchResults: results.slice(0, 1), searchLoading: false });
+            console.warn('AI search unavailable; no unverified lessons offered:', error);
+            update({ searchResults: [], searchLoading: false, searchSuggestions: [], searchNoResultsReason: lang === 'es' ? 'No se pudo verificar el tema educativo. No se generó contenido. Inténtalo más tarde.' : 'The educational topic could not be verified. No content was generated. Please try again later.' });
             return;
           }
 
@@ -344,38 +332,12 @@ export const useStore = create<GlobalState>()(
               });
             }
           } else {
-            // API error, fall back to mock data
-            console.warn('⚠️ AI search returned failure, using mock data');
-            const mockData = lang === 'es' ? mockSearchResultsES : mockSearchResults;
-            let results = mockData;
-            if (query.trim()) {
-              const lowerQuery = query.toLowerCase();
-              results = results.filter(
-                (r) =>
-                  r.title.toLowerCase().includes(lowerQuery) ||
-                  r.description.toLowerCase().includes(lowerQuery) ||
-                  r.metadata.tags.some((t) => t.toLowerCase().includes(lowerQuery))
-              );
-            }
-            if (results.length === 0) results = mockData.slice(0, 6);
-            update({ searchResults: results, searchLoading: false });
+            update({ searchResults: [], searchLoading: false, searchSuggestions: [], searchNoResultsReason: lang === 'es' ? 'No se pudo verificar el tema educativo. No se generó contenido. Inténtalo más tarde.' : 'The educational topic could not be verified. No content was generated. Please try again later.' });
           }
         } catch (error) {
           console.error('Search error:', error);
           const lang = localStorage.getItem('i18nextLng')?.split('-')[0] || 'es';
-          const mockData = lang === 'es' ? mockSearchResultsES : mockSearchResults;
-          let results = mockData;
-          if (query.trim()) {
-            const lowerQuery = query.toLowerCase();
-            results = results.filter(
-              (r) =>
-                r.title.toLowerCase().includes(lowerQuery) ||
-                r.description.toLowerCase().includes(lowerQuery) ||
-                r.metadata.tags.some((t) => t.toLowerCase().includes(lowerQuery))
-            );
-          }
-          if (results.length === 0) results = mockData.slice(0, 6);
-          update({ searchResults: results, searchLoading: false });
+          update({ searchResults: [], searchLoading: false, searchSuggestions: [], searchNoResultsReason: lang === 'es' ? 'No se pudo verificar el tema educativo. No se generó contenido. Inténtalo más tarde.' : 'The educational topic could not be verified. No content was generated. Please try again later.' });
           get().trackEvent({ type: 'error', details: { error: 'search_failed' } });
         }
       },
