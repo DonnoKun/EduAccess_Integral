@@ -11,6 +11,7 @@ import { ArrowLeft, BookOpen, Copy, Loader2, Plus, Send, Trash2, Users, EyeOff, 
 import { useCourseCache } from '@/hooks/useCourseCache';
 import { useTranslatedTexts } from '@/hooks/useTranslatedTexts';
 import LessonEditor, { type LessonDraft } from '@/components/LessonEditor';
+import { copiedLesson } from '@/lib/lessonReading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -74,6 +75,42 @@ export default function GroupDetailPage() {
   const [editing, setEditing] = useState<GroupLesson | null>(null);
   const translatedText = useTranslatedTexts([group?.description, ...lessons.map(l => l.description)]);
   const [publishing, setPublishing] = useState<string | null>(null);
+  const [reuseMode, setReuseMode] = useState(false);
+  const [reusable, setReusable] = useState<(GroupLesson & { groupName: string })[]>([]);
+  const [loadingReusable, setLoadingReusable] = useState(false);
+
+  useEffect(() => {
+    if (!openNew || !isTeacher || !currentUser?.id || !groupId) return;
+    let cancelled = false;
+    setLoadingReusable(true);
+    (async () => {
+      const { data: owned, error } = await supabase.from('groups').select('id,name').eq('owner_id', currentUser.id).neq('id', groupId);
+      if (error) { if (!cancelled) toast.error(error.message); return; }
+      const ids = (owned || []).map(g => g.id);
+      if (!ids.length) { if (!cancelled) setReusable([]); return; }
+      const { data: sources, error: sourceError } = await supabase.from('group_lessons').select('*').in('group_id', ids).eq('created_by', currentUser.id).order('updated_at', { ascending: false });
+      if (!cancelled) {
+        if (sourceError) toast.error(sourceError.message);
+        setReusable((sources || []).map(l => ({ ...l, content: l.content as unknown as GroupLesson['content'], status: l.status as GroupLesson['status'], groupName: owned?.find(g => g.id === l.group_id)?.name || '' })));
+      }
+    })().finally(() => { if (!cancelled) setLoadingReusable(false); });
+    return () => { cancelled = true; };
+  }, [openNew, isTeacher, currentUser?.id, groupId]);
+
+  const reuseLesson = async (source: GroupLesson) => {
+    if (!groupId || !currentUser?.id || generating) return;
+    setGenerating(true);
+    try {
+      const draft = drafts[source.id];
+      const payload = copiedLesson(draft || source, groupId, currentUser.id);
+      const { data: copied, error } = await supabase.from('group_lessons').insert(payload).select().single();
+      if (error) throw error;
+      setLessons(prev => [...prev, copied as unknown as GroupLesson]);
+      setOpenNew(false); setReuseMode(false);
+      toast.success(lang === 'es' ? 'Lección copiada como borrador independiente.' : 'Lesson copied as an independent draft.');
+    } catch (error) { toast.error(error instanceof Error ? error.message : t('courses.lessonError')); }
+    finally { setGenerating(false); }
+  };
 
   const load = async () => {
     if (!groupId) return;
@@ -243,7 +280,13 @@ export default function GroupDetailPage() {
               <DialogTitle>{t('courses.newLesson')}</DialogTitle>
               <DialogDescription>{t('courses.newLessonDesc')}</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="flex flex-wrap gap-2" role="tablist" aria-label={lang === 'es' ? 'Origen de la lección' : 'Lesson source'}>
+              <Button variant={!reuseMode ? 'default' : 'outline'} role="tab" aria-selected={!reuseMode} disabled={generating} onClick={() => setReuseMode(false)}>{lang === 'es' ? 'Nueva lección' : 'New lesson'}</Button>
+              <Button variant={reuseMode ? 'default' : 'outline'} role="tab" aria-selected={reuseMode} disabled={generating} onClick={() => setReuseMode(true)}><Copy className="mr-2 h-4 w-4" />{lang === 'es' ? 'Reutilizar una lección existente' : 'Reuse an existing lesson'}</Button>
+            </div>
+            {reuseMode ? <div className="space-y-3 max-h-96 overflow-y-auto">
+              {loadingReusable ? <p role="status">{lang === 'es' ? 'Cargando lecciones…' : 'Loading lessons…'}</p> : !reusable.length ? <p>{lang === 'es' ? 'No hay lecciones propias en otros grupos.' : 'No lessons in your other groups.'}</p> : reusable.map(source => <Button key={source.id} variant="outline" className="h-auto w-full whitespace-normal justify-start text-left" disabled={generating} onClick={() => reuseLesson(source)}><Copy className="mr-2 h-4 w-4 shrink-0" /><span className="min-w-0 break-words">{source.title}<span className="block text-muted-foreground">{source.groupName}</span></span></Button>)}
+            </div> : <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="lesson-title">{t('courses.lessonTitle')}</Label>
                 <Input id="lesson-title" disabled={generating} value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -252,14 +295,14 @@ export default function GroupDetailPage() {
                 <Label htmlFor="lesson-desc">{t('courses.lessonDescription')}</Label>
                 <Textarea id="lesson-desc" disabled={generating} value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
-            </div>
+            </div>}
             {generating && <p role="status" className="text-sm text-muted-foreground">{t('courses.generatingWait')}</p>}
-            <DialogFooter>
+            {!reuseMode && <DialogFooter>
               <Button onClick={handleCreateLesson} disabled={generating || !title.trim()}>
                 {generating && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
                 {t('courses.generateLesson')}
               </Button>
-            </DialogFooter>
+            </DialogFooter>}
           </DialogContent>
         </Dialog>
       )}

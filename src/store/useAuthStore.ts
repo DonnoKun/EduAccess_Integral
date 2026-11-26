@@ -6,6 +6,7 @@
  */
 
 import { create } from 'zustand';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { brokeredPreviewStorage } from '@/integrations/supabase/previewAuthStorage';
 import { clearAllUserData, resetVisualSettingsToDefault } from '@/lib/resetVisualSettings';
@@ -340,7 +341,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       });
 
       if (error) {
-        const msg = data?.error || error.message || 'Error al registrar';
+        const detail = error instanceof FunctionsHttpError ? await error.context.json().catch(() => null) : null;
+        const msg = detail?.error || data?.error || error.message || 'Error al registrar';
         set({ error: msg, isLoading: false });
         return { success: false, error: msg };
       }

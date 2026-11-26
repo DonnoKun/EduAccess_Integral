@@ -12,7 +12,8 @@ import { generateChatCompletion, generateResponse, GatewayError } from 'npm:@lov
 import { z } from 'npm:zod@3.25.76';
 import { controlTopics, reviewQuality, sectionSchema, structuredOperation } from './review-service.ts';
 import { replaceSection, unavailableQuality } from './quality.ts';
-import { checkRateLimit } from '../_shared/ai-gateway.ts';
+import { checkRateLimit, resilientChat } from '../_shared/ai-gateway.ts';
+import { lessonRules, FORMAT_RULES, LEVEL_RULES } from '../_shared/low-vision.ts';
 import { isAllowedOrigin } from '../_shared/cors.ts';
 
 const corsHeaders = {
@@ -28,6 +29,9 @@ interface ContentRequest {
   source: string;
   language?: string;
   originalContent?: Record<string, unknown>;
+  educationLevel?: string;
+  sourceUrl?: string;
+  directSearch?: boolean;
 }
 
 serve(async (req) => {
@@ -99,17 +103,20 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true, texts: out }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const { title, description, contentType, source, language = "es" } = body;
+    const { title, description, contentType, source, language = "es", educationLevel = 'high' } = body;
     if (typeof title !== 'string' || !title.trim() || !['es', 'en'].includes(language) || (body.originalContent && (typeof body.originalContent !== 'object' || Array.isArray(body.originalContent)))) {
       return new Response(JSON.stringify({ success: false, error: 'Invalid lesson request' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     console.log("📚 Generating course content for:", title);
+    if (body.directSearch && (!FORMAT_RULES[contentType] || !LEVEL_RULES[educationLevel] || (body.sourceUrl && !/^https?:\/\//.test(body.sourceUrl)))) {
+      return new Response(JSON.stringify({ success: false, error: 'Invalid lesson format, level or resource URL' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
     const startTime = Date.now();
 
     const langName = language === "es" ? "Spanish" : "English";
     let topics: string[] = [];
-    if (!body.originalContent) {
+    if (!body.originalContent && !body.directSearch) {
       try { topics = await controlTopics(auth.user.id, language, title, description || ''); } catch { /* Generation still works without the advisory outline. */ }
     }
 
@@ -161,6 +168,7 @@ The content should be university-level quality, at least 3000 words, written as 
 - Description: ${description}
 - Content Type: ${contentType}
 - Source: ${source}
+${body.directSearch ? `- Selected resource URL: ${body.sourceUrl || ''}\n${lessonRules(contentType, educationLevel)}` : ''}
 
 Write everything in ${langName}. Do NOT use asterisks or markdown formatting.
 ABSOLUTE LANGUAGE RULE: The ENTIRE output (titles, sections, examples, exercises, solutions, summary, image_alt) MUST be written in ${langName}, even if the Title or Description above is written in a different language. If they are in another language, translate them internally and answer only in ${langName}. Never mix languages.
@@ -172,11 +180,10 @@ CRITICAL: For each section, include image_prompt and image_alt describing an edu
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000);
 
-    const aiResponse = await generateChatCompletion({
-          model: "google/gemini-2.5-flash",
+    const generationRequest = {
           temperature: body.originalContent ? 0.1 : 0.5,
           messages: [
-            { role: "system", content: systemPrompt },
+            { role: "system", content: systemPrompt + (body.directSearch && !body.originalContent ? `\nFINAL OVERRIDING REQUIREMENTS:\n${lessonRules(contentType, educationLevel)}\nLength must fit this level and format, not a universal 3000-word target. Include the selected resource URL exactly in sources; do not claim to have read or transcribed remote content that was not supplied.` : '') },
             { role: "user", content: userPrompt + (topics.length ? `\nCover this control syllabus thoroughly: ${JSON.stringify(topics)}` : '') },
           ],
           tools: [
@@ -194,6 +201,7 @@ CRITICAL: For each section, include image_prompt and image_alt describing an edu
                     },
                     sections: {
                       type: "array",
+                      ...(body.directSearch && contentType === 'exercise' ? { maxItems: 2 } : {}),
                       items: {
                         type: "object",
                         properties: {
@@ -238,6 +246,7 @@ CRITICAL: For each section, include image_prompt and image_alt describing an edu
                     },
                     exercises: {
                       type: "array",
+                      ...(body.directSearch && contentType === 'exercise' ? { minItems: 10, maxItems: 12 } : {}),
                       items: {
                         type: "object",
                         properties: {
@@ -306,7 +315,10 @@ CRITICAL: For each section, include image_prompt and image_alt describing an edu
             type: "function",
             function: { name: "course_content" },
           },
-    }, { signal: controller.signal });
+    };
+    const generation = await resilientChat('generate-course-content', generationRequest, { primary: 'google/gemini-2.5-flash', cacheKey: { userId: auth.user.id, body }, timeoutMs: 90000, maxRetries: 0, secondaryRequest: { ...generationRequest, reasoning_effort: 'none' } });
+    if (generation.path === 'failed') throw new Error('Lesson generation unavailable');
+    const aiResponse = generation.data;
     clearTimeout(timeoutId);
 
     const toolCall = aiResponse.choices?.[0]?.message?.tool_calls?.[0];
@@ -316,8 +328,10 @@ CRITICAL: For each section, include image_prompt and image_alt describing an edu
     }
 
     const courseContent = JSON.parse(toolCall.function.arguments);
+    courseContent.language = language;
+    if (body.directSearch && !body.originalContent && contentType === 'exercise' && (courseContent.sections?.length > 2 || courseContent.exercises?.length < 10 || courseContent.exercises?.length > 12)) throw new Error('Lesson did not match requested exercise format');
     if (body.originalContent) validateTranslation(body.originalContent, courseContent);
-    else courseContent.quality = topics.length ? await reviewQuality(auth.user.id, language, courseContent, topics) : unavailableQuality(courseContent, language);
+    else if (!body.directSearch) courseContent.quality = topics.length ? await reviewQuality(auth.user.id, language, courseContent, topics) : unavailableQuality(courseContent, language);
     const totalTime = Date.now() - startTime;
 
     console.log("✅ Course content generated in", totalTime, "ms");

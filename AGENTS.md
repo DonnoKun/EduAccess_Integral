@@ -19,3 +19,10 @@
 
 - Concurrency sweeps use immutable parents, stored-phase/call completion checks and idempotent metric writes; explicitly authorized incomplete-cell restarts clean only that exact cell under a lease, while completed cells are never replayed to avoid rebilling.
 - Content-quality signals are additive lesson JSON, backed by cached control topics and advisory review; mark edited signals stale and regenerate only the selected draft section so publication and student snapshots remain isolated.
+- Search and group lesson pages share LessonReader and LessonToolbar; loaders and progress persistence remain separate to preserve pinned student snapshots.
+- Search lesson cache identity includes resource, format, level and language; direct searches generate only the selected version and omit advisory inference intended for teacher review.
+- Opened search lessons use existing user_library rows with content_data pin/open metadata; retain saved/completed status so analytics and existing policies stay compatible.
+- Image descriptions use actual multimodal image input and versioned caches; refuse metadata-only descriptions rather than invent visual evidence.
+- Normalize the complete image-generation prompt to English through the cached resilient gateway after bitmap lookup, so automatic and manual callers share one boundary.
+- Teacher lesson reuse copies owned content into a new unpublished row; never reuse the original identifier or trigger inference.
+- Long lesson generation opts into a longer bounded gateway timeout with no retries and a compatible secondary tool request; default service and benchmark policies remain unchanged.

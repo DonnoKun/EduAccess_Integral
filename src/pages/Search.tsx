@@ -202,7 +202,7 @@ export default function SearchPage() {
     const queryParam = searchParams.get('q');
     if (queryParam) {
       setLocalQuery(queryParam);
-      performSearch(queryParam);
+      if (useStore.getState().searchQuery !== queryParam || !useStore.getState().searchResults.length) performSearch(queryParam);
     } else {
       performSearch('');
     }
@@ -211,7 +211,6 @@ export default function SearchPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearchParams(localQuery ? { q: localQuery } : {});
-    performSearch(localQuery);
   };
 
   const handleLogout = async () => {
@@ -223,7 +222,7 @@ export default function SearchPage() {
   const handleContentClick = (contentId: string) => {
     const content = searchResults.find((r) => r.id === contentId);
     if (content) {
-      selectContent(content);
+      selectContent({ ...content, contentType: searchFilters.contentType?.[0] || content.contentType, educationLevel: searchFilters.educationLevel?.[0] || content.educationLevel });
       const navState = { fromSearch: true, searchQuery: localQuery };
       if (content.accessibilityStatus === 'needs_remediation') {
         navigate(`/remediate/${contentId}`, { state: navState });
@@ -240,7 +239,7 @@ export default function SearchPage() {
   ) => {
     const currentValues = (searchFilters[type] as string[]) || [];
     const newValues = checked
-      ? [...currentValues, value]
+      ? (type === 'accessibilityStatus' ? [...currentValues, value] : [value])
       : currentValues.filter((v) => v !== value);
     
     setSearchFilters({
@@ -430,7 +429,7 @@ export default function SearchPage() {
               <DropdownMenuContent className="bg-background border">
                 <DropdownMenuLabel>{t('search.filters.filterByType')}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {(Object.entries(contentTypeLabels) as [ContentType, string][]).map(([type, label]) => (
+                {(Object.entries(contentTypeLabels) as [ContentType, string][]).filter(([type]) => type !== 'video').map(([type, label]) => (
                   <DropdownMenuCheckboxItem key={type} checked={searchFilters.contentType?.includes(type)} onCheckedChange={(checked) => handleFilterChange('contentType', type, checked)}>
                     {label}
                   </DropdownMenuCheckboxItem>

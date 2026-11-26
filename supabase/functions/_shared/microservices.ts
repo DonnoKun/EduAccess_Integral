@@ -1,42 +1,46 @@
 /** S3 student microservices: alt-text, data-image-description, ocr-tts, wcag-verify. */
 import { resilientChat } from "./ai-gateway.ts";
 import { z } from "./validate.ts";
+import { LOW_VISION_AUDIENCE, visionContent, shortAlt } from './low-vision.ts';
 
 export const Input = z.object({
   title: z.string().min(1).max(500),
   description: z.string().max(20000).default(""),
-  imageUrl: z.string().url().max(2000).optional(),
+  imageUrl: z.string().max(12000000).refine(v => /^https:\/\//i.test(v) || /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(v), 'Expected HTTPS image or image data URL').optional(),
   html: z.string().max(200000).optional(),
   language: z.enum(["es", "en"]).default("es"),
 });
 export type MsInput = z.infer<typeof Input>;
 
-async function structured(fn: string, system: string, user: unknown, schema: Record<string, unknown>, lang: string) {
-  const content: unknown[] = [{ type: "text", text: typeof user === "string" ? user : JSON.stringify(user) }];
+async function structured(fn: string, system: string, user: unknown, schema: Record<string, unknown>, lang: string, imageUrl?: string) {
+  if (!imageUrl) throw Object.assign(new Error('An actual image is required; metadata cannot establish its contents'), { status: 400 });
+  const content = visionContent(user, imageUrl);
   const r = await resilientChat(fn, {
-    messages: [{ role: "system", content: `${system}\nRespond in ${lang === "es" ? "Spanish" : "English"}. Use the provided tool.` }, { role: "user", content }],
+    messages: [{ role: "system", content: `${system}\nAudience: ${LOW_VISION_AUDIENCE}. Describe ONLY what is visible in the supplied image, never infer from its title. If text or values are unreadable, explicitly say so; do not invent them. Respond in ${lang === "es" ? "Spanish" : "English"}. Use the provided tool.` }, { role: "user", content }],
     tools: [{ type: "function", function: { name: "result", description: "Structured result", parameters: { type: "object", ...schema } } }],
     tool_choice: { type: "function", function: { name: "result" } },
   }, { cacheKey: { fn, user, lang } });
   if (r.path === "failed") throw Object.assign(new Error(`${fn} unavailable`), { status: 503 });
   const args = r.data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-  return { ...(args ? JSON.parse(args) : {}), _meta: { path: r.path, provider: r.provider, degraded: r.degraded } };
+  const result = args ? JSON.parse(args) : {};
+  if (typeof result.altText === 'string') result.altText = shortAlt(result.altText);
+  return { ...result, _meta: { path: r.path, provider: r.provider, degraded: r.degraded } };
 }
 
 export const altText = (i: MsInput) => structured("alt-text",
-  "Generate concise WCAG-compliant alt text (max 125 chars) and a long description for the main image(s) of this educational content.",
+  "Inspect the actual image. Generate concise alt text (max 125 characters) and a rich long description: overall scene, every significant element, embedded text, colors, positions and relationships. Explain the educational meaning without substituting the title for observation.",
   { title: i.title, description: i.description, imageUrl: i.imageUrl },
-  { properties: { altText: { type: "string" }, longDescription: { type: "string" } }, required: ["altText", "longDescription"] }, i.language);
+  { properties: { altText: { type: "string", maxLength: 125 }, longDescription: { type: "string" } }, required: ["altText", "longDescription"] }, i.language, i.imageUrl);
 
 export const dataImageDescription = (i: MsInput) => structured("data-image-description",
-  "Describe charts, diagrams and data images for blind readers: chart type, axes, key values, trends and the main takeaway.",
+  "Inspect the actual chart or diagram: chart type, both axes and units, scale, legend, each series and its colors, visible numeric values, comparisons, trends, spatial relationships and takeaway. Transcribe legible data points from the image; never supply guessed values.",
   { title: i.title, description: i.description, imageUrl: i.imageUrl },
-  { properties: { chartType: { type: "string" }, summary: { type: "string" }, dataPoints: { type: "array", items: { type: "string" } } }, required: ["chartType", "summary", "dataPoints"] }, i.language);
+  { properties: { chartType: { type: "string" }, summary: { type: "string" }, dataPoints: { type: "array", items: { type: "string" } } }, required: ["chartType", "summary", "dataPoints"] }, i.language, i.imageUrl);
 
 export const ocrTts = (i: MsInput) => structured("ocr-tts",
-  "Extract the text likely present in images of this content (OCR) and prepare it as a clean script for text-to-speech (expand abbreviations, read symbols).",
+  "Read only text actually visible in the image (OCR) and prepare it as a clean script for text-to-speech (expand abbreviations, read symbols). Mark illegible passages rather than guessing.",
   { title: i.title, description: i.description, imageUrl: i.imageUrl },
-  { properties: { extractedText: { type: "string" }, ttsScript: { type: "string" } }, required: ["extractedText", "ttsScript"] }, i.language);
+  { properties: { extractedText: { type: "string" }, ttsScript: { type: "string" } }, required: ["extractedText", "ttsScript"] }, i.language, i.imageUrl);
 
 /** Deterministic WCAG checks (no AI cost) on HTML when provided. */
 export function wcagVerify(i: MsInput) {

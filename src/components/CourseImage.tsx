@@ -7,6 +7,10 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ImageIcon } from 'lucide-react';
+import { cachedAI } from '@/lib/aiCache';
+import { shortAlt } from '../../supabase/functions/_shared/low-vision';
+
+const imageRequests = new Map<string, Promise<{ imageUrl?: string; success?: boolean; error?: string }>>();
 
 interface CourseImageProps {
   prompt: string;
@@ -21,26 +25,35 @@ interface CourseImageProps {
   sectionContext?: string;
   /** Called when image finishes loading or errors */
   onStatusChange?: (status: 'loading' | 'done' | 'error') => void;
+  onDescription?: (description: string) => void;
 }
 
-export default function CourseImage({ prompt, alt, cacheAlt, className, lang = 'es', sectionTitle, sectionContext, onStatusChange }: CourseImageProps) {
+export default function CourseImage({ prompt, alt, cacheAlt, className, lang = 'es', sectionTitle, sectionContext, onStatusChange, onDescription }: CourseImageProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [observedAlt, setObservedAlt] = useState('');
+  const [longDescription, setLongDescription] = useState('');
+  const [descriptionFailed, setDescriptionFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    setIsLoading(true); setError(false); setImageUrl(null);
     onStatusChange?.('loading');
 
     const generateImage = async () => {
       try {
-        const { data, error: fnError } = await supabase.functions.invoke('generate-course-image', {
-          body: { prompt, alt: cacheAlt || alt, sectionTitle, sectionContext },
-        });
+        const key = JSON.stringify([prompt, cacheAlt || alt, sectionTitle, sectionContext]);
+        let request = imageRequests.get(key);
+        if (!request) {
+          request = supabase.functions.invoke('generate-course-image', { body: { prompt, alt: cacheAlt || alt, sectionTitle, sectionContext } }).then(({ data, error }) => { if (error) throw error; return data; }).finally(() => imageRequests.delete(key));
+          imageRequests.set(key, request);
+        }
+        const data = await request;
 
         if (cancelled) return;
-        if (fnError || !data?.success || !data?.imageUrl) {
-          console.warn('Image generation failed:', fnError || data?.error);
+        if (!data?.success || !data?.imageUrl) {
+          console.warn('Image generation failed:', data?.error);
           setError(true);
           onStatusChange?.('error');
           return;
@@ -62,6 +75,23 @@ export default function CourseImage({ prompt, alt, cacheAlt, className, lang = '
     generateImage();
     return () => { cancelled = true; };
   }, [prompt]);
+
+  useEffect(() => {
+    if (!imageUrl) return;
+    let cancelled = false;
+    setObservedAlt(''); setLongDescription(''); setDescriptionFailed(false);
+    (async () => {
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(imageUrl));
+      const hash = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
+      const description = await cachedAI(`image-vision-v1:${hash}:${lang}`, 'Image description', lang, async () => {
+        const { data, error } = await supabase.functions.invoke('alt-text', { body: { title: 'Educational illustration', imageUrl, language: lang === 'en' ? 'en' : 'es' } });
+        if (error || !data?.result?.longDescription) throw new Error('Image description unavailable');
+        return data.result as { altText: string; longDescription: string };
+      }, result => Boolean(result.longDescription));
+      if (!cancelled) { setObservedAlt(description.altText); setLongDescription(description.longDescription); onDescription?.(description.longDescription); }
+    })().catch(() => { if (!cancelled) setDescriptionFailed(true); });
+    return () => { cancelled = true; };
+  }, [imageUrl, lang]);
 
   if (error) return null;
 
@@ -85,12 +115,14 @@ export default function CourseImage({ prompt, alt, cacheAlt, className, lang = '
     <figure className={`rounded-lg overflow-hidden my-4 ${className || ''}`}>
       <img
         src={imageUrl}
-        alt={alt}
+        alt={shortAlt(observedAlt || alt)}
         className="w-full rounded-lg shadow-sm"
         loading="lazy"
       />
-      <figcaption className="text-xs text-muted-foreground text-center mt-2 italic px-2">
-        {alt}
+      <figcaption className="text-muted-foreground mt-3 px-2 space-y-2 break-words">
+        <p>{observedAlt || shortAlt(alt)}</p>
+        {longDescription && <p className="whitespace-pre-line">{longDescription}</p>}
+        {descriptionFailed && <p>{lang === 'es' ? 'La descripción visual detallada no está disponible.' : 'The detailed visual description is unavailable.'}</p>}
       </figcaption>
     </figure>
   );

@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useStore } from '@/store/useStore';
 import type { SearchResult } from '@/types';
+import { libraryContent, splitLibrary } from '@/lib/libraryRecords';
 
 interface LibraryItem {
   id: string;
@@ -24,6 +25,7 @@ interface LibraryItem {
 function mapItemToSearchResult(item: any): SearchResult {
   const contentData = item.content_data as any;
   return {
+    ...contentData,
     id: contentData?.id || item.id,
     title: contentData?.title || '',
     description: contentData?.description || '',
@@ -57,23 +59,11 @@ export function useLibrarySync() {
       }
 
       if (data && data.length > 0) {
-        const saved: SearchResult[] = [];
-        const completed: SearchResult[] = [];
-
-        data.forEach((item: any) => {
-          if (item.content_data) {
-            const searchResult = mapItemToSearchResult(item);
-            if (item.status === 'completed') {
-              completed.push(searchResult);
-            }
-            saved.push(searchResult);
-          }
-        });
-
-        useStore.setState({ savedContent: saved, completedContent: completed });
+        useStore.setState(splitLibrary(data.map(item => ({ ...item, content_data: mapItemToSearchResult(item) }))));
         loadedRef.current = true;
-        console.log(`📚 Loaded ${saved.length} saved, ${completed.length} completed from DB`);
+        console.log(`Loaded ${data.length} library records`);
       } else {
+        useStore.setState(splitLibrary([]));
         loadedRef.current = true;
       }
     } catch (err) {
@@ -96,21 +86,7 @@ export function useLibrarySync() {
         return;
       }
 
-      const saved: SearchResult[] = [];
-      const completed: SearchResult[] = [];
-
-      (data || []).forEach((item: any) => {
-        if (item.content_data) {
-          const searchResult = mapItemToSearchResult(item);
-          if (item.status === 'completed') {
-            completed.push(searchResult);
-          }
-          saved.push(searchResult);
-        }
-      });
-
-      useStore.setState({ savedContent: saved, completedContent: completed });
-      console.log(`🔄 Realtime sync: ${saved.length} saved, ${completed.length} completed`);
+      useStore.setState(splitLibrary((data || []).map(item => ({ ...item, content_data: mapItemToSearchResult(item) }))));
     } catch (err) {
       console.error('Realtime reload error:', err);
     }
@@ -164,7 +140,7 @@ export function useLibrarySync() {
       // Search for existing entry by content ID inside JSONB
       const { data: existing, error: searchError } = await supabase
         .from('user_library')
-        .select('id, status')
+        .select('id, status, content_data')
         .eq('user_id', currentUser.id)
         .eq('content_data->>id', content.id)
         .maybeSingle();
@@ -173,10 +149,14 @@ export function useLibrarySync() {
         console.error('❌ Error searching library:', searchError);
       }
 
+      const merged = libraryContent(content, existing?.content_data as unknown as SearchResult | undefined, status === 'recent');
+      if (status === 'unpinned') merged.pinned = false;
+      const storedStatus = ['recent', 'unpinned'].includes(status) ? (existing?.status || 'saved') : status;
       if (existing) {
         // Update existing entry
         const updatePayload: Record<string, any> = {
-          status,
+          status: storedStatus,
+          content_data: merged,
           updated_at: new Date().toISOString(),
         };
         // When marking as completed, also set progress to 100%
@@ -198,8 +178,8 @@ export function useLibrarySync() {
         // Insert new entry
         const insertPayload: Record<string, any> = {
           user_id: currentUser.id,
-          content_data: content as any,
-          status,
+          content_data: merged as any,
+          status: storedStatus,
         };
         if (status === 'completed') {
           insertPayload.progress_percentage = 100;
@@ -215,10 +195,11 @@ export function useLibrarySync() {
           console.log(`✅ Library item inserted: ${content.title} (${status})`);
         }
       }
+      await reloadLibrary();
     } catch (err) {
       console.error('❌ Library save error:', err);
     }
-  }, [currentUser?.id]);
+  }, [currentUser?.id, reloadLibrary]);
 
   const removeContentFromDB = useCallback(async (contentId: string) => {
     if (!currentUser?.id) return;

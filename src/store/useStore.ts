@@ -51,6 +51,7 @@ interface GlobalState {
   remediationProgress: RemediationProgress;
   
   // Library
+  recentContent: SearchResult[];
   savedContent: SearchResult[];
   completedContent: SearchResult[];
   
@@ -107,6 +108,8 @@ const initialSessionMetrics: SessionMetrics = {
   errorEncountered: 0,
 };
 
+let latestSearch = 0;
+
 export const useStore = create<GlobalState>()(
   persist(
     (set, get) => ({
@@ -126,6 +129,7 @@ export const useStore = create<GlobalState>()(
       currentContent: null,
       remediatedContent: null,
       remediationProgress: initialRemediationProgress,
+      recentContent: [],
       savedContent: [],
       completedContent: [],
       sidebarOpen: true,
@@ -195,7 +199,9 @@ export const useStore = create<GlobalState>()(
       setSearchQuery: (query) => set({ searchQuery: query }),
 
       performSearch: async (query) => {
-        set({ searchLoading: true, searchError: null, searchQuery: query, searchSuggestions: [], searchNoResultsReason: null, searchQueryClassification: null });
+        const searchId = ++latestSearch;
+        const update = (patch: Partial<GlobalState>) => { if (searchId === latestSearch) set(patch); };
+        update({ searchLoading: true, searchError: null, searchQuery: query, searchSuggestions: [], searchNoResultsReason: null, searchQueryClassification: null });
         get().trackEvent({ type: 'search', details: { query } });
 
         // Track real searches in history (only non-empty queries)
@@ -203,7 +209,7 @@ export const useStore = create<GlobalState>()(
           const current = get().recentSearches;
           const filtered = current.filter((s) => s.toLowerCase() !== query.toLowerCase());
           const updated = [query, ...filtered].slice(0, 10);
-          set({ recentSearches: updated });
+          update({ recentSearches: updated });
 
           // Persist to DB (fire-and-forget)
           supabase.auth.getUser().then(({ data: { user } }) => {
@@ -268,7 +274,7 @@ export const useStore = create<GlobalState>()(
               );
             }
             if (results.length === 0) results = mockData.slice(0, 6);
-            set({ searchResults: results, searchLoading: false });
+            update({ searchResults: results, searchLoading: false });
             return;
           }
 
@@ -299,16 +305,16 @@ export const useStore = create<GlobalState>()(
               // Apply local filters
               let results = aiResults;
               if (filters.contentType?.length) {
-                results = results.filter((r) => filters.contentType!.includes(r.contentType));
+                results = results.filter((r) => filters.contentType?.includes(r.contentType));
               }
               if (filters.educationLevel?.length) {
-                results = results.filter((r) => filters.educationLevel!.includes(r.educationLevel));
+                results = results.filter((r) => filters.educationLevel?.includes(r.educationLevel));
               }
               if (filters.accessibilityStatus?.length) {
-                results = results.filter((r) => filters.accessibilityStatus!.includes(r.accessibilityStatus));
+                results = results.filter((r) => filters.accessibilityStatus?.includes(r.accessibilityStatus));
               }
 
-              set({ 
+              update({
                 searchResults: results, 
                 searchLoading: false,
                 searchQueryClassification: classification,
@@ -318,7 +324,7 @@ export const useStore = create<GlobalState>()(
             } else {
               // AI intentionally returned 0 results (unknown entity, nonsense, etc.)
               console.log('ℹ️ AI returned 0 results intentionally:', noResultsReason);
-              set({ 
+              update({
                 searchResults: [], 
                 searchLoading: false,
                 searchQueryClassification: classification,
@@ -341,7 +347,7 @@ export const useStore = create<GlobalState>()(
               );
             }
             if (results.length === 0) results = mockData.slice(0, 6);
-            set({ searchResults: results, searchLoading: false });
+            update({ searchResults: results, searchLoading: false });
           }
         } catch (error) {
           console.error('Search error:', error);
@@ -358,7 +364,7 @@ export const useStore = create<GlobalState>()(
             );
           }
           if (results.length === 0) results = mockData.slice(0, 6);
-          set({ searchResults: results, searchLoading: false });
+          update({ searchResults: results, searchLoading: false });
           get().trackEvent({ type: 'error', details: { error: 'search_failed' } });
         }
       },
@@ -509,6 +515,7 @@ export const useStore = create<GlobalState>()(
         currentTheme: state.currentTheme,
         readingGuideEnabled: state.readingGuideEnabled,
         recentSearches: state.recentSearches,
+        recentContent: state.recentContent,
         savedContent: state.savedContent,
         completedContent: state.completedContent,
       }),

@@ -12,7 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import AudioPlayer from '@/components/AudioPlayer';
+import LessonReader from '@/components/LessonReader';
+import LessonToolbar from '@/components/LessonToolbar';
 import { useCourseCache } from '@/hooks/useCourseCache';
 import CourseImage from '@/components/CourseImage';
 
@@ -242,15 +243,7 @@ export default function LessonViewerPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b bg-background">
-        <div className="container mx-auto flex flex-wrap items-center gap-3 px-4 py-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate(`/courses/${groupId}`)}>
-            <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
-            {t('courses.backToLessons')}
-          </Button>
-          <h1 className="min-w-0 max-w-full break-words font-bold">{lesson.title}</h1>
-        </div>
-      </header>
+      <LessonToolbar title={lesson.title} onBack={() => navigate(`/courses/${groupId}`)} />
 
       <main className="container mx-auto max-w-3xl space-y-6 px-4 py-6" aria-busy={translating}>
         {isStudent && <p className="text-muted-foreground">{t('courses.pinnedVersion')}</p>}
@@ -279,146 +272,7 @@ export default function LessonViewerPage() {
           </div>
         )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('contentViewer.introduction', 'Introducción')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <AudioPlayer text={fullText} lang={readingLanguage} storageKey={`${currentUser?.id}:${lessonId}:intro:${readingLanguage}`} />
-            <p className="whitespace-pre-line break-words">{content.introduction}</p>
-          </CardContent>
-        </Card>
-
-        {(content.sections || []).map((section, i) => (
-          <Card key={i}>
-            <CardHeader>
-              <CardTitle className="break-words">{section.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <AudioPlayer
-                text={`${section.title}. ${section.content}. ${section.image_alt || ''}`}
-                lang={readingLanguage}
-                storageKey={`${currentUser?.id}:${lessonId}:s${i}:${readingLanguage}`}
-              />
-              <p className="whitespace-pre-line break-words">{section.content}</p>
-              {section.image_prompt && (
-                <CourseImage
-                  prompt={section.image_prompt}
-                  alt={section.image_alt || section.title}
-                  lang={lang}
-                  cacheAlt={original.sections?.[i]?.image_alt || original.sections?.[i]?.title}
-                  sectionTitle={original.sections?.[i]?.title || section.title}
-                  sectionContext={original.sections?.[i]?.content || section.content}
-                />
-              )}
-              {section.keyPoints && section.keyPoints.length > 0 && (
-                <ul className="list-disc space-y-1 pl-6">
-                  {section.keyPoints.map((point, k) => (
-                    <li key={k} className="break-words">{point}</li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-
-
-        {(content.examples || []).length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('contentViewer.examples', 'Ejemplos prácticos')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <AudioPlayer text={examplesText} lang={readingLanguage} storageKey={`${currentUser?.id}:${lessonId}:examples:${readingLanguage}`} />
-              {(content.examples || []).map((example, i) => (
-                <div key={i} className="space-y-1">
-                  <h3 className="font-semibold break-words">{example.title}</h3>
-                  <p className="whitespace-pre-line break-words">{example.description}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
-        {exercises.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('contentViewer.exercises', 'Ejercicios de práctica')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <AudioPlayer text={exercisesText} lang={readingLanguage} storageKey={`${currentUser?.id}:${lessonId}:exercises:${readingLanguage}`} />
-              {exercises.map((exercise, i) => (
-                <div key={i} className="space-y-2">
-                  <p className="break-words font-medium">{i + 1}. {exercise.question}</p>
-                  <Textarea
-                    value={answers[i] || ''}
-                    onChange={(e) => setAnswers((prev) => ({ ...prev, [i]: e.target.value }))}
-                    aria-label={t('courses.yourAnswer')}
-                  />
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button variant="outline" onClick={() => handleCheck(i)}>
-                      {t('courses.checkAnswer')}
-                    </Button>
-                    {results[i] && (
-                      <span role="status" className="break-words">
-                        {t(`courses.answer_${results[i]}`)}
-                      </span>
-                    )}
-                  </div>
-                  {results[i] && results[i] !== 'correct' && exercise.solution && (
-                    <p className="whitespace-pre-line break-words text-muted-foreground">
-                      {exercise.solution}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
-        {content.summary && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('contentViewer.summary', 'Resumen')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <AudioPlayer text={content.summary} lang={readingLanguage} storageKey={`${currentUser?.id}:${lessonId}:summary:${readingLanguage}`} />
-              <p className="whitespace-pre-line break-words">{content.summary}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {(content.sources || []).length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('courses.sourcesTitle')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-muted-foreground">{t('courses.sourcesNote')}</p>
-              <ul className="list-disc space-y-2 pl-6">
-                {(content.sources || []).map((source, i) => {
-                  const href = safeSourceUrl(source.url);
-                  return (
-                    <li key={i} className="break-words">
-                      {href ? (
-                        <a href={href} target="_blank" rel="noopener noreferrer" className="underline">
-                          {source.name}
-                        </a>
-                      ) : (
-                        <span>{source.name}</span>
-                      )}
-                      {source.description && (
-                        <span className="text-muted-foreground"> — {source.description}</span>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </CardContent>
-          </Card>
-        )}
-
-
+        <LessonReader content={content} original={original} lang={readingLanguage} storageKey={`${currentUser?.id}:${lessonId}`} answers={answers} results={results} onAnswer={(i, value) => setAnswers(prev => ({ ...prev, [i]: value }))} onCheck={handleCheck} />
 
         {isStudent && (
           <Button disabled={!progressId} onClick={handleComplete}>

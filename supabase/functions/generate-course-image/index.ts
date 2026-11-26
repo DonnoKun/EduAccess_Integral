@@ -1,6 +1,7 @@
 import { gatewayFetch } from "../_shared/ai-gateway.ts";
 const gatewayFetchNoFallback = (f: string, u: string, i: any) => gatewayFetch(f, u, i, { secondary: null });
 import { requireUser } from "../_shared/require-user.ts";
+import { englishImagePrompt } from './english-prompt.ts';
 /**
  * EduAccess - AI Course Image Generator Edge Function
  * Generates educational illustrations using Lovable AI image generation
@@ -39,7 +40,7 @@ serve(async (req) => {
 
     const { prompt, alt, sectionTitle, sectionContext } = await req.json();
 
-    if (!prompt) {
+    if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 4000 || (alt !== undefined && typeof alt !== 'string') || (sectionTitle !== undefined && typeof sectionTitle !== 'string') || (sectionContext !== undefined && typeof sectionContext !== 'string')) {
       return new Response(
         JSON.stringify({ success: false, error: "Missing prompt" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -47,8 +48,9 @@ serve(async (req) => {
     }
 
     // --- Persistent cache: generate an illustration only once per section ---
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceKey) throw new Error('Image cache unavailable');
     const admin = createClient(supabaseUrl, serviceKey);
     const cacheKey = await makeCacheKey([prompt, sectionTitle || "", alt || ""]);
 
@@ -76,9 +78,9 @@ serve(async (req) => {
       ? `The section covers: ${sectionContext.slice(0, 300)}.`
       : "";
 
-    const fullPrompt = [
+    const fullPrompt = await englishImagePrompt([
       "Generate a precise, educational illustration for a textbook.",
-      "Style: modern flat illustration with clear colors, labeled diagrams where relevant, educational and accessible.",
+      "Style: clear high-contrast educational diagrams for students with low vision, large easily distinguished elements and uncluttered spatial relationships.",
       "IMPORTANT: The illustration must accurately depict the specific topic described below. Do NOT add unrelated elements.",
       "Do NOT include any text overlays or watermarks.",
       contextClue,
@@ -86,7 +88,7 @@ serve(async (req) => {
       `Specific subject to illustrate: ${prompt}`,
     ]
       .filter(Boolean)
-      .join(" ");
+      .join(" "));
 
     // 45-second timeout for image generation
     const controller = new AbortController();

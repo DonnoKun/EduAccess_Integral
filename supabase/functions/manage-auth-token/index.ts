@@ -5,6 +5,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
+import { isDuplicateEmail } from '../_shared/low-vision.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -76,9 +77,9 @@ serve(async (req) => {
 
       if (error) {
         // Handle duplicate email
-        if (error.message?.includes("already been registered") || error.message?.includes("already exists")) {
+        if (isDuplicateEmail(error)) {
           return new Response(
-            JSON.stringify({ error: "Este correo ya está registrado. Usa 'Olvidé mi token' para obtener uno nuevo." }),
+            JSON.stringify({ code: 'email_exists', error: "Este correo ya tiene una cuenta, independientemente del rol. Inicia sesión o utiliza otro correo. / This email already has an account, regardless of role. Sign in or use a different email." }),
             { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }

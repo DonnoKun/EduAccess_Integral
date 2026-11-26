@@ -78,6 +78,9 @@ export default function Dashboard() {
     readingGuideEnabled,
     toggleReadingGuide,
     recentSearches,
+    recentContent,
+    savedContent,
+    selectContent,
   } = useStore();
   const { isAuthenticated, logout, currentUser, role } = useAuthStore();
   const { i18n } = useTranslation();
@@ -503,6 +506,13 @@ export default function Dashboard() {
             </>
           ) : (
             <>
+          <section className="space-y-4" aria-labelledby="recent-lessons">
+            <h2 id="recent-lessons" className="font-bold">{lang === 'es' ? 'Lecciones recientes' : 'Recent lessons'}</h2>
+            {!recentContent.length && <p className="text-muted-foreground">{lang === 'es' ? 'Aún no hay lecciones abiertas.' : 'No opened lessons yet.'}</p>}
+            <div className="grid gap-3">{recentContent.slice(0, 6).map(content => <Button key={content.id} variant="outline" className="h-auto justify-start whitespace-normal text-left" onClick={() => { selectContent(content); navigate(`/content/${content.id}`); }}>{content.title}</Button>)}</div>
+            <h2 className="font-bold">{lang === 'es' ? 'Lecciones guardadas' : 'Saved lessons'}</h2>
+            <div className="grid gap-3">{savedContent.slice(0, 6).map(content => <Button key={content.id} variant="outline" className="h-auto justify-start whitespace-normal text-left" onClick={() => { selectContent(content); navigate(`/content/${content.id}`); }}>{content.title}</Button>)}</div>
+          </section>
           {/* Quick Stats & Recent Activity */}
           <div className="grid md:grid-cols-2 gap-6">
             {/* Recent Searches */}

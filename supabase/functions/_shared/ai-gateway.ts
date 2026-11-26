@@ -140,9 +140,10 @@ export const forcedFailAdapter = (model: string): ProviderAdapter => ({
   async call() { throw new TransientError(`${model} injected outage`, 503); },
 });
 
-export async function resilientChat(functionName: string, req: ChatRequest, opts: { primary?: string; secondary?: string | null; cacheKey?: unknown; bench?: BenchOptions } = {}): Promise<AIResult> {
+export async function resilientChat(functionName: string, req: ChatRequest, opts: { primary?: string; secondary?: string | null; cacheKey?: unknown; bench?: BenchOptions; timeoutMs?: number; maxRetries?: number; secondaryRequest?: ChatRequest } = {}): Promise<AIResult> {
   const start = Date.now();
   const bench = opts.bench;
+  const callOptions = { timeoutMs: opts.timeoutMs ?? CONFIG.timeoutMs, maxRetries: opts.maxRetries ?? CONFIG.maxRetries, sleepFn: sleep };
   const primaryModel = opts.primary ?? CONFIG.primaryModel;
   const secondaryModel = opts.secondary === undefined ? CONFIG.secondaryModel : opts.secondary;
   // benchmark uses an isolated breaker so real users are never affected
@@ -190,7 +191,7 @@ export async function resilientChat(functionName: string, req: ChatRequest, opts
   if (tryPrimary) {
     const isTrial = dec.transitionTo === "HALF_OPEN";
     try {
-      const { json, status } = await callWithRetry(primaryAdapter, req);
+      const { json, status } = await callWithRetry(primaryAdapter, req, callOptions);
       await writeB(isTrial ? { ...(row as BreakerRow), state: "HALF_OPEN" } : row, breakerAfter(row, true));
       return finish({ data: json, path: "primary", provider: primaryModel, degraded: false, status });
     } catch (e) {
@@ -210,7 +211,7 @@ export async function resilientChat(functionName: string, req: ChatRequest, opts
   // 2) secondary
   if (secondaryModel) {
     try {
-      const { json, status } = await callWithRetry(bench?.forceSecondaryFail ? forcedFailAdapter(secondaryModel) : gatewayAdapter(secondaryModel), req);
+      const { json, status } = await callWithRetry(bench?.forceSecondaryFail ? forcedFailAdapter(secondaryModel) : gatewayAdapter(secondaryModel), opts.secondaryRequest ?? req, callOptions);
       return finish({ data: json, path: "secondary", provider: secondaryModel, degraded: false, status });
     } catch (e) {
       lastStatus = (e as TransientError).status ?? lastStatus;

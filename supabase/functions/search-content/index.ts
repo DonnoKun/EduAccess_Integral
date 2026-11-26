@@ -48,7 +48,7 @@ serve(async (req) => {
     console.log("🔍 AI Search for:", query, "language:", language);
 
     const filterContext = filters
-      ? `\nFilters applied: ${JSON.stringify(filters)}`
+      ? `\nRequested output format: ${filters.contentType?.[0] || 'article'}. Requested learning level: ${filters.educationLevel?.[0] || 'high'}. Find sources suitable for ONE lesson at this level, not several level variants. For exercise prioritize practice resources; diagram prioritize visual explanations; textbook prioritize actual textbook chapters; article prioritize explanatory articles. Filters: ${JSON.stringify(filters)}`
       : "";
 
     const langName = language === "es" ? "Spanish" : "English";
@@ -310,8 +310,8 @@ First, classify this query, then return results accordingly. Remember: NEVER inv
         source: r.source,
         url: r.url,
         description: r.description,
-        contentType: r.contentType,
-        educationLevel: r.educationLevel,
+        contentType: filters?.contentType?.[0] || r.contentType,
+        educationLevel: filters?.educationLevel?.[0] || r.educationLevel,
         accessibilityStatus: r.accessibilityStatus,
         accessibilityIssues: r.accessibilityIssues || [],
         metadata: {

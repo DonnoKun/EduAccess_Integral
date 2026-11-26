@@ -229,12 +229,12 @@ export async function deleteGroup(groupId: string) {
   return supabase.from('groups').delete().eq('id', groupId);
 }
 
-/** AI-generated deep links often 404; link to the source's site root instead. */
+/** Preserve specific resource links while rejecting executable URL schemes. */
 export function safeSourceUrl(url: string): string | null {
   try {
     const u = new URL(url);
     if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
-    return u.origin;
+    return u.href;
   } catch {
     return null;
   }

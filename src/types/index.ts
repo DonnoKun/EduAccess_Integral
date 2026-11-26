@@ -64,6 +64,9 @@ export interface ContentMetadata {
 }
 
 export interface SearchResult {
+  pinned?: boolean;
+  lastOpenedAt?: string;
+  lessonContent?: import('@/lib/courses').LessonContent;
   id: string;
   title: string;
   source: ContentSource;

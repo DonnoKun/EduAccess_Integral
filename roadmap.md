@@ -27,3 +27,11 @@
 - [x] Finish live sweep d4b06465-43d7-42b7-a9ab-ab1323c87cb1: 12/12 cells, 72 completed phases and 2,880 stored calls; concurrency-1 export unchanged, only 5/10/20 resumed. Idempotent metric persistence and exact-cell restart cleanup added; all levels have invariant availability/error/path, breaker opening at five failures and recovery in all repetitions; summarize JSON saved.
 - [x] Add cached control topics, advisory quality review and individual section regeneration to content generation; live lesson generated with review flag and 12 unit tests passing.
 - [x] Show and persist teacher coverage review; teacher test account verified editing, stale signals, saved review on reload and section-only regeneration preserving all other sections/exercises; desktop/mobile checked.
+- [x] Align remediation with low vision and pass actual images to vision descriptions; live chart inspection read 7, 13 and 19 despite misleading title.
+- [x] Include key points in section narration and share lesson reading layout; narration order regression tested. Audible device output remains device-dependent.
+- [x] Make student search single-level, single-format and parameter-aware; unsupported video option hidden. Live elementary worksheet generated 12 exercises in one lesson; format/level cache isolation tested.
+- [x] Persist opened lessons as recent, separate from pinned library items; live student reopening from dashboard restored answer without explicit save; mobile width checked.
+- [x] Normalize complete image-model prompts to English on automatic/manual paths through cached resilient translation; deployed. New image generation not exercised to avoid unnecessary inference.
+- [x] Copy teacher-owned lessons between groups without inference; independent copy regression tested.
+- [ ] Verify teacher reuse end-to-end — temporary teacher session stayed in onboarding and could not reach group controls; all temporary data removed.
+- [x] Enforce duplicate-email rejection regardless of role; live uppercase duplicate rejected for both roles with 409. Eight test files, 38 tests passed; current build OK.

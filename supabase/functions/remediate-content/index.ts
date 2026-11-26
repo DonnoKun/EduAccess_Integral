@@ -1,6 +1,7 @@
 import { aiEndpoint, jsonRes } from "../_shared/ai-endpoint.ts";
 import { resilientChat } from "../_shared/ai-gateway.ts";
 import { z } from "../_shared/validate.ts";
+import { LOW_VISION_AUDIENCE } from '../_shared/low-vision.ts';
 
 const Body = z.object({
   title: z.string().min(1).max(500),
@@ -15,15 +16,15 @@ const Body = z.object({
 async function remediate(input: z.infer<typeof Body>) {
   const { title, description, contentType, source, url, language } = input;
   const startTime = Date.now();
-    const systemPrompt = `You are an accessibility remediation AI for educational content. You help make content accessible to people with visual impairments.
+    const systemPrompt = `You are an accessibility remediation AI for educational content for ${LOW_VISION_AUDIENCE}. Reinforce visual reading, not an audio-only experience.
 
 You must respond in ${language === 'es' ? 'Spanish' : 'English'}.
 
 Given educational content metadata, perform these tasks:
 1. ANALYSIS: Analyze the content for accessibility issues (missing alt-text, complex language, no audio alternative, etc.)
-2. ALT-TEXT: Generate descriptive alt-text for any images/diagrams that would be in this type of content
+2. ALT-TEXT: No actual image is supplied here. Return an empty altText array; never invent image descriptions from metadata. Actual image description is handled by the vision microservice.
 3. SIMPLIFICATION: Rewrite the description in simpler, more accessible language (target: middle school reading level)
-4. OCR: Describe what text would likely be extracted from images/diagrams in this content
+4. OCR: Return an empty extractedText string because no actual image is supplied; never invent OCR.
 5. ACCESSIBILITY_SCORE: Rate the content's current accessibility from 0-100
 
 You MUST use the provided tool to return structured results.`;
