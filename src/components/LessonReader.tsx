@@ -6,6 +6,8 @@ import AudioPlayer from '@/components/AudioPlayer';
 import CourseImage from '@/components/CourseImage';
 import { safeSourceUrl, type LessonContent } from '@/lib/courses';
 import { lessonNarration, sectionNarration } from '@/lib/lessonReading';
+import { useStore } from '@/store/useStore';
+import { lessonModality } from '@/lib/lessonModality';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 type Result = 'correct' | 'partial' | 'incorrect';
@@ -25,7 +27,9 @@ export default function LessonReader({ content, original = content, lang, storag
   const { t } = useTranslation();
   const [solutions, setSolutions] = useState<Set<number>>(new Set());
   const [imageDescriptions, setImageDescriptions] = useState<Record<number, string>>({});
-  const audio = (text: string, key: string) => <AudioPlayer text={text} lang={lang} storageKey={`${storageKey}:${key}:${lang}`} />;
+  const profile = useStore(s => s.visualProfile);
+  const { showAudio, showImages } = lessonModality(profile?.preferences.preferredModality, profile?.technicalParameters.enableTTS);
+  const audio = (text: string, key: string) => !showAudio ? null : <AudioPlayer text={text} lang={lang} storageKey={`${storageKey}:${key}:${lang}`} />;
   return <div className="space-y-8 min-w-0">
     {audio(lessonNarration(content), 'all')}
     {content.introduction && <section className="space-y-4" aria-labelledby="lesson-introduction">
@@ -37,7 +41,7 @@ export default function LessonReader({ content, original = content, lang, storag
       <h2 id={`lesson-section-${i}`} className="font-bold break-words">{section.title}</h2>
       {audio(sectionNarration({ ...section, image_alt: imageDescriptions[i] || section.image_alt }), `s${i}`)}
       <p className="lesson-text whitespace-pre-line break-words">{section.content}</p>
-      {section.image_prompt && <CourseImage prompt={section.image_prompt} alt={section.image_alt || section.title} lang={lang}
+      {showImages && section.image_prompt && <CourseImage prompt={section.image_prompt} alt={section.image_alt || section.title} lang={lang}
         cacheAlt={original.sections?.[i]?.image_alt || original.sections?.[i]?.title}
         sectionTitle={original.sections?.[i]?.title || section.title} sectionContext={original.sections?.[i]?.content || section.content}
         onDescription={description => setImageDescriptions(prev => ({ ...prev, [i]: description }))} />}

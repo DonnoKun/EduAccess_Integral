@@ -43,7 +43,8 @@ import { useStore } from '@/store/useStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProfileSync } from '@/hooks/useProfileSync';
 import LanguageSelector from '@/components/LanguageSelector';
-import type { ThemeMode, ContrastMode } from '@/types';
+import type { ThemeMode, ContrastMode, PreferredModality } from '@/types';
+import { syncModalityWithTTS } from '@/lib/lessonModality';
 
 type SettingsTab = 'profile' | 'appearance' | 'accessibility' | 'data' | 'about';
 
@@ -464,6 +465,7 @@ export default function Settings() {
                       checked={visualProfile.technicalParameters.enableTTS}
                       onCheckedChange={(enabled) =>
                         updateVisualProfile({
+                          preferences: { ...visualProfile.preferences, preferredModality: syncModalityWithTTS(visualProfile.preferences.preferredModality, enabled) },
                           technicalParameters: {
                             ...visualProfile.technicalParameters,
                             enableTTS: enabled,
@@ -471,6 +473,30 @@ export default function Settings() {
                         })
                       }
                     />
+                  </div>
+
+                  {/* Preferred modality */}
+                  <div className="space-y-3">
+                    <Label className="settings-toggle-label">{t('onboarding.step4.title')}</Label>
+                    <p className="settings-toggle-description">{t('onboarding.step4.description')}</p>
+                    <RadioGroup value={visualProfile.preferences.preferredModality} className="grid gap-3"
+                      onValueChange={(v) => {
+                        const m = v as PreferredModality;
+                        updateVisualProfile({
+                          preferences: { ...visualProfile.preferences, preferredModality: m },
+                          technicalParameters: { ...visualProfile.technicalParameters, enableTTS: m !== 'visual' },
+                        });
+                      }}>
+                      {(['visual', 'audio', 'mixed'] as const).map((m) => (
+                        <Label key={m} htmlFor={`set-modality-${m}`} className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer min-w-0">
+                          <RadioGroupItem id={`set-modality-${m}`} value={m} className="mt-1 shrink-0" />
+                          <span className="min-w-0 break-words">
+                            <span className="block font-semibold">{t(`onboarding.step4.${m}`)}</span>
+                            <span className="block text-muted-foreground font-normal">{t(`onboarding.step4.${m}Desc`)}</span>
+                          </span>
+                        </Label>
+                      ))}
+                    </RadioGroup>
                   </div>
                 </CardContent>
               </Card>

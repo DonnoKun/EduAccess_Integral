@@ -1,3 +1,4 @@
+import { useStore } from '@/store/useStore';
 /**
  * EduAccess - Platform Tutorial
  * Interactive step-by-step guide for new users showing all platform features
@@ -221,7 +222,9 @@ export default function PlatformTutorial({ open, onClose }: PlatformTutorialProp
   const [currentStep, setCurrentStep] = useState(0);
   const role = useAuthStore((s) => s.role);
   const steps = role === 'teacher' ? teacherSteps : tutorialSteps;
-  const [isMuted, setIsMuted] = useState(false);
+  const ttsOn = useStore(s => s.visualProfile?.technicalParameters?.enableTTS !== false);
+  const [isMuted, setIsMuted] = useState(!ttsOn);
+  useEffect(() => { setIsMuted(!ttsOn); }, [ttsOn]);
   const { i18n } = useTranslation();
   const lang = i18n.language?.split('-')[0] || 'es';
   const isES = lang === 'es';

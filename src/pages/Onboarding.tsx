@@ -346,32 +346,31 @@ export default function Onboarding() {
                       setLineSpacing(rec.lineSpacing);
                       setContrast(rec.contrast);
                     }}>
-                      <SelectTrigger id="snellen" className="text-lg">
+                      <SelectTrigger id="snellen" className="text-lg h-auto min-h-12 py-3 whitespace-normal text-left leading-snug [&>span]:line-clamp-none">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {snellenOptions.map((option) => (
-                          <SelectItem key={option} value={option} className="text-lg">
+                          <SelectItem key={option} value={option} className="text-lg py-3 whitespace-normal leading-snug">
                             {option} {option === '6/6' && t('onboarding.step1.normalVision')}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground leading-relaxed break-words">
                       ℹ️ {t('onboarding.step1.tooltip')}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground leading-relaxed break-words">
                       {t('onboarding.step1.autoAdjust')}
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-lg bg-secondary/50">
+                  <div className="p-4 rounded-lg bg-secondary/50 space-y-2 leading-relaxed break-words">
                     <p className="text-sm">
                       <strong>{t('onboarding.step1.calculatedValues')}</strong>
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      {t('onboarding.step1.logMAR')}: {logMAR.toFixed(2)} · {t('onboarding.step1.severity')}: {severity}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{t('onboarding.step1.logMAR')}: {logMAR.toFixed(2)}</p>
+                    <p className="text-sm text-muted-foreground">{t('onboarding.step1.severity')}: {severity}</p>
                   </div>
                 </div>
               )}
