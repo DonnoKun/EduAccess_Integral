@@ -63,13 +63,21 @@ export default function ContentViewer() {
         if (!lesson) {
           const original = current.lessonContent || await getCachedCourse(key, lang === 'es' ? 'en' : 'es');
           const data = await cachedAI(aiCacheKey('search-lesson-v4', key, lang), current.title, lang, async () => {
-            const { data, error } = await supabase.functions.invoke('generate-course-content', { body: {
-              title: current.title, description: current.description, contentType: current.contentType === 'video' ? 'article' : current.contentType,
-              educationLevel: current.educationLevel, source: current.source, sourceUrl: current.url, language: lang, directSearch: true,
-              ...(original ? { originalContent: original } : {}),
-            } });
-            if (error || !data?.success || !data.content) throw new Error(data?.error || error?.message || 'Lesson unavailable');
-            return data.content;
+            // Translations are strictly validated and may be rejected once; retry one time automatically.
+            // New generations are never replayed, so a failed lesson is not billed twice.
+            const attempts = original ? 2 : 1;
+            let lastError = 'Lesson unavailable';
+            for (let attempt = 0; attempt < attempts && !cancelled; attempt++) {
+              const { data, error } = await supabase.functions.invoke('generate-course-content', { body: {
+                title: current.title, description: current.description, contentType: current.contentType === 'video' ? 'article' : current.contentType,
+                educationLevel: current.educationLevel, source: current.source, sourceUrl: current.url, language: lang, directSearch: true,
+                ...(original ? { originalContent: original } : {}),
+              } });
+              if (!error && data?.success && data.content) return data.content;
+              lastError = data?.error || error?.message || lastError;
+              if (/402|429|credits/i.test(lastError)) break;
+            }
+            throw new Error(lastError);
           }, value => Boolean(value?.introduction));
           lesson = { ...data, language: lang };
           if (lesson) await saveCourseToCache(key, lang, lesson as Parameters<typeof saveCourseToCache>[2]);
