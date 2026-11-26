@@ -227,6 +227,8 @@ export default function SearchPage() {
     }
     autoOpen.current = Boolean(localQuery.trim());
     setSearchParams(localQuery ? { q: localQuery } : {});
+    // Re-submitting the same text (e.g. after changing level/type) must search again.
+    if (localQuery.trim() && localQuery === searchParams.get('q')) performSearch(localQuery);
   };
 
   const handleLogout = async () => {

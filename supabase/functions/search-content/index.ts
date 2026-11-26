@@ -48,7 +48,7 @@ serve(async (req) => {
     console.log("🔍 AI Search for:", query, "language:", language);
 
     const filterContext = filters
-      ? `\nRequested output format: ${filters.contentType?.[0] || 'article'}. Requested learning level: ${filters.educationLevel?.[0] || 'high'}. Find sources suitable for ONE lesson at this level, not several level variants. For exercise prioritize practice resources; diagram prioritize visual explanations; textbook prioritize actual textbook chapters; article prioritize explanatory articles. Filters: ${JSON.stringify(filters)}`
+      ? `\nRequested output format: ${filters.contentType?.[0] || 'article'}. Requested learning level: ${filters.educationLevel?.[0] || 'high'}. Find sources suitable for ONE lesson at this level, not several level variants. IMPORTANT: the format and level describe the lesson EduAccess will write itself from the source, NOT a required type of source. Any real source about the topic (for example a Wikipedia article or Khan Academy page) is acceptable for any format or level. NEVER return zero results for a valid educational topic because no source of that exact type or level exists. For exercise prioritize practice resources; diagram prioritize visual explanations; textbook prioritize actual textbook chapters; article prioritize explanatory articles. Filters: ${JSON.stringify(filters)}`
       : "";
 
     const langName = language === "es" ? "Spanish" : "English";
@@ -302,6 +302,19 @@ First, classify this query, then return results accordingly. Remember: NEVER inv
       oer: "#2196F3",
       arxiv: "#B31B1B",
     };
+
+    // A valid topic always yields one usable source: the lesson is written by EduAccess at the
+    // requested format/level, so a missing source of that exact type must not block the student.
+    if (!(searchData.results || []).length && ["educational_topic", "known_figure"].includes(searchData.queryClassification)) {
+      const host = language === "es" ? "es" : "en";
+      searchData.results = [{
+        title: searchQuery, source: "wikipedia",
+        url: `https://${host}.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(searchQuery)}`,
+        description: searchQuery, contentType: filters?.contentType?.[0] || "article", educationLevel: filters?.educationLevel?.[0] || "high",
+        accessibilityStatus: "partial", tags: [searchQuery],
+      }];
+      searchData.noResultsReason = null;
+    }
 
     const results = (searchData.results || []).map(
       (r: any, index: number) => ({
