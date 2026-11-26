@@ -38,6 +38,8 @@ import {
   fetchGroupRoster,
   enrollStudentByEmail,
   removeStudent,
+  fetchGroupInvitations,
+  type SentInvitation,
   type Group,
   type GroupLesson,
   type RosterEntry,
@@ -62,6 +64,7 @@ export default function GroupDetailPage() {
   const [group, setGroup] = useState<Group | null>(null);
   const [lessons, setLessons] = useState<GroupLesson[]>([]);
   const [roster, setRoster] = useState<RosterEntry[]>([]);
+  const [invites, setInvites] = useState<SentInvitation[]>([]);
   const [progressRows, setProgressRows] = useState<ProgressRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -123,6 +126,7 @@ export default function GroupDetailPage() {
       const { data: savedDrafts } = await supabase.from('lesson_drafts').select('lesson_id,payload');
       setDrafts(Object.fromEntries((savedDrafts || []).map(d => [d.lesson_id, d.payload as unknown as LessonDraft])));
       setRoster(await fetchGroupRoster(groupId));
+      setInvites(await fetchGroupInvitations(groupId));
       const { data: p } = await supabase
         .from('lesson_progress')
         .select('lesson_id, student_id, progress_percentage, completed, time_spent_seconds')
@@ -249,6 +253,7 @@ export default function GroupDetailPage() {
     }
     setStudentEmail('');
     setRoster(await fetchGroupRoster(groupId));
+    setInvites(await fetchGroupInvitations(groupId));
     toast.success(t('courses.studentAdded'));
   };
 
@@ -458,6 +463,36 @@ export default function GroupDetailPage() {
                       {t('courses.addStudent')}
                     </Button>
                   </form>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('courses.sentInvitations')}</CardTitle>
+                  <CardDescription>{t('courses.sentInvitationsDesc')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {invites.length === 0 ? (
+                    <p className="text-muted-foreground">{t('courses.noSentInvitations')}</p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {invites.map((inv) => {
+                        const fmt = (d: string | null) => d ? new Date(d).toLocaleString(lang) : '—';
+                        const statusKey = inv.status === 'accepted' ? 'inviteAccepted' : inv.status === 'declined' ? 'inviteDeclined' : inv.seen_at ? 'inviteSeen' : 'inviteNotSeen';
+                        return (
+                          <li key={inv.id} className="rounded-md border p-3 space-y-1 break-words">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-medium">{inv.student_name || inv.student_email || t('courses.unnamedStudent')}</span>
+                              <Badge variant={inv.status === 'declined' ? 'destructive' : inv.status === 'accepted' ? 'default' : 'secondary'}>{t(`courses.${statusKey}`)}</Badge>
+                            </div>
+                            {inv.student_email && <p className="text-muted-foreground">{inv.student_email}</p>}
+                            <p>{t('courses.inviteSentAt')}: {fmt(inv.sent_at)}</p>
+                            <p>{t('courses.inviteSeenAt')}: {fmt(inv.seen_at)}</p>
+                            <p>{t('courses.inviteRespondedAt')}: {fmt(inv.responded_at)}</p>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                 </CardContent>
               </Card>
               {roster.length === 0 ? (

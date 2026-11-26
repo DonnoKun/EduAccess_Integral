@@ -213,7 +213,18 @@ export async function acceptInvitation(id: string): Promise<boolean> {
 }
 
 export async function declineInvitation(id: string) {
-  return supabase.from('group_invitations' as any).delete().eq('id', id);
+  return supabase.rpc('decline_group_invitation' as any, { _invitation_id: id });
+}
+
+export interface SentInvitation {
+  id: string; student_name: string; student_email: string | null;
+  status: 'pending' | 'accepted' | 'declined';
+  sent_at: string; seen_at: string | null; responded_at: string | null;
+}
+
+export async function fetchGroupInvitations(groupId: string): Promise<SentInvitation[]> {
+  const { data } = await supabase.rpc('get_group_invitations' as any, { _group_id: groupId });
+  return ((data as any[]) || []) as SentInvitation[];
 }
 
 export async function removeStudent(groupId: string, studentId: string) {

@@ -373,6 +373,9 @@ export type Database = {
           created_at: string
           group_id: string
           id: string
+          responded_at: string | null
+          seen_at: string | null
+          status: string
           student_id: string
           teacher_id: string
         }
@@ -380,6 +383,9 @@ export type Database = {
           created_at?: string
           group_id: string
           id?: string
+          responded_at?: string | null
+          seen_at?: string | null
+          status?: string
           student_id: string
           teacher_id: string
         }
@@ -387,6 +393,9 @@ export type Database = {
           created_at?: string
           group_id?: string
           id?: string
+          responded_at?: string | null
+          seen_at?: string | null
+          status?: string
           student_id?: string
           teacher_id?: string
         }
@@ -877,6 +886,10 @@ export type Database = {
         Args: { _limit: number; _user_id: string }
         Returns: boolean
       }
+      decline_group_invitation: {
+        Args: { _invitation_id: string }
+        Returns: Json
+      }
       enroll_student_by_email: {
         Args: { _email: string; _group_id: string }
         Returns: Json
@@ -893,6 +906,18 @@ export type Database = {
       }
       get_benchmark_metrics: { Args: { _run_id: string }; Returns: Json }
       get_course_cache: { Args: { _key: string }; Returns: Json }
+      get_group_invitations: {
+        Args: { _group_id: string }
+        Returns: {
+          id: string
+          responded_at: string
+          seen_at: string
+          sent_at: string
+          status: string
+          student_email: string
+          student_name: string
+        }[]
+      }
       get_group_roster: {
         Args: { _group_id: string }
         Returns: {

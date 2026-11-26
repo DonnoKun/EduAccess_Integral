@@ -283,7 +283,7 @@
     },
     "about": {
       "title": "About EduAccess",
-      "version": "Version 1.14.0 (Doctoral Thesis Prototype) · Updated Nov 2026",
+      "version": "Version 1.15.0 (Doctoral Thesis Prototype) · Updated Nov 2026",
       "description": "EduAccess Integral is a learning platform for students with low vision (mild to moderate visual impairment). It uses AI to create lessons from real sources, adapted to each student's level, content type and visual profile, with read-aloud, exercises, described images and groups where teachers publish lessons and track progress.",
       "research": "Research Project",
       "researchDesc": "This prototype is part of a doctoral thesis that evaluates a five-service architecture (content aggregation, visual profiling, accessibility remediation, AI orchestration and content delivery) and measures its resilience to AI failures. It builds on Michael (2024), Jeanneret & Baudet (2022), ISO/IEC 24751 and WCAG 2.1 AA.",
@@ -501,6 +501,16 @@
     "invitationsDesc": "A teacher invited you to their group. Accept only if you know them.",
     "acceptInvitation": "Accept",
     "declineInvitation": "Decline",
-    "invitationDeclined": "Invitation declined"
+    "invitationDeclined": "Invitation declined",
+    "sentInvitations": "Sent invitations",
+    "sentInvitationsDesc": "Record of each email invitation: when you sent it, when the student saw it and how they answered.",
+    "noSentInvitations": "You haven't sent any email invitations yet.",
+    "inviteNotSeen": "Sent, not seen",
+    "inviteSeen": "Seen, no answer",
+    "inviteAccepted": "Accepted",
+    "inviteDeclined": "Declined",
+    "inviteSentAt": "Sent",
+    "inviteSeenAt": "Seen",
+    "inviteRespondedAt": "Answered"
   }
 }

@@ -99,6 +99,13 @@
       "when": 1795718645769,
       "tag": "0013_harden_roles_progress",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795718759388,
+      "tag": "0014_invitation_status_tracking",
+      "breakpoints": true
     }
   ]
 }
