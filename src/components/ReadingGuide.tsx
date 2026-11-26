@@ -22,8 +22,18 @@ export default function ReadingGuide({ enabled }: ReadingGuideProps) {
     if (!uid) return;
     const sync = async () => {
       if (document.visibilityState !== 'visible') return;
-      const { data } = await supabase.from('profiles').select('reading_guide_enabled').eq('user_id', uid).maybeSingle();
-      if (data) useStore.setState({ readingGuideEnabled: Boolean(data.reading_guide_enabled) });
+      const { data } = await supabase.from('profiles').select('reading_guide_enabled,current_theme').eq('user_id', uid).maybeSingle();
+      if (!data) return;
+      useStore.setState({ readingGuideEnabled: Boolean(data.reading_guide_enabled) });
+      const theme = data.current_theme as ReturnType<typeof useStore.getState>['currentTheme'] | null;
+      // Apply a theme chosen on another device; skip while onboarding previews own the styles.
+      if (theme && theme !== useStore.getState().currentTheme && !location.pathname.startsWith('/onboarding')) {
+        const root = document.documentElement;
+        root.classList.remove('light', 'dark', 'high-contrast', 'inverted');
+        root.setAttribute('data-theme', theme);
+        if (theme !== 'light') root.classList.add(theme);
+        useStore.setState({ currentTheme: theme });
+      }
     };
     document.addEventListener('visibilitychange', sync);
     window.addEventListener('focus', sync);
