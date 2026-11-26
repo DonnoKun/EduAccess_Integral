@@ -4,6 +4,7 @@
  * Student: browse published lessons of the group.
  */
 
+import GenerationSteps from '@/components/GenerationSteps';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -296,7 +297,7 @@ export default function GroupDetailPage() {
                 <Textarea id="lesson-desc" disabled={generating} value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
             </div>}
-            {generating && <p role="status" className="text-sm text-muted-foreground">{t('courses.generatingWait')}</p>}
+            {generating && !reuseMode && <GenerationSteps lang={lang} />}
             {!reuseMode && <DialogFooter>
               <Button onClick={handleCreateLesson} disabled={generating || !title.trim()}>
                 {generating && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}

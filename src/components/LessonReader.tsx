@@ -31,12 +31,12 @@ export default function LessonReader({ content, original = content, lang, storag
     {content.introduction && <section className="space-y-4" aria-labelledby="lesson-introduction">
       <h2 id="lesson-introduction" className="font-bold break-words">{t('contentViewer.introduction', 'Introducción')}</h2>
       {audio(content.introduction, 'intro')}
-      <p className="whitespace-pre-line break-words">{content.introduction}</p>
+      <p className="lesson-text whitespace-pre-line break-words">{content.introduction}</p>
     </section>}
     {(content.sections || []).map((section, i) => <section key={i} className="space-y-4 border-t pt-6" aria-labelledby={`lesson-section-${i}`}>
       <h2 id={`lesson-section-${i}`} className="font-bold break-words">{section.title}</h2>
       {audio(sectionNarration({ ...section, image_alt: imageDescriptions[i] || section.image_alt }), `s${i}`)}
-      <p className="whitespace-pre-line break-words">{section.content}</p>
+      <p className="lesson-text whitespace-pre-line break-words">{section.content}</p>
       {section.image_prompt && <CourseImage prompt={section.image_prompt} alt={section.image_alt || section.title} lang={lang}
         cacheAlt={original.sections?.[i]?.image_alt || original.sections?.[i]?.title}
         sectionTitle={original.sections?.[i]?.title || section.title} sectionContext={original.sections?.[i]?.content || section.content}
@@ -49,7 +49,7 @@ export default function LessonReader({ content, original = content, lang, storag
     {!!content.examples?.length && <section className="space-y-4 border-t pt-6">
       <h2 className="font-bold">{t('contentViewer.examples', 'Ejemplos prácticos')}</h2>
       {audio(content.examples.map(e => `${e.title}. ${e.description}`).join('. '), 'examples')}
-      {content.examples.map((example, i) => <div key={i} className="space-y-2"><h3 className="font-semibold break-words">{example.title}</h3><p className="whitespace-pre-line break-words">{example.description}</p></div>)}
+      {content.examples.map((example, i) => <div key={i} className="space-y-2"><h3 className="font-semibold break-words">{example.title}</h3><p className="lesson-text whitespace-pre-line break-words">{example.description}</p></div>)}
     </section>}
     {!!content.exercises?.length && <section className="space-y-6 border-t pt-6">
       <h2 className="font-bold">{t('contentViewer.exercises', 'Ejercicios de práctica')}</h2>
@@ -67,13 +67,13 @@ export default function LessonReader({ content, original = content, lang, storag
           </Button>}
         </div>
         {solutions.has(i) && exercise.solution && <div className="space-y-3 border-l-2 border-primary pl-4">
-          {audio(exercise.solution, `solution${i}`)}<p className="whitespace-pre-line break-words">{exercise.solution}</p>
+          {audio(exercise.solution, `solution${i}`)}<p className="lesson-text whitespace-pre-line break-words">{exercise.solution}</p>
         </div>}
       </div>)}
     </section>}
     {content.summary && <section className="space-y-4 border-t pt-6">
       <h2 className="font-bold">{t('contentViewer.summary', 'Resumen')}</h2>{audio(content.summary, 'summary')}
-      <p className="whitespace-pre-line break-words">{content.summary}</p>
+      <p className="lesson-text whitespace-pre-line break-words">{content.summary}</p>
     </section>}
     {!!content.sources?.length && <section className="space-y-4 border-t pt-6">
       <h2 className="font-bold">{t('courses.sourcesTitle')}</h2><p className="text-muted-foreground">{t('courses.sourcesNote')}</p>

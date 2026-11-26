@@ -4,7 +4,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -85,6 +85,7 @@ export default function SearchPage() {
   const [isListening, setIsListening] = useState(false);
 
   const applyTranscript = (transcript: string) => {
+    autoOpen.current = true;
     setLocalQuery(transcript);
     setSearchParams({ q: transcript });
     performSearch(transcript);
@@ -208,8 +209,17 @@ export default function SearchPage() {
     }
   }, [searchParams, performSearch]);
 
+  // A submitted query opens one lesson directly; the list stays only for returning users.
+  const autoOpen = useRef(false);
+  useEffect(() => {
+    if (!autoOpen.current || searchLoading) return;
+    if (searchResults.length) { autoOpen.current = false; handleContentClick(searchResults[0].id); }
+    else if (searchQuery) autoOpen.current = false;
+  }, [searchResults, searchLoading]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    autoOpen.current = Boolean(localQuery.trim());
     setSearchParams(localQuery ? { q: localQuery } : {});
   };
 
@@ -224,11 +234,8 @@ export default function SearchPage() {
     if (content) {
       selectContent({ ...content, contentType: searchFilters.contentType?.[0] || content.contentType, educationLevel: searchFilters.educationLevel?.[0] || content.educationLevel });
       const navState = { fromSearch: true, searchQuery: localQuery };
-      if (content.accessibilityStatus === 'needs_remediation') {
-        navigate(`/remediate/${contentId}`, { state: navState });
-      } else {
-        navigate(`/content/${contentId}`, { state: navState });
-      }
+      // Every lesson is generated already adapted, so all results open in the same reader.
+      navigate(`/content/${contentId}`, { state: navState });
     }
   };
 
@@ -452,26 +459,7 @@ export default function SearchPage() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-9">{t('search.filters.accessibility')}</Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-background border">
-                <DropdownMenuLabel>{t('search.filters.accessibilityStatus')}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem checked={searchFilters.accessibilityStatus?.includes('accessible')} onCheckedChange={(checked) => handleFilterChange('accessibilityStatus', 'accessible', checked)}>
-                  {t('search.accessibilityStatuses.accessible')}
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem checked={searchFilters.accessibilityStatus?.includes('partially_accessible')} onCheckedChange={(checked) => handleFilterChange('accessibilityStatus', 'partially_accessible', checked)}>
-                  {t('search.accessibilityStatuses.partiallyAccessible')}
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem checked={searchFilters.accessibilityStatus?.includes('needs_remediation')} onCheckedChange={(checked) => handleFilterChange('accessibilityStatus', 'needs_remediation', checked)}>
-                  {t('search.accessibilityStatuses.needsRemediation')}
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {activeFilterCount > 0 && (
+{activeFilterCount > 0 && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
                 {t('search.filters.clearFilters')} ({activeFilterCount})
               </Button>

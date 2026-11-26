@@ -1582,3 +1582,6 @@ html[data-user-profile] [role="menu"] [class~="font-semibold"] { font-size: 0.9e
   .eduaccess-splash .eduaccess-splash-particle { animation-name: eduaccess-twinkle !important; }
   .eduaccess-splash .eduaccess-splash-ring { animation: none !important; }
 }
+
+/* Lesson paragraphs: justified with hyphenation so wide fonts don't leave ragged edges. */
+.lesson-text { text-align: justify; text-justify: inter-word; hyphens: auto; -webkit-hyphens: auto; overflow-wrap: anywhere; }

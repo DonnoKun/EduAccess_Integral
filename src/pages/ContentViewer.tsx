@@ -2,10 +2,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Bookmark, BookmarkCheck, CheckCircle2, Loader2 } from 'lucide-react';
+import { Bookmark, BookmarkCheck, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import LessonReader from '@/components/LessonReader';
 import LessonToolbar from '@/components/LessonToolbar';
+import GenerationSteps from '@/components/GenerationSteps';
 import { useStore } from '@/store/useStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useLibrarySync } from '@/hooks/useLibrarySync';
@@ -117,7 +118,8 @@ export default function ContentViewer() {
     <a href="#lesson-main" className="skip-link">{t('common.skipToMain')}</a>
     <LessonToolbar title={current.title} onBack={back} actions={<Button variant={saved ? 'default' : 'outline'} size="icon" onClick={togglePin} aria-label={lang === 'es' ? 'Guardar lección' : 'Save lesson'} aria-pressed={saved}>{saved ? <BookmarkCheck /> : <Bookmark />}</Button>} />
     <main id="lesson-main" className="container mx-auto max-w-3xl space-y-6 px-4 py-6" aria-busy={loading}>
-      {loading && <p role="status" className="flex gap-3 items-center"><Loader2 className="animate-spin" />{lang === 'es' ? 'Preparando lección…' : 'Preparing lesson…'}</p>}
+      {(current.educationLevel || current.contentType) && <p className="text-muted-foreground break-words">{[current.educationLevel && `${t('search.filters.level')}: ${t(`search.educationLevels.${current.educationLevel}`)}`, current.contentType && `${t('search.filters.contentType')}: ${t(`search.contentTypes.${current.contentType}`, current.contentType)}`].filter(Boolean).join(' · ')}</p>}
+      {loading && <GenerationSteps lang={lang} />}
       {failed && <p role="alert">{lang === 'es' ? 'No se pudo preparar la lección. Se conserva en recientes para volver a abrirla.' : 'The lesson could not be prepared. It remains in recent lessons.'}</p>}
       {!loading && content && <>
         <LessonReader content={content} lang={lang} storageKey={`${currentUser?.id}:${current.id}`} answers={answers} results={results} onAnswer={(i, value) => setAnswers(prev => ({ ...prev, [i]: value }))} onCheck={check} />

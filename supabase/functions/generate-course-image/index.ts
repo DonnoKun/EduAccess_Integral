@@ -38,7 +38,8 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const { prompt, alt, sectionTitle, sectionContext } = await req.json();
+    const { prompt, alt, sectionTitle, sectionContext, language } = await req.json();
+    const labelLang = language === 'en' ? 'English' : 'Spanish';
 
     if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 4000 || (alt !== undefined && typeof alt !== 'string') || (sectionTitle !== undefined && typeof sectionTitle !== 'string') || (sectionContext !== undefined && typeof sectionContext !== 'string')) {
       return new Response(
@@ -52,7 +53,7 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!supabaseUrl || !serviceKey) throw new Error('Image cache unavailable');
     const admin = createClient(supabaseUrl, serviceKey);
-    const cacheKey = await makeCacheKey([prompt, sectionTitle || "", alt || ""]);
+    const cacheKey = await makeCacheKey([prompt, sectionTitle || "", alt || "", language === "en" ? "" : "labels-es"]);
 
     const { data: cached } = await admin
       .from("course_images")
@@ -82,13 +83,13 @@ serve(async (req) => {
       "Generate a precise, educational illustration for a textbook.",
       "Style: clear high-contrast educational diagrams for students with low vision, large easily distinguished elements and uncluttered spatial relationships.",
       "IMPORTANT: The illustration must accurately depict the specific topic described below. Do NOT add unrelated elements.",
-      "Do NOT include any text overlays or watermarks.",
+      "Do NOT include text overlays or watermarks. Prefer no written words at all.",
       contextClue,
       contentClue,
       `Specific subject to illustrate: ${prompt}`,
     ]
       .filter(Boolean)
-      .join(" "));
+      .join(" ")) + ` Any unavoidable label, number caption or word drawn inside the image MUST be written in ${labelLang}, never in another language.`;
 
     // 45-second timeout for image generation
     const controller = new AbortController();

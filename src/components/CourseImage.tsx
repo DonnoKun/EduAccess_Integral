@@ -43,10 +43,10 @@ export default function CourseImage({ prompt, alt, cacheAlt, className, lang = '
 
     const generateImage = async () => {
       try {
-        const key = JSON.stringify([prompt, cacheAlt || alt, sectionTitle, sectionContext]);
+        const key = JSON.stringify([prompt, cacheAlt || alt, sectionTitle, sectionContext, lang]);
         let request = imageRequests.get(key);
         if (!request) {
-          request = supabase.functions.invoke('generate-course-image', { body: { prompt, alt: cacheAlt || alt, sectionTitle, sectionContext } }).then(({ data, error }) => { if (error) throw error; return data; }).finally(() => imageRequests.delete(key));
+          request = supabase.functions.invoke('generate-course-image', { body: { prompt, alt: cacheAlt || alt, sectionTitle, sectionContext, language: lang === 'en' ? 'en' : 'es' } }).then(({ data, error }) => { if (error) throw error; return data; }).finally(() => imageRequests.delete(key));
           imageRequests.set(key, request);
         }
         const data = await request;
@@ -74,7 +74,7 @@ export default function CourseImage({ prompt, alt, cacheAlt, className, lang = '
 
     generateImage();
     return () => { cancelled = true; };
-  }, [prompt]);
+  }, [prompt, lang]);
 
   useEffect(() => {
     if (!imageUrl) return;
@@ -119,7 +119,7 @@ export default function CourseImage({ prompt, alt, cacheAlt, className, lang = '
         className="w-full rounded-lg shadow-sm"
         loading="lazy"
       />
-      <figcaption className="text-muted-foreground mt-3 px-2 space-y-2 break-words">
+      <figcaption className="sr-only">
         <p>{observedAlt || shortAlt(alt)}</p>
         {longDescription && <p className="whitespace-pre-line">{longDescription}</p>}
         {descriptionFailed && <p>{lang === 'es' ? 'La descripción visual detallada no está disponible.' : 'The detailed visual description is unavailable.'}</p>}

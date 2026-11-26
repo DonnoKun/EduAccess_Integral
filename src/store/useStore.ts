@@ -310,9 +310,6 @@ export const useStore = create<GlobalState>()(
               if (filters.educationLevel?.length) {
                 results = results.filter((r) => filters.educationLevel?.includes(r.educationLevel));
               }
-              if (filters.accessibilityStatus?.length) {
-                results = results.filter((r) => filters.accessibilityStatus?.includes(r.accessibilityStatus));
-              }
 
               update({
                 searchResults: results, 

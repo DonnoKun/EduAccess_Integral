@@ -12,10 +12,10 @@ export function visionContent(metadata: unknown, imageUrl?: string) {
 export const shortAlt = (text: string) => Array.from(text.trim()).slice(0, 125).join('');
 
 export const LEVEL_RULES: Record<string, string> = {
-  elementary: 'Elementary school: concrete everyday examples, short sentences, define each new word. No assumed algebra or advanced terminology.',
-  middle: 'Middle school: explain foundations, basic terminology and simple calculations step by step.',
-  high: 'High school: rigorous explanations with appropriate subject vocabulary; explain prerequisites and formulas.',
-  college: 'College: advanced vocabulary, analytical depth, formal reasoning and prerequisite-aware explanations.',
+  elementary: 'Elementary school (ages 6-11): sentences under 15 words, numbers under 1000, concrete everyday examples, short sentences, define each new word. No assumed algebra or advanced terminology.',
+  middle: 'Middle school (ages 12-15): moderate sentences, introduce formal terms with definitions; explain foundations, basic terminology and simple calculations step by step.',
+  high: 'High school (ages 15-18): algebraic notation and formulas allowed; rigorous explanations with appropriate subject vocabulary; explain prerequisites and formulas.',
+  college: 'College/university: formal notation, proofs or derivations where relevant, references to theory; advanced vocabulary, analytical depth, formal reasoning and prerequisite-aware explanations.',
 };
 export const FORMAT_RULES: Record<string, string> = {
   article: 'Explanatory article: 3-4 narrative sections, 2 examples and 3 practice exercises. Images only when useful.',
