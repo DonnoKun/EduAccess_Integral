@@ -67,6 +67,7 @@ export default function SearchPage() {
     searchFilters,
     searchSuggestions,
     searchNoResultsReason,
+    hasSearched,
     performSearch,
     setSearchFilters,
     clearFilters,
@@ -475,7 +476,7 @@ export default function SearchPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-muted-foreground">{t('search.results', { count: searchResults.length })}</span>
+            <span className="text-sm text-muted-foreground">{hasSearched ? t('search.results', { count: searchResults.length }) : ''}</span>
             <div className="flex border rounded-lg">
               <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('grid')} aria-label={t('search.gridView')} aria-pressed={viewMode === 'grid'}>
                 <Grid3X3 className="h-4 w-4" />
@@ -496,11 +497,21 @@ export default function SearchPage() {
             </div>
           ) : searchResults.length === 0 ? (
             <div className="text-center py-12 max-w-lg mx-auto">
-              <SearchIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" aria-hidden="true" />
-              <h2 className="text-xl font-semibold mb-2">{t('search.noResults')}</h2>
-              <p className="text-muted-foreground mb-6">
-                {searchNoResultsReason || t('search.noResultsHint')}
-              </p>
+              {hasSearched ? (
+                <>
+                  <SearchIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" aria-hidden="true" />
+                  <h2 className="text-xl font-semibold mb-2">{t('search.noResults')}</h2>
+                  <p className="text-muted-foreground mb-6">
+                    {searchNoResultsReason || t('search.noResultsHint')}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-12 w-12 text-muted-foreground mx-auto mb-4" aria-hidden="true" />
+                  <h2 className="text-xl font-semibold mb-2">{t('search.welcomeTitle')}</h2>
+                  <p className="text-muted-foreground mb-6">{t('search.welcomeHint')}</p>
+                </>
+              )}
               
               {/* Show AI-generated search suggestions */}
               {searchSuggestions && searchSuggestions.length > 0 && (

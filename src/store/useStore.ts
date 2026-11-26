@@ -44,6 +44,7 @@ interface GlobalState {
   searchSuggestions: string[];
   searchNoResultsReason: string | null;
   searchQueryClassification: string | null;
+  hasSearched: boolean;
   
   // Current content
   currentContent: SearchResult | null;
@@ -126,6 +127,7 @@ export const useStore = create<GlobalState>()(
       searchSuggestions: [],
       searchNoResultsReason: null,
       searchQueryClassification: null,
+      hasSearched: false,
       currentContent: null,
       remediatedContent: null,
       remediationProgress: initialRemediationProgress,
@@ -209,10 +211,10 @@ export const useStore = create<GlobalState>()(
         const update = (patch: Partial<GlobalState>) => { if (searchId === latestSearch) set(patch); };
         // Never call AI without an explicit user query: browsing the Search tab must cost nothing.
         if (!query.trim()) {
-          update({ searchLoading: false, searchError: null, searchQuery: '', searchResults: [], searchSuggestions: [], searchNoResultsReason: null, searchQueryClassification: null });
+          update({ searchLoading: false, searchError: null, searchQuery: '', searchResults: [], searchSuggestions: [], searchNoResultsReason: null, searchQueryClassification: null, hasSearched: false });
           return;
         }
-        update({ searchLoading: true, searchError: null, searchQuery: query, searchSuggestions: [], searchNoResultsReason: null, searchQueryClassification: null });
+        update({ searchLoading: true, searchError: null, searchQuery: query, searchSuggestions: [], searchNoResultsReason: null, searchQueryClassification: null, hasSearched: true });
         get().trackEvent({ type: 'search', details: { query } });
 
         // Track real searches in history (only non-empty queries)

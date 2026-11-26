@@ -171,6 +171,8 @@
     "noResults": "No se encontraron resultados educativos",
     "noResultsHint": "Intenta ajustar tu búsqueda o filtros",
     "noResultsForQuery": "No se encontró contenido educativo verificable para esta búsqueda.",
+    "welcomeTitle": "¿Qué quieres aprender hoy?",
+    "welcomeHint": "Escribe un tema, elige tu nivel y el tipo de contenido, y crearé una lección adaptada a tu visión.",
     "suggestionsTitle": "¿Quizás quisiste buscar?",
     "trySearchingFor": "Prueba buscando temas educativos como:",
     "gridView": "Vista de cuadrícula",

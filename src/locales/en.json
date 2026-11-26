@@ -171,6 +171,8 @@
     "noResults": "No educational results found",
     "noResultsHint": "Try adjusting your search or filters",
     "noResultsForQuery": "No verifiable educational content was found for this search.",
+    "welcomeTitle": "What would you like to learn today?",
+    "welcomeHint": "Type a topic, choose your level and content type, and I'll create a lesson adapted to your vision.",
     "suggestionsTitle": "Did you mean to search for?",
     "trySearchingFor": "Try searching for educational topics like:",
     "gridView": "Grid view",
