@@ -16,11 +16,12 @@ export default function LessonToolbar({ title, onBack, actions }: { title: strin
     setTheme(next);
   };
   const resize = (delta: number) => { if (visualProfile) updateVisualProfile({ preferences: { ...visualProfile.preferences, fontSize: Math.max(16, Math.min(48, Number(visualProfile.preferences.fontSize) + delta)) } }); };
-  return <header className="sticky top-0 z-40 border-b bg-background">
-    <div className="container mx-auto flex flex-wrap items-center gap-3 px-4 py-4">
-      <Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" />{es ? 'Volver' : 'Back'}</Button>
-      <h1 className="min-w-0 flex-1 break-words font-bold">{title}</h1>
-      <div className="flex flex-wrap gap-2 items-center">
+  return <header className="z-40 border-b bg-background md:sticky md:top-0">
+    {/* Mobile: header scrolls away and tools share one row so the lesson keeps the screen. */}
+    <div className="container mx-auto flex flex-wrap items-center gap-2 px-3 py-2 md:gap-3 md:px-4 md:py-4">
+      <Button variant="ghost" onClick={onBack} aria-label={es ? 'Volver' : 'Back'} className="px-2 md:px-4"><ArrowLeft className="h-4 w-4 md:mr-2" /><span className="sr-only md:not-sr-only">{es ? 'Volver' : 'Back'}</span></Button>
+      <h1 className="order-last basis-full min-w-0 break-words font-bold md:order-none md:basis-auto md:flex-1">{title}</h1>
+      <div className="ml-auto flex flex-wrap justify-end gap-1.5 items-center md:ml-0 md:gap-2">
         <LanguageSelector />
         <Button variant="outline" size="icon" onClick={() => resize(-2)} aria-label={es ? 'Reducir fuente' : 'Decrease font'}><ZoomOut /></Button>
         <Button variant="outline" size="icon" onClick={() => resize(2)} aria-label={es ? 'Aumentar fuente' : 'Increase font'}><ZoomIn /></Button>
