@@ -4,11 +4,22 @@ import { Button } from '@/components/ui/button';
 import LanguageSelector from '@/components/LanguageSelector';
 import { useStore } from '@/store/useStore';
 import { useTranslation } from 'react-i18next';
+import { useProfileSync } from '@/hooks/useProfileSync';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function LessonToolbar({ title, onBack, actions }: { title: string; onBack: () => void; actions?: ReactNode }) {
   const { t, i18n } = useTranslation();
   const es = i18n.language.startsWith('es');
   const { visualProfile, updateVisualProfile, currentTheme, setTheme, readingGuideEnabled, toggleReadingGuide } = useStore();
+  useProfileSync();
+  const userId = useAuthStore(s => s.currentUser?.id);
+  const changeTheme = () => {
+    const next = currentTheme === 'light' ? 'dark' : currentTheme === 'dark' ? 'high-contrast' : 'light';
+    setTheme(next);
+    // Save immediately so a reload or leaving the lesson keeps the chosen theme.
+    if (userId) void supabase.from('profiles').update({ current_theme: next } as any).eq('user_id', userId);
+  };
   const resize = (delta: number) => { if (visualProfile) updateVisualProfile({ preferences: { ...visualProfile.preferences, fontSize: Math.max(16, Math.min(48, Number(visualProfile.preferences.fontSize) + delta)) } }); };
   return <header className="sticky top-0 z-40 border-b bg-background">
     <div className="container mx-auto flex flex-wrap items-center gap-3 px-4 py-4">
@@ -18,7 +29,7 @@ export default function LessonToolbar({ title, onBack, actions }: { title: strin
         <LanguageSelector />
         <Button variant="outline" size="icon" onClick={() => resize(-2)} aria-label={es ? 'Reducir fuente' : 'Decrease font'}><ZoomOut /></Button>
         <Button variant="outline" size="icon" onClick={() => resize(2)} aria-label={es ? 'Aumentar fuente' : 'Increase font'}><ZoomIn /></Button>
-        <Button variant="outline" size="icon" onClick={() => setTheme(currentTheme === 'light' ? 'dark' : currentTheme === 'dark' ? 'high-contrast' : 'light')} aria-label={t('navigation.changeTheme')}>
+        <Button variant="outline" size="icon" onClick={changeTheme} aria-label={t('navigation.changeTheme')}>
           {currentTheme === 'light' ? <Sun /> : currentTheme === 'dark' ? <Moon /> : <Contrast />}
         </Button>
         <Button variant={readingGuideEnabled ? 'default' : 'outline'} size="icon" onClick={toggleReadingGuide} aria-pressed={readingGuideEnabled} aria-label={es ? 'Guía de lectura' : 'Reading guide'}><Eye /></Button>
