@@ -516,9 +516,7 @@ export default function SearchPage() {
                         size="sm"
                         className="rounded-full"
                         onClick={() => {
-                          setLocalQuery(suggestion);
-                          setSearchParams({ q: suggestion });
-                          performSearch(suggestion);
+                          applyTranscript(suggestion);
                         }}
                       >
                         <SearchIcon className="h-3 w-3 mr-1.5" aria-hidden="true" />
