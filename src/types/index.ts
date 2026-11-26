@@ -288,3 +288,20 @@ export function contrastToTheme(contrast: ContrastMode, preferDark: boolean = fa
   if (contrast === 'inverted') return 'inverted';
   return preferDark ? 'dark' : 'light';
 }
+
+/**
+ * Starting display settings suggested by Snellen acuity; the user may still adjust them.
+ */
+export function recommendedPreferencesForSnellen(snellen: SnellenNotation): {
+  fontSize: number; lineSpacing: number; contrast: ContrastMode;
+} {
+  const table: Record<SnellenNotation, { fontSize: number; lineSpacing: number; contrast: ContrastMode }> = {
+    '6/6': { fontSize: 18, lineSpacing: 1.5, contrast: 'normal' },
+    '6/12': { fontSize: 22, lineSpacing: 1.75, contrast: 'normal' },
+    '6/18': { fontSize: 26, lineSpacing: 1.8, contrast: 'normal' },
+    '6/24': { fontSize: 30, lineSpacing: 2, contrast: 'high' },
+    '6/36': { fontSize: 36, lineSpacing: 2, contrast: 'high' },
+    '6/60': { fontSize: 44, lineSpacing: 2, contrast: 'high' },
+  };
+  return table[snellen];
+}

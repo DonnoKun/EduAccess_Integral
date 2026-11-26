@@ -60,6 +60,7 @@
       "namePlaceholder": "Ingresa tu nombre",
       "snellenLabel": "Notación Snellen",
       "tooltip": "Esta medida la obtienes de tu oftalmólogo u oculista",
+      "autoAdjust": "Al elegir tu medida ajustamos automáticamente el tamaño de letra, el interlineado y el contraste. En los siguientes pasos puedes afinarlos si lo necesitas.",
       "normalVision": "(Visión normal)",
       "calculatedValues": "Valores Calculados:",
       "logMAR": "logMAR",
@@ -90,13 +91,13 @@
       "audio": "Audio",
       "audioDesc": "Prefiero escuchar contenido con texto a voz",
       "mixed": "Mixto",
-      "mixedDesc": "Quiero ambas opciones disponibles"
+      "mixedDesc": "Ver el texto y escucharlo con voz al mismo tiempo"
     },
     "step5": {
       "title": "Opciones Adicionales",
       "description": "Ajusta tu experiencia con estas configuraciones de accesibilidad.",
-      "animations": "Habilitar Animaciones",
-      "animationsDesc": "Transiciones suaves y micro-interacciones",
+      "animations": "Movimientos suaves de la interfaz",
+      "animationsDesc": "Botones y avisos que se mueven o se desvanecen. No afecta el contenido de las lecciones. Apágalo si el movimiento te cansa la vista.",
       "brightness": "Sensibilidad al Brillo",
       "brightnessLow": "Baja",
       "brightnessMedium": "Media",
@@ -257,8 +258,8 @@
       "normal": "Normal (contraste 4.5:1)",
       "high": "Alto Contraste (21:1)",
       "inverted": "Invertido (para fotofobia)",
-      "animations": "Habilitar Animaciones",
-      "animationsDesc": "Transiciones suaves y micro-interacciones",
+      "animations": "Movimientos suaves de la interfaz",
+      "animationsDesc": "Botones y avisos que se mueven o se desvanecen. No afecta el contenido de las lecciones. Apágalo si el movimiento te cansa la vista.",
       "tts": "Texto a Voz",
       "ttsDesc": "Habilitar narración de audio para contenido"
     },
@@ -283,7 +284,7 @@
     },
     "about": {
       "title": "Acerca de EduAccess",
-      "version": "Versión 1.15.0 (Prototipo de Tesis Doctoral) · Actualizado nov 2026",
+      "version": "Versión 1.16.0 (Prototipo de Tesis Doctoral) · Actualizado nov 2026",
       "description": "EduAccess Integral es una plataforma educativa para estudiantes con baja visión (discapacidad visual leve a moderada). Crea lecciones con inteligencia artificial a partir de fuentes reales, adaptadas al nivel, al tipo de contenido y al perfil visual de cada estudiante, con lectura en voz, ejercicios, imágenes descritas y grupos donde el docente publica y da seguimiento.",
       "research": "Proyecto de Investigación",
       "researchDesc": "Este prototipo forma parte de una tesis doctoral que evalúa una arquitectura de cinco servicios (agregación de contenido, perfilado visual, remediación de accesibilidad, orquestación de IA y entrega de contenido) y mide su resiliencia ante fallos de la IA. Se basa en Michael (2024), Jeanneret & Baudet (2022), la norma ISO/IEC 24751 y las pautas WCAG 2.1 AA.",

@@ -41,7 +41,7 @@ import type {
   PreferredModality, 
   BrightnessSensitivity 
 } from '@/types';
-import { snellenToLogMAR, getSeverityFromLogMAR } from '@/types';
+import { snellenToLogMAR, getSeverityFromLogMAR, recommendedPreferencesForSnellen } from '@/types';
 import { configureSpeech, warmSpeechVoices } from '@/lib/speech';
 import { LearningModalitySample } from '@/components/LearningModalitySample';
 import { useOnboardingPreview } from '@/hooks/useOnboardingPreview';
@@ -60,7 +60,7 @@ export default function Onboarding() {
   
   const [currentStep, setCurrentStep] = useState(1);
   const [userName, setUserName] = useState(currentUser?.name || '');
-  const [snellen, setSnellen] = useState<SnellenNotation>('6/12');
+  const [snellen, setSnellen] = useState<SnellenNotation>((saved?.visualAcuity?.snellen as SnellenNotation) ?? '6/12');
   const [fontSize, setFontSize] = useState(saved?.preferences.fontSize ?? 20);
   const [lineSpacing, setLineSpacing] = useState(saved?.preferences.lineSpacing ?? 1.75);
   const [contrast, setContrast] = useState<ContrastMode>(saved?.preferences.contrast ?? 'normal');
@@ -338,7 +338,14 @@ export default function Onboarding() {
 
                   <div className="space-y-4">
                     <Label htmlFor="snellen">{t('onboarding.step1.snellenLabel')}</Label>
-                    <Select value={snellen} onValueChange={(v) => setSnellen(v as SnellenNotation)}>
+                    <Select value={snellen} onValueChange={(v) => {
+                      const next = v as SnellenNotation;
+                      setSnellen(next);
+                      const rec = recommendedPreferencesForSnellen(next);
+                      setFontSize(rec.fontSize);
+                      setLineSpacing(rec.lineSpacing);
+                      setContrast(rec.contrast);
+                    }}>
                       <SelectTrigger id="snellen" className="text-lg">
                         <SelectValue />
                       </SelectTrigger>
@@ -352,6 +359,9 @@ export default function Onboarding() {
                     </Select>
                     <p className="text-sm text-muted-foreground">
                       ℹ️ {t('onboarding.step1.tooltip')}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {t('onboarding.step1.autoAdjust')}
                     </p>
                   </div>
 

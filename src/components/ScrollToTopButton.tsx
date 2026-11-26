@@ -3,6 +3,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
 import { ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -11,6 +12,7 @@ export const SCROLL_TOP_THRESHOLD = 300;
 export default function ScrollToTopButton() {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
+  const { pathname } = useLocation();
 
   useEffect(() => {
     const update = () => setVisible(window.scrollY > SCROLL_TOP_THRESHOLD);
@@ -25,16 +27,17 @@ export default function ScrollToTopButton() {
     main?.focus?.({ preventScroll: true });
   };
 
-  if (!visible) return null;
+  // Onboarding has its own bottom Next/Back controls; the floating button would cover them.
+  if (!visible || pathname.startsWith('/onboarding')) return null;
 
   return (
     <Button
       onClick={goTop}
-      className="back-to-top-control fixed bottom-24 left-1/2 -translate-x-1/2 z-50 md:left-auto md:right-6 md:translate-x-0 h-auto rounded-full px-4 py-3 shadow-lg md:bottom-6"
+      className="back-to-top-control fixed right-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 h-12 w-12 min-w-0 rounded-full p-0 opacity-90 shadow-lg md:right-6 md:bottom-6 md:h-auto md:w-auto md:px-4 md:py-3 md:opacity-100"
       aria-label={t('courses.backToTop')}
     >
-      <ArrowUp className="mr-2 h-5 w-5" aria-hidden="true" />
-      {t('courses.backToTop')}
+      <ArrowUp className="h-5 w-5 md:mr-2" aria-hidden="true" />
+      <span className="sr-only md:not-sr-only">{t('courses.backToTop')}</span>
     </Button>
   );
 }
