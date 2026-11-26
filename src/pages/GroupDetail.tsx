@@ -13,6 +13,7 @@ import { useCourseCache } from '@/hooks/useCourseCache';
 import { useTranslatedTexts } from '@/hooks/useTranslatedTexts';
 import LessonEditor, { type LessonDraft } from '@/components/LessonEditor';
 import { copiedLesson } from '@/lib/lessonReading';
+import { lessonGenerationError } from '@/lib/lessonGenerationError';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -154,7 +155,7 @@ export default function GroupDetailPage() {
       // Reuse an identical lesson (same title, focus and language) instead of spending AI credits again.
       const cacheTitle = `group:${title.trim()}|${(description.trim() || title.trim())}`;
       const cached = await getCachedCourse(cacheTitle, lang);
-      const { data, error } = cached ? await supabase.functions.invoke('generate-course-content', { body: { operation: 'review', title: title.trim(), description: description.trim(), language: lang, lesson: cached } }) : await supabase.functions.invoke('generate-course-content', {
+      const { data, error } = cached ? { data: { success: true, content: cached }, error: null } : await supabase.functions.invoke('generate-course-content', {
         body: {
           title: title.trim(),
           description: description.trim() || title.trim(),
@@ -163,10 +164,10 @@ export default function GroupDetailPage() {
           language: lang,
         },
       });
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(await lessonGenerationError(error, t('courses.generationUnavailable')));
       if (!data?.success || !data?.content?.introduction) throw new Error(data?.error || t('courses.lessonError'));
       const content = { ...(data?.content || {}), language: lang };
-      if (!cached) saveCourseToCache(cacheTitle, lang, data.content);
+      if (!cached) await saveCourseToCache(cacheTitle, lang, data.content);
 
       const { data: inserted, error: insertError } = await supabase
         .from('group_lessons')

@@ -8,11 +8,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { validateTranslation, translationSchema } from './translation.ts';
-import { generateChatCompletion, generateResponse, GatewayError } from 'npm:@lovable.dev/ai-gateway@0.1.11';
+import type {} from '../_shared/generated/ai-gateway/models.d.ts';
+import { streamChatCompletion, generateResponse, GatewayError, type GeminiChatFields } from 'npm:@lovable.dev/ai-gateway@0.1.11';
 import { z } from 'npm:zod@3.25.76';
 import { controlTopics, reviewQuality, sectionSchema, structuredOperation } from './review-service.ts';
 import { replaceSection, unavailableQuality } from './quality.ts';
-import { checkRateLimit, resilientChat } from '../_shared/ai-gateway.ts';
+import { checkRateLimit, resilientChat, TerminalError, TransientError } from '../_shared/ai-gateway.ts';
 import { checkEducationalTopic, notEducationalMessage } from '../_shared/topic-guard.ts';
 import { lessonRules, FORMAT_RULES, LEVEL_RULES } from '../_shared/low-vision.ts';
 import { isAllowedOrigin } from '../_shared/cors.ts';
@@ -165,7 +166,8 @@ Generate a COMPLETE educational lesson with:
    - CONSTRUCT the Wikipedia URL based on the actual topic being taught. The URL should point to the specific article.
    - For other platforms, link to the most specific section you are confident exists.
 
-The content should be university-level quality, at least 3000 words, written as a comprehensive textbook chapter.`;
+The content should be university-level quality, written as a comprehensive textbook chapter.
+TOTAL LENGTH: 3000-3200 words, never an unbounded chapter. Allocate approximately 200 words to the introduction, exactly 4 sections of 400 words each, exactly 4 examples of 150 words each, exactly 5 exercises with 100-word solutions each, and a 150-word summary. Keep keyPoints, hints, image prompts and source descriptions concise. Cover the topic completely within this budget; do not repeat explanations. These exact counts override the ranges above.`;
 
     const userPrompt = body.originalContent
       ? `Translate and proofread this entire existing lesson into ${langName}. Do not rewrite or regenerate its topic. Preserve all numerical results and structure.\n${JSON.stringify(body.originalContent)}`
@@ -182,11 +184,8 @@ CRITICAL: For exercises, the answer_keywords field must contain ONLY 3-15 key wo
 CRITICAL: For sources, construct SPECIFIC Wikipedia article URLs based on the topic (e.g., https://es.wikipedia.org/wiki/Nombre_Del_Tema).
 CRITICAL: For each section, include image_prompt and image_alt describing an educational illustration.`;
 
-    // Add 90-second timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
-
-    const generationRequest = {
+    const generationRequest: GeminiChatFields = {
+          reasoning_effort: 'none',
           temperature: body.originalContent ? 0.1 : 0.5,
           messages: [
             { role: "system", content: systemPrompt + (body.directSearch && !body.originalContent ? `\nFINAL OVERRIDING REQUIREMENTS:\n${lessonRules(contentType, educationLevel)}\nLength must fit this level and format, not a universal 3000-word target. Include the selected resource URL exactly in sources; do not claim to have read or transcribed remote content that was not supplied.` : '') },
@@ -322,10 +321,45 @@ CRITICAL: For each section, include image_prompt and image_alt describing an edu
             function: { name: "course_content" },
           },
     };
-    const generation = await resilientChat('generate-course-content', generationRequest, { primary: 'google/gemini-2.5-flash', cacheKey: { userId: auth.user.id, body }, timeoutMs: 90000, maxRetries: 0, secondaryRequest: { ...generationRequest, reasoning_effort: 'none' } });
-    if (generation.path === 'failed') throw new Error('Lesson generation unavailable');
+    const generation = await resilientChat('generate-course-content', generationRequest, {
+      primary: 'google/gemini-3.8-flash', cacheKey: { userId: auth.user.id, body },
+      timeoutMs: 100000, maxRetries: 0, secondaryTimeoutMs: 20000, fallbackOnTimeout: false,
+      primaryAdapter: {
+        name: 'google/gemini-3.8-flash',
+        async call(_request, signal) {
+          try {
+            const stream = await streamChatCompletion({ model: 'google/gemini-3.8-flash', ...generationRequest }, { signal, maxRetries: 0 });
+            let argumentsText = '';
+            let totalTokens = 0;
+            for await (const event of stream) {
+              if ('choices' in event) {
+                for (const choice of event.choices) {
+                  for (const call of choice.delta.tool_calls ?? []) {
+                    if (call.index === 0) argumentsText += call.function?.arguments ?? '';
+                  }
+                }
+              }
+              if ('usage' in event && event.usage) totalTokens = event.usage.total_tokens;
+            }
+            const json = { choices: [{ message: { tool_calls: [{ function: { name: 'course_content', arguments: argumentsText } }] } }], usage: { total_tokens: totalTokens } };
+            return { json, status: 200 };
+          } catch (error) {
+            if (signal.aborted) throw new DOMException('Generation timed out', 'AbortError');
+            if (error instanceof GatewayError) {
+              if (error.httpStatus === 402 || error.httpStatus === 403 || error.httpStatus === 401) throw new TerminalError(error.message, error.httpStatus);
+              if (error.outcome === 'unknown') throw new TransientError('Generation outcome unknown', 504);
+            }
+            throw error;
+          }
+        },
+      },
+      secondaryRequest: { ...generationRequest, reasoning_effort: 'none' },
+    });
+    if (generation.path === 'failed') return new Response(JSON.stringify({
+      success: false, code: generation.status === 504 ? 'GENERATION_TIMEOUT' : 'GENERATION_UNAVAILABLE',
+      error: language === 'es' ? 'No se pudo terminar la lección a tiempo. El título y la descripción se conservan; puedes intentarlo de nuevo.' : 'The lesson could not finish in time. Your title and description are preserved; you can try again.',
+    }), { status: generation.status || 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     const aiResponse = generation.data;
-    clearTimeout(timeoutId);
 
     const toolCall = aiResponse.choices?.[0]?.message?.tool_calls?.[0];
 

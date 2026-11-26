@@ -32,7 +32,9 @@ export async function structuredOperation(operation: string, userId: string, lan
       messages: [{ role: 'system', content: instructions }, { role: 'user', content: JSON.stringify(input) }],
       tools: [{ type: 'function', function: { name: 'result', description: 'Structured result', parameters: schema } }],
       tool_choice: { type: 'function', function: { name: 'result' } },
-    }, { primary: 'google/gemini-2.5-flash', cacheKey: key });
+    }, { primary: 'google/gemini-2.5-flash', cacheKey: key,
+      ...(operation === 'outline' || operation === 'review' ? { timeoutMs: 10000, maxRetries: 0, secondary: null } : {}),
+    });
     if (result.path === 'failed') throw new Error('Quality operation unavailable');
     response = result.data;
   }

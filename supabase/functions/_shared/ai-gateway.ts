@@ -140,7 +140,7 @@ export const forcedFailAdapter = (model: string): ProviderAdapter => ({
   async call() { throw new TransientError(`${model} injected outage`, 503); },
 });
 
-export async function resilientChat(functionName: string, req: ChatRequest, opts: { primary?: string; secondary?: string | null; cacheKey?: unknown; bench?: BenchOptions; timeoutMs?: number; maxRetries?: number; secondaryRequest?: ChatRequest } = {}): Promise<AIResult> {
+export async function resilientChat(functionName: string, req: ChatRequest, opts: { primary?: string; secondary?: string | null; cacheKey?: unknown; bench?: BenchOptions; timeoutMs?: number; maxRetries?: number; secondaryRequest?: ChatRequest; primaryAdapter?: ProviderAdapter; secondaryTimeoutMs?: number; fallbackOnTimeout?: boolean } = {}): Promise<AIResult> {
   const start = Date.now();
   const bench = opts.bench;
   const callOptions = { timeoutMs: opts.timeoutMs ?? CONFIG.timeoutMs, maxRetries: opts.maxRetries ?? CONFIG.maxRetries, sleepFn: sleep };
@@ -148,7 +148,7 @@ export async function resilientChat(functionName: string, req: ChatRequest, opts
   const secondaryModel = opts.secondary === undefined ? CONFIG.secondaryModel : opts.secondary;
   // benchmark uses an isolated breaker so real users are never affected
   const service = bench ? `bench:ai:${primaryModel}` : `ai:${primaryModel}`;
-  const primaryAdapter = bench?.forcePrimaryFail ? forcedFailAdapter(primaryModel) : gatewayAdapter(primaryModel);
+  const primaryAdapter = bench?.forcePrimaryFail ? forcedFailAdapter(primaryModel) : opts.primaryAdapter ?? gatewayAdapter(primaryModel);
   const tags = bench ? { benchmark_run_id: bench.runId, config: bench.config, phase: bench.phase,
     ...(bench.batchRunId ? { batch_run_id: bench.batchRunId, rep_index: bench.repIndex, scenario: bench.scenario, call_index: bench.callIndex, concurrency: bench.concurrency } : {}) } : {};
   const cooldown = bench?.cooldownMs ?? CONFIG.cooldownMs;
@@ -209,9 +209,9 @@ export async function resilientChat(functionName: string, req: ChatRequest, opts
     }
   }
   // 2) secondary
-  if (secondaryModel) {
+  if (secondaryModel && !(opts.fallbackOnTimeout === false && lastStatus === 504)) {
     try {
-      const { json, status } = await callWithRetry(bench?.forceSecondaryFail ? forcedFailAdapter(secondaryModel) : gatewayAdapter(secondaryModel), opts.secondaryRequest ?? req, callOptions);
+      const { json, status } = await callWithRetry(bench?.forceSecondaryFail ? forcedFailAdapter(secondaryModel) : gatewayAdapter(secondaryModel), opts.secondaryRequest ?? req, { ...callOptions, timeoutMs: opts.secondaryTimeoutMs ?? callOptions.timeoutMs });
       return finish({ data: json, path: "secondary", provider: secondaryModel, degraded: false, status });
     } catch (e) {
       lastStatus = (e as TransientError).status ?? lastStatus;

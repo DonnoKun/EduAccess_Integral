@@ -26,5 +26,6 @@
 - Normalize the complete image-generation prompt to English through the cached resilient gateway after bitmap lookup, so automatic and manual callers share one boundary.
 - Teacher lesson reuse copies owned content into a new unpublished row; never reuse the original identifier or trigger inference.
 - Long lesson generation opts into a longer bounded gateway timeout with no retries and a compatible secondary tool request; default service and benchmark policies remain unchanged.
+- Lesson generation uses an SDK primary adapter with reasoning disabled and bounded advisory checks; timeout outcomes never trigger another inference automatically, avoiding duplicate charges.
 - Every user-visible change bumps the app version (settings.about.version in es/en locales and package.json) in the same commit so About always shows the current release.
 - Only educational topics may produce search results or lessons; a cached shared topic guard (_shared/topic-guard.ts) checks new topics server-side so every client and role is covered.

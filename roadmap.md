@@ -39,3 +39,4 @@
 - [x] Show a welcome prompt on first visit to student Search and hide the result count until a real search; after searching, the usual no-results message returns. Live student account checked in ES and EN; search-content mocked locally so no credits were spent; 63 tests passed, build OK.
 - [x] Mobile fixes: tutorial centered (dashboard overflow removed), readable bottom-nav labels, tutorials updated for both roles, saved lessons/images reopen from stored copies without regeneration.
 - [x] App parity: auto-updating installed app, synced reading guide (touch-follow), centered back-to-top, stacked Settings tabs, cleaner mobile header.
+- [x] Repair teacher generation timeouts: real educational anatomy lesson generated in 73s, saved with 4 sections/5 exercises and reopened with zero AI calls; preserve input and explain errors. 30 regression tests passed; v1.23.0.
