@@ -1603,4 +1603,4 @@ html .lesson-text, html[data-user-profile] .lesson-text { text-align: justify !i
 
 body { overflow-x: clip; }
 /* Bottom nav labels: readable, wrap instead of overlapping neighbours. */
-html body nav span.mobile-nav-label, html[data-user-profile] body nav button span.mobile-nav-label { font-size: 11.5px !important; letter-spacing: -0.01em; line-height: 1.15 !important; hyphens: none !important; overflow-wrap: normal; word-break: keep-all; white-space: nowrap; overflow: hidden; text-overflow: clip; }
+html body nav span.mobile-nav-label, html[data-user-profile] body nav button span.mobile-nav-label { font-size: 11px !important; letter-spacing: -0.02em; line-height: 1.15 !important; hyphens: none !important; overflow-wrap: normal; word-break: keep-all; white-space: nowrap; overflow: hidden; text-overflow: clip; }

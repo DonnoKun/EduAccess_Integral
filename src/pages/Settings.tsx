@@ -240,18 +240,18 @@ export default function Settings() {
 
       {/* Header */}
       <header className="sticky top-0 z-50 glass-card border-b">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-4 min-h-16 py-2 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-4">
             <Button variant="ghost" onClick={() => navigate('/dashboard')}>
               <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
               {t('common.back')}
             </Button>
-            <Link to="/dashboard" className="flex items-center gap-2">
+            <Link to="/dashboard" className="flex min-w-0 items-center gap-2">
               <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />
-              <span className="text-xl font-bold">{t('settings.title')}</span>
+              <span className="truncate text-lg font-bold sm:text-xl">{t('settings.title')}</span>
             </Link>
           </div>
-          <LanguageSelector />
+          <div className="shrink-0"><LanguageSelector /></div>
         </div>
       </header>
 
