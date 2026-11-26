@@ -28,6 +28,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
+      injectRegister: false,
       includeAssets: ["favicon.png", "robots.txt"],
       manifest: {
         name: "EduAccess - Educación Accesible",

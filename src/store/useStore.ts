@@ -437,7 +437,16 @@ export const useStore = create<GlobalState>()(
 
       toggleFocusMode: () => set((state) => ({ focusModeEnabled: !state.focusModeEnabled })),
 
-      toggleReadingGuide: () => set((state) => ({ readingGuideEnabled: !state.readingGuideEnabled })),
+      toggleReadingGuide: () => {
+        const next = !get().readingGuideEnabled;
+        set({ readingGuideEnabled: next });
+        // One setting per account: persist so desktop and the app stay in sync.
+        void import('@/store/useAuthStore').then(({ useAuthStore }) => {
+          const uid = useAuthStore.getState().currentUser?.id;
+          if (uid) void import('@/integrations/supabase/client').then(({ supabase }) =>
+            supabase.from('profiles').update({ reading_guide_enabled: next } as never).eq('user_id', uid));
+        });
+      },
 
       resetReadingGuide: () => set({ readingGuideEnabled: false }),
 

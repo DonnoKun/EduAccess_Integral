@@ -30,7 +30,7 @@ export default function ScrollToTopButton() {
   return (
     <Button
       onClick={goTop}
-      className="back-to-top-control fixed bottom-20 right-4 z-50 h-auto rounded-full px-4 py-3 shadow-lg md:bottom-6"
+      className="back-to-top-control fixed bottom-24 left-1/2 -translate-x-1/2 z-50 md:left-auto md:right-6 md:translate-x-0 h-auto rounded-full px-4 py-3 shadow-lg md:bottom-6"
       aria-label={t('courses.backToTop')}
     >
       <ArrowUp className="mr-2 h-5 w-5" aria-hidden="true" />

@@ -95,9 +95,7 @@ async function restoreProfileFromDB(profileData: any, userId: string) {
     }
 
     // Restore reading guide setting
-    if (profileData.reading_guide_enabled && !store.readingGuideEnabled) {
-      store.toggleReadingGuide();
-    }
+    useStore.setState({ readingGuideEnabled: Boolean(profileData.reading_guide_enabled) });
 
     // Restore tutorial_seen flag to localStorage so the modal doesn't reopen
     if (visualPrefs?.tutorial_seen) {

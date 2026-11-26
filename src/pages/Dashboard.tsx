@@ -22,7 +22,6 @@ import {
   HelpCircle,
   TrendingUp,
   Eye,
-  Menu,
   Sun,
   Moon,
   Contrast,
@@ -239,9 +238,6 @@ export default function Dashboard() {
       <header className="sticky top-0 z-50 glass-card border-b">
         <div className="site-header-layout container mx-auto px-4 min-h-16 py-3">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="md:hidden" aria-label={t('navigation.menu')}>
-              <Menu className="h-5 w-5" />
-            </Button>
             <Link to="/dashboard" className="flex items-center gap-2">
               <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />
               <span className="text-xl font-bold">{t('common.appName')}</span>
