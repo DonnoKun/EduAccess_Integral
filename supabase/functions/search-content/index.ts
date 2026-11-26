@@ -1,4 +1,5 @@
 import { gatewayFetch } from "../_shared/ai-gateway.ts";
+import { checkEducationalTopic, notEducationalMessage } from "../_shared/topic-guard.ts";
 import { requireUser } from "../_shared/require-user.ts";
 /**
  * EduAccess - AI Educational Content Search Edge Function
@@ -46,6 +47,12 @@ serve(async (req) => {
     const { query, filters, language = "es" } = body;
 
     console.log("🔍 AI Search for:", query, "language:", language);
+    if (typeof query === "string" && query.trim()) {
+      const verdict = await checkEducationalTopic(query, "", language);
+      if (!verdict.educational) {
+        return new Response(JSON.stringify({ success: true, results: [], totalEstimated: 0, queryClassification: "nonsense", suggestions: verdict.suggestions, noResultsReason: notEducationalMessage(language, verdict.reason) }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
 
     const filterContext = filters
       ? `\nRequested output format: ${filters.contentType?.[0] || 'article'}. Requested learning level: ${filters.educationLevel?.[0] || 'high'}. Find sources suitable for ONE lesson at this level, not several level variants. IMPORTANT: the format and level describe the lesson EduAccess will write itself from the source, NOT a required type of source. Any real source about the topic (for example a Wikipedia article or Khan Academy page) is acceptable for any format or level. NEVER return zero results for a valid educational topic because no source of that exact type or level exists. For exercise prioritize practice resources; diagram prioritize visual explanations; textbook prioritize actual textbook chapters; article prioritize explanatory articles. Filters: ${JSON.stringify(filters)}`

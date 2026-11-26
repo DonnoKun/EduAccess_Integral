@@ -13,6 +13,7 @@ import { z } from 'npm:zod@3.25.76';
 import { controlTopics, reviewQuality, sectionSchema, structuredOperation } from './review-service.ts';
 import { replaceSection, unavailableQuality } from './quality.ts';
 import { checkRateLimit, resilientChat } from '../_shared/ai-gateway.ts';
+import { checkEducationalTopic, notEducationalMessage } from '../_shared/topic-guard.ts';
 import { lessonRules, FORMAT_RULES, LEVEL_RULES } from '../_shared/low-vision.ts';
 import { isAllowedOrigin } from '../_shared/cors.ts';
 
@@ -113,6 +114,11 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: false, error: 'Invalid lesson format, level or resource URL' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     const startTime = Date.now();
+    // Only educational topics may become lessons (translations of existing lessons are exempt).
+    if (!body.originalContent) {
+      const verdict = await checkEducationalTopic(title, description || '', language);
+      if (!verdict.educational) return new Response(JSON.stringify({ success: false, code: 'NOT_EDUCATIONAL', error: notEducationalMessage(language, verdict.reason), suggestions: verdict.suggestions }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     const langName = language === "es" ? "Spanish" : "English";
     let topics: string[] = [];
