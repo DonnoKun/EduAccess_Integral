@@ -372,22 +372,10 @@ export const useStore = create<GlobalState>()(
         }
       },
 
-      setSearchFilters: (filters) => {
-        set({ searchFilters: filters });
-        // Re-run search with new filters
-        const query = get().searchQuery;
-        if (query || Object.keys(filters).length > 0) {
-          get().performSearch(query);
-        }
-      },
+      // Filters apply on the next explicit search; changing them must not spend AI credits.
+      setSearchFilters: (filters) => set({ searchFilters: filters }),
 
-      clearFilters: () => {
-        set({ searchFilters: {} });
-        const query = get().searchQuery;
-        if (query) {
-          get().performSearch(query);
-        }
-      },
+      clearFilters: () => set({ searchFilters: {} }),
 
       selectContent: (content) => {
         set({ currentContent: content, remediatedContent: null });
