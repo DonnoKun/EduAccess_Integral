@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => ({
       manifest: {
         name: "EduAccess - Educación Accesible",
         short_name: "EduAccess",
-        description: "Plataforma educativa accesible con contenido adaptativo para personas con discapacidad visual",
+        description: "Lecciones con IA adaptadas a estudiantes con baja visión: lectura en voz, letra y contraste a tu medida, ejercicios y grupos con tu docente.",
         theme_color: "#3b82f6",
         background_color: "#f8fafc",
         display: "standalone",

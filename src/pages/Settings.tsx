@@ -561,11 +561,9 @@ export default function Settings() {
                   <div className="settings-tech-stack">
                     <p className="settings-tech-title">{t('settings.about.techStack')}:</p>
                     <ul className="settings-tech-list">
-                      <li>React 18 with TypeScript</li>
-                      <li>Tailwind CSS + shadcn/ui</li>
-                      <li>Zustand for state management</li>
-                      <li>Framer Motion for animations</li>
-                      <li>WCAG 2.1 AA Compliant</li>
+                      {(t('settings.about.techItems', { returnObjects: true }) as string[]).map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
                     </ul>
                   </div>
                 </CardContent>
