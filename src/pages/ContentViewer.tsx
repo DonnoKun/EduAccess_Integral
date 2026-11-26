@@ -52,14 +52,18 @@ export default function ContentViewer() {
       setLoading(true); setFailed(false); setAnswers({}); setResults({});
       started.current = Date.now();
       incrementContentViewed();
+      // Already-generated lessons open instantly from the stored copy; nothing is regenerated.
+      const ready = current.lessonContent?.language === lang ? current.lessonContent : null;
+      if (ready && !cancelled) { setContent(ready); setLoading(false); }
       // Record opening before inference, and preserve pin/completion if already present.
-      await saveContentToDB(current, 'recent');
       const { data: progress } = await supabase.from('user_library').select('content_data').eq('user_id', currentUser.id).eq('content_data->>id', current.id).maybeSingle();
-      const stored = progress?.content_data as unknown as { exerciseAnswers?: Record<number, string>; exerciseResults?: Record<number, 'correct' | 'partial' | 'incorrect'> } | null;
+      const stored = progress?.content_data as unknown as { lessonContent?: LessonContent; exerciseAnswers?: Record<number, string>; exerciseResults?: Record<number, 'correct' | 'partial' | 'incorrect'> } | null;
       if (!cancelled) { setAnswers(stored?.exerciseAnswers || {}); setResults(stored?.exerciseResults || {}); }
+      if (ready) { if (!progress) await saveContentToDB(current, 'recent'); return; }
+      await saveContentToDB(current, 'recent');
       try {
         const key = searchLessonIdentity(current);
-        let lesson: LessonContent | null = current.lessonContent?.language === lang ? current.lessonContent : await getCachedCourse(key, lang);
+        let lesson: LessonContent | null = (stored?.lessonContent?.language === lang ? stored.lessonContent : null) || await getCachedCourse(key, lang);
         if (!lesson) {
           const original = current.lessonContent || await getCachedCourse(key, lang === 'es' ? 'en' : 'es');
           const data = await cachedAI(aiCacheKey('search-lesson-v4', key, lang), current.title, lang, async () => {

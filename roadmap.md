@@ -37,3 +37,4 @@
 - [x] Exercise live automatic and teacher-written image generation: both produced 1024px images with real-image descriptions, short alt <=125, mobile layout and cached reopening; 10 low-vision regression tests passed, current build OK. Details in .lovable/reviews/teacher-image-verification.md.
 - [x] Enforce duplicate-email rejection regardless of role; live uppercase duplicate rejected for both roles with 409. Eight test files, 38 tests passed; current build OK.
 - [x] Show a welcome prompt on first visit to student Search and hide the result count until a real search; after searching, the usual no-results message returns. Live student account checked in ES and EN; search-content mocked locally so no credits were spent; 63 tests passed, build OK.
+- [x] Mobile fixes: tutorial centered (dashboard overflow removed), readable bottom-nav labels, tutorials updated for both roles, saved lessons/images reopen from stored copies without regeneration.

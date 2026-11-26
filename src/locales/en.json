@@ -302,7 +302,10 @@
     "library": "Library",
     "courses": "Courses",
     "main": "Main navigation",
-    "myGroups": "My groups"
+    "myGroups": "My groups",
+    "settingsShort": "Settings",
+    "dashboardShort": "Home",
+    "libraryShort": "Library"
   },
   "themes": {
     "light": "Light",

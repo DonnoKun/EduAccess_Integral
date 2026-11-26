@@ -49,18 +49,18 @@ const tutorialSteps: TutorialStep[] = [
     titleES: '🔍 Buscar Contenido',
     titleEN: '🔍 Search Content',
     descriptionES:
-      'Escribe cualquier tema educativo en la barra de búsqueda. La plataforma buscará contenido de múltiples fuentes como Wikipedia y lo adaptará a tus necesidades visuales.',
+      'Escribe un tema, elige tu nivel y el tipo de contenido, y pulsa Buscar. La plataforma busca fuentes reales y crea una sola lección adaptada a tu visión, que se abre sola.',
     descriptionEN:
-      'Type any educational topic in the search bar. The platform searches content from multiple sources like Wikipedia and adapts it to your visual needs.',
+      'Type a topic, choose your level and content type, and press Search. The platform finds real sources and creates a single lesson adapted to your vision, which opens automatically.',
     tipsES: [
       'Escribe un tema como "Sistema Solar" o "Revolución Francesa"',
-      'Los resultados se generan con IA y se adaptan a tu perfil visual',
-      'Puedes buscar en español o inglés',
+      'El nivel y el tipo de contenido son obligatorios antes de buscar',
+      'También puedes dictar el tema con el micrófono',
     ],
     tipsEN: [
       'Type a topic like "Solar System" or "French Revolution"',
-      'Results are AI-generated and adapted to your visual profile',
-      'You can search in Spanish or English',
+      'Level and content type are required before searching',
+      'You can also dictate the topic with the microphone',
     ],
   },
   {
@@ -68,16 +68,16 @@ const tutorialSteps: TutorialStep[] = [
     titleES: '📚 Cursos Generados por IA',
     titleEN: '📚 AI-Generated Courses',
     descriptionES:
-      'Cada búsqueda genera un curso completo con secciones, ejemplos prácticos, ejercicios y un resumen. Todo el contenido se adapta automáticamente a tu configuración de accesibilidad.',
+      'Mientras se crea la lección verás cada paso del proceso. La lección trae secciones, ejemplos, ejercicios y un resumen con el texto justificado y en el tamaño que elegiste.',
     descriptionEN:
-      'Each search generates a complete course with sections, practical examples, exercises, and a summary. All content automatically adapts to your accessibility settings.',
+      'While the lesson is created you see each step. It includes sections, examples, exercises and a summary, with justified text at the size you chose.',
     tipsES: [
-      'Cada curso incluye varias secciones con contenido detallado',
+      'El nivel cambia el vocabulario, la longitud de las frases y la dificultad',
       'Los ejemplos prácticos te ayudan a entender mejor cada tema',
       'Los ejercicios de práctica refuerzan tu aprendizaje',
     ],
     tipsEN: [
-      'Each course includes several sections with detailed content',
+      'The level changes vocabulary, sentence length and difficulty',
       'Practical examples help you better understand each topic',
       'Practice exercises reinforce your learning',
     ],
@@ -110,13 +110,13 @@ const tutorialSteps: TutorialStep[] = [
     descriptionEN:
       'The platform generates educational illustrations for each course section using artificial intelligence. Images include alternative descriptions for accessibility.',
     tipsES: [
-      'Las imágenes se generan automáticamente mientras lees el curso',
-      'Un contador muestra el progreso de generación de imágenes',
+      'Los textos de las imágenes aparecen en tu idioma',
+      'Las descripciones no se muestran, pero se leen en voz alta',
       'Cada imagen tiene una descripción alternativa accesible',
     ],
     tipsEN: [
-      'Images are generated automatically while you read the course',
-      'A counter shows the image generation progress',
+      'Image labels appear in your language',
+      'Descriptions are hidden but read aloud',
       'Each image has an accessible alternative description',
     ],
   },
@@ -125,16 +125,16 @@ const tutorialSteps: TutorialStep[] = [
     titleES: '📖 Biblioteca Personal',
     titleEN: '📖 Personal Library',
     descriptionES:
-      'Guarda tus cursos favoritos en tu biblioteca personal. Puedes continuar donde lo dejaste y ver tu progreso en cada curso.',
+      'Cada lección que abres queda en Recientes y puedes guardarla con el marcador. Al volver a abrirla se carga al instante, con tus respuestas, sin crearla de nuevo.',
     descriptionEN:
-      'Save your favorite courses to your personal library. You can continue where you left off and see your progress on each course.',
+      'Every lesson you open stays in Recent and you can save it with the bookmark. Reopening it loads instantly, with your answers, without creating it again.',
     tipsES: [
-      'Presiona "Guardar en Biblioteca" al final de cada curso',
+      'Pulsa el marcador arriba de la lección para guardarla',
       'Tus cursos en progreso aparecen en la sección "En Progreso"',
       'Los cursos completados se marcan con una palomita',
     ],
     tipsEN: [
-      'Press "Save to Library" at the end of each course',
+      'Press the bookmark at the top of the lesson to save it',
       'Your in-progress courses appear in the "In Progress" section',
       'Completed courses are marked with a checkmark',
     ],
@@ -148,12 +148,12 @@ const tutorialSteps: TutorialStep[] = [
     descriptionEN:
       'Adjust font size, contrast, theme, and more from Settings. You can switch between light, dark, or high contrast themes at any time.',
     tipsES: [
-      'Cambia el tema con el botón de sol o luna en la barra superior',
+      'Cambia el tema o el tamaño de letra desde la barra de la lección; se guarda en tu cuenta',
       'Activa la guía de lectura con el botón de ojo para seguir el texto',
       'Ve a Configuración para ajustar todos los parámetros visuales',
     ],
     tipsEN: [
-      'Switch themes with the sun or moon button in the top bar',
+      'Change theme or text size from the lesson bar; it is saved to your account',
       'Enable the reading guide with the eye button to follow text',
       'Go to Settings to adjust all visual parameters',
     ],
@@ -180,8 +180,12 @@ const teacherSteps: TutorialStep[] = [
     ['The student must have a registered account', 'You can remove a student from the same tab'], <TUsers className="h-12 w-12" />),
   T(['📝 Crea y publica lecciones', '📝 Create and publish lessons'],
     ['Dentro del grupo pulsa "Nueva lección": la IA genera texto, imágenes, ejemplos y ejercicios. Revísala y publícala.', 'Inside the group press "New lesson": AI generates text, images, examples and exercises. Review it and publish it.'],
-    ['Los borradores no los ven los alumnos', 'Puedes despublicar una lección en cualquier momento'],
-    ['Students cannot see drafts', 'You can unpublish a lesson at any time'], <TBook className="h-12 w-12" />),
+    ['Mientras se crea verás cada paso; luego puedes editar cada sección o regenerar solo una', 'Los borradores no los ven los alumnos; puedes despublicar cuando quieras'],
+    ['You see each step while it is created; then edit any section or regenerate just one', 'Students cannot see drafts; you can unpublish at any time'], <TBook className="h-12 w-12" />),
+  T(['♻️ Reutiliza lecciones', '♻️ Reuse lessons'],
+    ['Puedes copiar una lección tuya a otro grupo sin gastar créditos: se crea un borrador nuevo e independiente que puedes editar antes de publicar.', 'You can copy one of your lessons to another group without spending credits: a new independent draft is created that you can edit before publishing.'],
+    ['Editar la copia no cambia la original', 'Al abrirla en otro idioma se traduce una vez y queda guardada'],
+    ['Editing the copy does not change the original', 'Opening it in another language translates it once and keeps it'], <TBook className="h-12 w-12" />),
   T(['📊 Sigue el progreso', '📊 Track progress'],
     ['En la pestaña "Alumnos" ves el avance promedio de cada alumno en las lecciones del grupo.', 'In the "Students" tab you see each student\'s average progress in the group\'s lessons.'],
     ['Ajustes > Datos muestra el resumen de tus grupos', 'Puedes volver a ver esta guía desde el panel'],

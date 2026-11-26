@@ -44,6 +44,9 @@ export default function CourseImage({ prompt, alt, cacheAlt, className, lang = '
     const generateImage = async () => {
       try {
         const key = JSON.stringify([prompt, cacheAlt || alt, sectionTitle, sectionContext, lang]);
+        const localKey = `course-image:${key}`;
+        const known = (() => { try { return localStorage.getItem(localKey); } catch { return null; } })();
+        if (known) { setImageUrl(known); setIsLoading(false); onStatusChange?.('done'); return; }
         let request = imageRequests.get(key);
         if (!request) {
           request = supabase.functions.invoke('generate-course-image', { body: { prompt, alt: cacheAlt || alt, sectionTitle, sectionContext, language: lang === 'en' ? 'en' : 'es' } }).then(({ data, error }) => { if (error) throw error; return data; }).finally(() => imageRequests.delete(key));
@@ -59,6 +62,7 @@ export default function CourseImage({ prompt, alt, cacheAlt, className, lang = '
           return;
         }
 
+        try { if (/^https?:/.test(data.imageUrl)) localStorage.setItem(localKey, data.imageUrl); } catch { /* storage full: server cache still applies */ }
         setImageUrl(data.imageUrl);
         onStatusChange?.('done');
       } catch (err) {

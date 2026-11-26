@@ -51,12 +51,12 @@ export default function MobileBottomNav() {
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       aria-label={t('navigation.main', 'Main navigation')}
     >
-      <div className="flex items-center justify-around h-14">
+      <div className="flex items-stretch justify-around min-h-16">
         {navItems.map((item) => (
           <button
             key={item.path}
             onClick={() => navigate(item.path)}
-            className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors touch-target ${
+            className={`flex min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-1 px-0.5 py-1.5 transition-colors touch-target ${
               isActive(item.path) 
                 ? 'text-primary' 
                 : 'text-muted-foreground hover:text-foreground'
@@ -64,8 +64,8 @@ export default function MobileBottomNav() {
             aria-current={isActive(item.path) ? 'page' : undefined}
           >
             {item.icon}
-            <span className="text-[10px] font-medium leading-none">
-              {t(item.labelKey)}
+            <span className="mobile-nav-label w-full text-center font-medium">
+              {t(`${item.labelKey}Short`, { defaultValue: t(item.labelKey) })}
             </span>
           </button>
         ))}

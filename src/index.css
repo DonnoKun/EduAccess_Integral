@@ -1584,7 +1584,7 @@ html[data-user-profile] [role="menu"] [class~="font-semibold"] { font-size: 0.9e
 }
 
 /* Lesson paragraphs: justified with hyphenation so wide fonts don't leave ragged edges. */
-.lesson-text { text-align: justify; text-justify: inter-word; hyphens: auto; -webkit-hyphens: auto; overflow-wrap: anywhere; }
+html .lesson-text, html[data-user-profile] .lesson-text { text-align: justify !important; text-justify: inter-word; hyphens: auto; -webkit-hyphens: auto; overflow-wrap: break-word; word-break: normal; }
 
 /* Lesson generation loader */
 @keyframes gen-spin { to { transform: rotate(360deg); } }
@@ -1598,3 +1598,7 @@ html[data-user-profile] [role="menu"] [class~="font-semibold"] { font-size: 0.9e
 .gen-shimmer { animation: gen-shimmer 1.8s ease-in-out infinite; }
 .gen-glow { animation: gen-glow 6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .gen-spin,.gen-pulse,.gen-pop,.gen-shimmer,.gen-glow { animation: none; } }
+
+body { overflow-x: clip; }
+/* Bottom nav labels: readable, wrap instead of overlapping neighbours. */
+html body nav span.mobile-nav-label, html[data-user-profile] body nav button span.mobile-nav-label { font-size: 11.5px !important; letter-spacing: -0.01em; line-height: 1.15 !important; hyphens: none !important; overflow-wrap: normal; word-break: keep-all; white-space: nowrap; overflow: hidden; text-overflow: clip; }

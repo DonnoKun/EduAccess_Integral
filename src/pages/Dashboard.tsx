@@ -514,7 +514,7 @@ export default function Dashboard() {
             <div className="grid gap-3">{savedContent.slice(0, 6).map(content => <Button key={content.id} variant="outline" className="h-auto justify-start whitespace-normal text-left" onClick={() => { selectContent(content); navigate(`/content/${content.id}`); }}>{content.title}</Button>)}</div>
           </section>
           {/* Quick Stats & Recent Activity */}
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Recent Searches */}
             <motion.div variants={item}>
               <Card>
@@ -546,7 +546,7 @@ export default function Dashboard() {
                         <li key={index}>
                           <Button
                             variant="ghost"
-                            className="w-full justify-start text-left"
+                            className="h-auto w-full min-w-0 justify-start whitespace-normal break-words text-left"
                             onClick={() => navigate(`/search?q=${encodeURIComponent(search)}`)}
                           >
                             <Search className="mr-2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
@@ -593,13 +593,13 @@ export default function Dashboard() {
                       <li key={content.id}>
                         <Button
                           variant="ghost"
-                          className="w-full justify-start text-left h-auto py-2"
+                          className="w-full min-w-0 justify-start whitespace-normal break-words text-left h-auto py-2"
                           onClick={() => navigate(`/search?q=${encodeURIComponent(content.query)}`)}
                         >
                           <span className="mr-2" aria-hidden="true">
                             {getSourceIcon(content.source)}
                           </span>
-                          <span className="truncate">{content.title}</span>
+                          <span className="min-w-0 break-words">{content.title}</span>
                         </Button>
                       </li>
                     ))}
