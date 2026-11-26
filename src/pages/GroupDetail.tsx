@@ -112,7 +112,7 @@ export default function GroupDetailPage() {
       // Reuse an identical lesson (same title, focus and language) instead of spending AI credits again.
       const cacheTitle = `group:${title.trim()}|${(description.trim() || title.trim())}`;
       const cached = await getCachedCourse(cacheTitle, lang);
-      const { data, error } = cached ? { data: { success: true, content: cached }, error: null } : await supabase.functions.invoke('generate-course-content', {
+      const { data, error } = cached ? await supabase.functions.invoke('generate-course-content', { body: { operation: 'review', title: title.trim(), description: description.trim(), language: lang, lesson: cached } }) : await supabase.functions.invoke('generate-course-content', {
         body: {
           title: title.trim(),
           description: description.trim() || title.trim(),
@@ -141,6 +141,7 @@ export default function GroupDetailPage() {
       if (insertError) throw new Error(insertError.message);
 
       setLessons((prev) => [...prev, inserted as unknown as GroupLesson]);
+      setEditing(inserted as unknown as GroupLesson);
       setTitle('');
       setDescription('');
       setOpenNew(false);

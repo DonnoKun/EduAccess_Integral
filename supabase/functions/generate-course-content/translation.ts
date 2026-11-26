@@ -1,7 +1,7 @@
 /** Schema mirrors the original tree, including paragraph and array lengths. */
 export function translationSchema(value: unknown, key = ''): Record<string, unknown> {
   if (typeof value === 'string') {
-    if (key === 'image_prompt' || key === 'url' || key === 'language') return { type: 'string', enum: [value] };
+    if (['image_prompt', 'url', 'language', 'confidence', 'status', 'kind'].includes(key)) return { type: 'string', enum: [value] };
     return { type: 'string' };
   }
   if (Array.isArray(value)) return { type: 'array', minItems: value.length, maxItems: value.length, items: value.length ? translationSchema(value[0]) : { type: 'string' } };
@@ -9,7 +9,7 @@ export function translationSchema(value: unknown, key = ''): Record<string, unkn
     const fields = Object.entries(value);
     return { type: 'object', properties: Object.fromEntries(fields.map(([k, v]) => [k, translationSchema(v, k)])), required: fields.map(([k]) => k), additionalProperties: false };
   }
-  return { type: typeof value === 'number' ? 'number' : typeof value === 'boolean' ? 'boolean' : 'null' };
+  return { type: typeof value === 'number' ? 'number' : typeof value === 'boolean' ? 'boolean' : 'null', enum: [value] };
 }
 
 export function validateTranslation(original: Record<string, unknown>, translated: Record<string, unknown>) {

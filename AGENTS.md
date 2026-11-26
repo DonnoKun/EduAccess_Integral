@@ -18,3 +18,4 @@
 - Benchmark batches checkpoint calls and phases under a database lease; aggregate only completed stored repetitions with Student-t intervals, and pause uncertain in-flight calls instead of replaying potentially billed inference.
 
 - Concurrency sweeps use immutable parents, stored-phase/call completion checks and idempotent metric writes; explicitly authorized incomplete-cell restarts clean only that exact cell under a lease, while completed cells are never replayed to avoid rebilling.
+- Content-quality signals are additive lesson JSON, backed by cached control topics and advisory review; mark edited signals stale and regenerate only the selected draft section so publication and student snapshots remain isolated.

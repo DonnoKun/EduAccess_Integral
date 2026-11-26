@@ -5,6 +5,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import type { LessonQuality } from '../../supabase/functions/generate-course-content/quality';
 
 export interface Group {
   id: string;
@@ -59,6 +60,7 @@ export interface LessonSource {
 }
 
 export interface LessonContent {
+  quality?: LessonQuality;
   language?: string;
   introduction?: string;
   sections?: LessonSection[];

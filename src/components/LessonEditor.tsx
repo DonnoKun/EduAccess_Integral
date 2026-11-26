@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { GroupLesson, LessonContent, LessonSection, LessonExample, LessonExercise, LessonSource } from '@/lib/courses';
+import LessonQualityPanel from '@/components/LessonQualityPanel';
 
 export interface LessonDraft { title: string; description: string; content: LessonContent }
 
@@ -51,13 +52,38 @@ function ListEditor<T extends object>({ title, items, fields, blank, onChange, e
 }
 
 export default function LessonEditor({ lesson, initial, onClose, onSaved }: { lesson: GroupLesson; initial: LessonDraft; onClose: () => void; onSaved: (draft: LessonDraft) => void }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [draft, setDraft] = useState(initial);
   const [saving, setSaving] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   const c = draft.content;
-  const setC = (patch: Partial<LessonContent>) => setDraft({ ...draft, content: { ...c, ...patch } });
+  const markStale = (content: LessonContent): LessonContent => ({ ...content, ...(content.quality ? { quality: { ...content.quality, status: 'stale' as const } } : {}) });
+  const setC = (patch: Partial<LessonContent>) => setDraft(prev => ({ ...prev, content: markStale({ ...prev.content, ...patch }) }));
   const dirty = JSON.stringify(initial) !== JSON.stringify(draft);
-  const close = () => { if (!saving && (!dirty || window.confirm(t('courses.discardChanges')))) onClose(); };
+  const close = () => { if (!saving && !reviewing && (!dirty || window.confirm(t('courses.discardChanges')))) onClose(); };
+
+  const assess = async (sectionIndex?: number) => {
+    if (reviewing || saving) return;
+    setReviewing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-course-content', { body: {
+        operation: sectionIndex === undefined ? 'review' : 'regenerate_section',
+        title: draft.title, description: draft.description, language: c.language || i18n.language.split('-')[0], lesson: c, sectionIndex,
+      } });
+      if (error || !data?.success || !data.content?.quality) throw new Error('Review unavailable');
+      setDraft(prev => ({ ...prev, content: data.content }));
+      toast.success(i18n.language.startsWith('es') ? 'Revisión actualizada. Guarda el borrador para conservarla.' : 'Review updated. Save the draft to keep it.');
+    } catch {
+      toast.error(i18n.language.startsWith('es') ? 'No se pudo completar la revisión. Tu contenido se conserva.' : 'Review could not finish. Your content is preserved.');
+    } finally { setReviewing(false); }
+  };
+  const focusFlag = (sectionIndex?: number, exerciseIndex?: number) => {
+    const field = document.getElementById(sectionIndex !== undefined ? `sec-${sectionIndex}-content` : `exr-${exerciseIndex}-question`);
+    const details = field?.closest('details');
+    if (details) details.open = true;
+    field?.focus();
+    field?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  };
 
   const save = async () => {
     setSaving(true);
@@ -103,8 +129,10 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
     <DialogContent className="max-h-[85dvh] max-w-3xl overflow-y-auto">
       <DialogHeader><DialogTitle>{t('courses.editLesson')}</DialogTitle><DialogDescription>{t('courses.editNotice')}</DialogDescription></DialogHeader>
       <div className="space-y-4">
-        <div className="space-y-1"><Label htmlFor="edit-title">{t('courses.lessonTitle')}</Label><Input id="edit-title" value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} /></div>
-        <div className="space-y-1"><Label htmlFor="edit-description">{t('courses.lessonDescription')}</Label><Textarea id="edit-description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} /></div>
+        <LessonQualityPanel quality={c.quality} busy={saving || reviewing} onReview={() => assess()} onEdit={focusFlag} onRegenerate={assess} />
+        <fieldset disabled={reviewing || saving} className="min-w-0 space-y-4">
+        <div className="space-y-1"><Label htmlFor="edit-title">{t('courses.lessonTitle')}</Label><Input id="edit-title" value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value, content: markStale(c) })} /></div>
+        <div className="space-y-1"><Label htmlFor="edit-description">{t('courses.lessonDescription')}</Label><Textarea id="edit-description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value, content: markStale(c) })} /></div>
         <div className="space-y-1"><Label htmlFor="edit-intro">{t('courses.editFields.introduction', { defaultValue: 'Introduction' })}</Label><Textarea id="edit-intro" rows={6} value={c.introduction || ''} onChange={e => setC({ introduction: e.target.value })} /></div>
         <ListEditor<LessonSection> idPrefix="sec" title={t('courses.edit.sections')} items={c.sections || []} onChange={sections => setC({ sections })}
           blank={() => ({ title: '', content: '', keyPoints: [] })}
@@ -120,10 +148,11 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
         <ListEditor<LessonSource> idPrefix="src" title={t('courses.edit.sources')} items={c.sources || []} onChange={sources => setC({ sources })}
           blank={() => ({ name: '', url: 'https://' })}
           fields={[{ key: 'name', label: t('courses.edit.title') }, { key: 'url', label: 'URL' }, { key: 'description', label: t('courses.edit.content') }]} />
+        </fieldset>
       </div>
       <div className="sticky bottom-0 flex flex-wrap gap-2 border-t bg-background pt-4">
-        <Button disabled={saving || !draft.title.trim()} onClick={save} className="h-auto whitespace-normal">{saving ? <Loader2 className="animate-spin" /> : <Save />}{t('courses.saveDraft')}</Button>
-        <Button variant="outline" disabled={saving} onClick={close}>{t('courses.cancel')}</Button>
+        <Button disabled={saving || reviewing || !draft.title.trim()} onClick={save} className="h-auto whitespace-normal">{saving ? <Loader2 className="animate-spin" /> : <Save />}{t('courses.saveDraft')}</Button>
+        <Button variant="outline" disabled={saving || reviewing} onClick={close}>{t('courses.cancel')}</Button>
       </div>
     </DialogContent>
   </Dialog>;
