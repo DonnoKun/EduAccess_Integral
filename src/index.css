@@ -332,6 +332,12 @@
     line-height: var(--profile-line-height) !important;
   }
 
+  /* Bottom bar labels stay compact at any profile size so the bar never eats the screen. */
+  html[data-user-profile] body nav[aria-label] button span.mobile-nav-label.mobile-nav-label {
+    font-size: 12px !important;
+    line-height: 1.15 !important;
+  }
+
   /* Buttons and form elements scale */
   html[data-user-profile] button,
   html[data-user-profile] .btn,
@@ -917,8 +923,9 @@
   html[data-user-profile] .search-status svg { width: 1em !important; height: 1em !important; }
   .search-card-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, max(18rem, calc(var(--profile-font-size) * 13))), 1fr)); }
   @media (max-width: 800px) {
-    .site-header-layout { grid-template-columns: minmax(0, 1fr); }
-    .site-header-nav { grid-row: auto; }
+    /* Logo icon and actions share one row so the header stays short on phones. */
+    .site-header-layout { grid-template-columns: auto minmax(0, 1fr); gap: 0.5em; }
+    .site-header-nav { grid-row: auto; grid-column: 1 / -1; }
     .site-header-actions { justify-content: space-between; width: 100%; }
     .site-header-actions > * { flex: 1 1 0; min-width: 0; }
   }
@@ -1592,4 +1599,4 @@ html .lesson-text, html[data-user-profile] .lesson-text { text-align: justify !i
 
 body { overflow-x: clip; }
 /* Bottom nav labels: readable, wrap instead of overlapping neighbours. */
-html body nav span.mobile-nav-label, html[data-user-profile] body nav button span.mobile-nav-label { font-size: 11px !important; letter-spacing: -0.02em; line-height: 1.15 !important; hyphens: none !important; overflow-wrap: normal; word-break: keep-all; white-space: nowrap; overflow: hidden; text-overflow: clip; }
+html body nav span.mobile-nav-label, html[data-user-profile] body nav[aria-label] button span.mobile-nav-label.mobile-nav-label { font-size: 11px !important; letter-spacing: -0.02em; line-height: 1.15 !important; hyphens: none !important; overflow-wrap: normal; word-break: keep-all; white-space: nowrap; overflow: hidden; text-overflow: clip; }

@@ -236,11 +236,11 @@ export default function Dashboard() {
 
       {/* Header */}
       <header className="z-50 glass-card border-b md:sticky md:top-0">
-        <div className="site-header-layout container mx-auto px-4 min-h-16 py-3">
+        <div className="site-header-layout container mx-auto px-3 min-h-14 py-2 md:px-4 md:min-h-16 md:py-3">
           <div className="flex items-center gap-4">
             <Link to="/dashboard" className="flex items-center gap-2">
               <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />
-              <span className="text-xl font-bold">{t('common.appName')}</span>
+              <span className="sr-only sm:not-sr-only text-lg font-bold md:text-xl">{t('common.appName')}</span>
             </Link>
           </div>
 

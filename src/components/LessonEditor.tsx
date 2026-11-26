@@ -150,7 +150,7 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
           fields={[{ key: 'name', label: t('courses.edit.title') }, { key: 'url', label: 'URL' }, { key: 'description', label: t('courses.edit.content') }]} />
         </fieldset>
       </div>
-      <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] md:bottom-0 z-30 flex flex-wrap gap-2 border-t bg-background py-4">
+      <div className="sticky bottom-[var(--mobile-nav-h,0px)] transition-[bottom] duration-200 md:bottom-0 z-30 flex flex-wrap gap-2 border-t bg-background py-4">
         <Button disabled={saving || reviewing || !draft.title.trim()} onClick={save} className="h-auto whitespace-normal">{saving ? <Loader2 className="animate-spin" /> : <Save />}{t('courses.saveDraft')}</Button>
         <Button variant="outline" disabled={saving || reviewing} onClick={close}>{t('courses.cancel')}</Button>
       </div>
