@@ -472,7 +472,8 @@
 
   /* Respect reduced motion preferences */
   @media (prefers-reduced-motion: reduce) {
-    *:not(.eduaccess-splash *) {
+    /* The motion preview stays live so the switch visibly works; the user's own choice controls it. */
+    *:not(.eduaccess-splash *):not(.animation-sample *) {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
@@ -849,27 +850,6 @@
     object-fit: contain;
   }
   /* Water-cycle sample: 9s loop — evaporation, condensation, precipitation */
-  html .learning-sample .water-cycle-anim * { animation-duration: 9s !important; animation-iteration-count: infinite !important; animation-timing-function: ease-in-out; transform-box: fill-box; transform-origin: center; }
-  .water-cycle-anim[data-running="false"] * { animation-play-state: paused; }
-  .water-cycle-anim .wc-sun { animation-name: wc-sun; }
-  .water-cycle-anim .wc-vapor { animation-name: wc-vapor; }
-  .water-cycle-anim .wc-cloud { animation-name: wc-cloud; }
-  .water-cycle-anim .wc-rain { animation-name: wc-rain; }
-  .water-cycle-anim .wc-label { opacity: 0; }
-  .water-cycle-anim [class~="wc-label-0"] { animation-name: wc-label-0; }
-  .water-cycle-anim [class~="wc-label-1"] { animation-name: wc-label-1; }
-  .water-cycle-anim [class~="wc-label-2"] { animation-name: wc-label-2; }
-  @keyframes wc-sun { 0%, 33%, 100% { transform: scale(1); } 15% { transform: scale(1.15); } }
-  @keyframes wc-vapor { 0% { transform: translateY(20px); opacity: 0; } 15% { opacity: 0.8; } 33% { transform: translateY(-90px); opacity: 0; } 100% { opacity: 0; } }
-  @keyframes wc-cloud { 0%, 30% { transform: translateX(0); } 60%, 90% { transform: translateX(190px); } 100% { transform: translateX(0); } }
-  @keyframes wc-rain { 0%, 62% { opacity: 0; transform: translateY(0); } 70% { opacity: 1; } 95% { opacity: 1; transform: translateY(110px); } 100% { opacity: 0; transform: translateY(110px); } }
-  @keyframes wc-label-0 { 0%, 30% { opacity: 1; } 33%, 100% { opacity: 0; } }
-  @keyframes wc-label-1 { 0%, 33% { opacity: 0; } 36%, 63% { opacity: 1; } 66%, 100% { opacity: 0; } }
-  @keyframes wc-label-2 { 0%, 66% { opacity: 0; } 69%, 97% { opacity: 1; } 100% { opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) {
-    .water-cycle-anim * { animation: none !important; }
-    .water-cycle-anim [class~="wc-label-0"] { opacity: 1; }
-  }
   .learning-sample p, .learning-sample figcaption {
     overflow-wrap: anywhere;
   }
@@ -877,8 +857,17 @@
     width: 1.25em;
     height: 1.25em;
   }
+  .animation-sample-card { transition: none; }
+  .animation-sample[data-animated="true"] .animation-sample-card {
+    animation: sample-notice 2.4s ease-in-out infinite;
+  }
   .animation-sample[data-animated="true"] .animation-sample-icon {
-    animation: sample-confirmation 2s ease-in-out infinite;
+    animation: sample-confirmation 1.2s ease-in-out infinite;
+  }
+  @keyframes sample-notice {
+    0% { transform: translateY(40%); opacity: 0; }
+    20%, 75% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(0); opacity: 0; }
   }
   @keyframes sample-confirmation {
     0%, 100% { transform: scale(1); }

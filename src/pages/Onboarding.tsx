@@ -639,8 +639,13 @@ export default function Onboarding() {
                       </div>
                     </div>
 
-                    <div className="animation-sample border-y border-border py-5" data-animated={enableAnimations}>
-                      <div className="flex items-center gap-3 font-semibold">
+                    <div className="animation-sample space-y-3 border-y border-border py-5" data-animated={enableAnimations} aria-live="polite">
+                      <p className="font-semibold text-primary">
+                        {enableAnimations
+                          ? (i18n.language.startsWith('es') ? 'Movimiento activado: los avisos aparecen y se desvanecen' : 'Motion on: notices slide in and fade out')
+                          : (i18n.language.startsWith('es') ? 'Movimiento desactivado: los avisos se quedan quietos' : 'Motion off: notices stay still')}
+                      </p>
+                      <div className="animation-sample-card flex items-center gap-3 rounded-lg border-2 border-primary bg-primary/10 p-4 font-semibold">
                         <Check className="animation-sample-icon text-primary shrink-0" aria-hidden="true" />
                         <span>{i18n.language.startsWith('es') ? 'Lección completada' : 'Lesson completed'}</span>
                       </div>
