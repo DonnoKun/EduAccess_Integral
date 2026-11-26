@@ -237,6 +237,10 @@ export default function GroupDetailPage() {
       const key =
         res.error === 'user_not_found'
           ? 'courses.emailNotFound'
+          : res.error === 'self'
+            ? 'courses.emailIsSelf'
+          : res.error === 'not_student'
+            ? 'courses.emailNotStudent'
           : res.error === 'already_enrolled'
             ? 'courses.alreadyEnrolled'
             : 'courses.addStudentError';
