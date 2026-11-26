@@ -303,7 +303,7 @@ export default function SearchPage() {
     <div className="min-h-screen bg-background">
       <a href="#search-results" className="skip-link">{t('common.skipToMain')}</a>
 
-      <header className="sticky top-0 z-50 glass-card border-b">
+      <header className="z-50 glass-card border-b md:sticky md:top-0">
         <div className="site-header-layout search-header-layout container mx-auto px-4 min-h-16 py-3">
           <Link to="/dashboard" className="flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />

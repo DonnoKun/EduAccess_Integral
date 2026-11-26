@@ -235,7 +235,7 @@ export default function Dashboard() {
       </a>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 glass-card border-b">
+      <header className="z-50 glass-card border-b md:sticky md:top-0">
         <div className="site-header-layout container mx-auto px-4 min-h-16 py-3">
           <div className="flex items-center gap-4">
             <Link to="/dashboard" className="flex items-center gap-2">

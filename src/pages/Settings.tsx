@@ -240,7 +240,7 @@ export default function Settings() {
       </a>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 glass-card border-b">
+      <header className="z-50 glass-card border-b md:sticky md:top-0">
         <div className="container mx-auto px-4 min-h-16 py-2 flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2 sm:gap-4">
             <Button variant="ghost" onClick={() => navigate('/dashboard')}>
