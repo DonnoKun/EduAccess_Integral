@@ -31,7 +31,8 @@
 - [x] Include key points in section narration and share lesson reading layout; narration order regression tested. Audible device output remains device-dependent.
 - [x] Make student search single-level, single-format and parameter-aware; unsupported video option hidden. Live elementary worksheet generated 12 exercises in one lesson; format/level cache isolation tested.
 - [x] Persist opened lessons as recent, separate from pinned library items; live student reopening from dashboard restored answer without explicit save; mobile width checked.
-- [x] Normalize complete image-model prompts to English on automatic/manual paths through cached resilient translation; deployed. New image generation not exercised to avoid unnecessary inference.
+- [x] Normalize complete image-model prompts to English on automatic/manual paths through cached resilient translation; live gateway requests verified on 2026-11-26 (Spanish visual labels retained in the automatic diagram).
 - [x] Copy teacher-owned lessons between groups without inference; independent copy regression tested.
-- [ ] Verify teacher reuse end-to-end — temporary teacher session stayed in onboarding and could not reach group controls; all temporary data removed.
+- [x] Verify teacher reuse end-to-end: identical content copied into a new draft without AI calls; editing, reload and publishing of the copy preserved the original. Temporary groups/lessons removed and counts confirmed zero.
+- [x] Exercise live automatic and teacher-written image generation: both produced 1024px images with real-image descriptions, short alt <=125, mobile layout and cached reopening; 10 low-vision regression tests passed, current build OK. Details in .lovable/reviews/teacher-image-verification.md.
 - [x] Enforce duplicate-email rejection regardless of role; live uppercase duplicate rejected for both roles with 409. Eight test files, 38 tests passed; current build OK.
