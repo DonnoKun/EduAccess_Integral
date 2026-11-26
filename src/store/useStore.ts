@@ -192,6 +192,12 @@ export const useStore = create<GlobalState>()(
           });
         }
         
+        // Persist right away so the chosen theme survives reloads and navigation on every screen.
+        void import('@/store/useAuthStore').then(({ useAuthStore }) => {
+          const uid = useAuthStore.getState().currentUser?.id;
+          if (uid) void import('@/integrations/supabase/client').then(({ supabase }) =>
+            supabase.from('profiles').update({ current_theme: theme } as never).eq('user_id', uid));
+        });
         get().trackEvent({ type: 'theme_change', details: { theme } });
         console.log('✅ Theme changed to:', theme, 'class:', root.classList.toString());
       },

@@ -5,20 +5,15 @@ import LanguageSelector from '@/components/LanguageSelector';
 import { useStore } from '@/store/useStore';
 import { useTranslation } from 'react-i18next';
 import { useProfileSync } from '@/hooks/useProfileSync';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuthStore } from '@/store/useAuthStore';
 
 export default function LessonToolbar({ title, onBack, actions }: { title: string; onBack: () => void; actions?: ReactNode }) {
   const { t, i18n } = useTranslation();
   const es = i18n.language.startsWith('es');
   const { visualProfile, updateVisualProfile, currentTheme, setTheme, readingGuideEnabled, toggleReadingGuide } = useStore();
   useProfileSync();
-  const userId = useAuthStore(s => s.currentUser?.id);
   const changeTheme = () => {
     const next = currentTheme === 'light' ? 'dark' : currentTheme === 'dark' ? 'high-contrast' : 'light';
     setTheme(next);
-    // Save immediately so a reload or leaving the lesson keeps the chosen theme.
-    if (userId) void supabase.from('profiles').update({ current_theme: next } as any).eq('user_id', userId);
   };
   const resize = (delta: number) => { if (visualProfile) updateVisualProfile({ preferences: { ...visualProfile.preferences, fontSize: Math.max(16, Math.min(48, Number(visualProfile.preferences.fontSize) + delta)) } }); };
   return <header className="sticky top-0 z-40 border-b bg-background">
