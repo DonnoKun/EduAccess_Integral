@@ -201,6 +201,11 @@ export const useStore = create<GlobalState>()(
       performSearch: async (query) => {
         const searchId = ++latestSearch;
         const update = (patch: Partial<GlobalState>) => { if (searchId === latestSearch) set(patch); };
+        // Never call AI without an explicit user query: browsing the Search tab must cost nothing.
+        if (!query.trim()) {
+          update({ searchLoading: false, searchError: null, searchQuery: '', searchResults: [], searchSuggestions: [], searchNoResultsReason: null, searchQueryClassification: null });
+          return;
+        }
         update({ searchLoading: true, searchError: null, searchQuery: query, searchSuggestions: [], searchNoResultsReason: null, searchQueryClassification: null });
         get().trackEvent({ type: 'search', details: { query } });
 
@@ -274,7 +279,7 @@ export const useStore = create<GlobalState>()(
               );
             }
             if (results.length === 0) results = mockData.slice(0, 6);
-            update({ searchResults: results, searchLoading: false });
+            update({ searchResults: results.slice(0, 1), searchLoading: false });
             return;
           }
 
@@ -312,7 +317,8 @@ export const useStore = create<GlobalState>()(
               }
 
               update({
-                searchResults: results, 
+                // One query produces one lesson; extra results would invite duplicate generations.
+                searchResults: results.slice(0, 1),
                 searchLoading: false,
                 searchQueryClassification: classification,
                 searchSuggestions: suggestions,

@@ -85,6 +85,12 @@ export default function SearchPage() {
   const [isListening, setIsListening] = useState(false);
 
   const applyTranscript = (transcript: string) => {
+    const f = useStore.getState().searchFilters;
+    if (!f.educationLevel?.length || !f.contentType?.length) {
+      setLocalQuery(transcript);
+      toast.error(lang === 'es' ? 'Elige el nivel y el tipo de contenido antes de buscar.' : 'Choose a level and content type before searching.');
+      return;
+    }
     autoOpen.current = true;
     setLocalQuery(transcript);
     setSearchParams({ q: transcript });
@@ -148,10 +154,8 @@ export default function SearchPage() {
     setIsListening(true);
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
-      setLocalQuery(transcript);
-      setSearchParams({ q: transcript });
-      performSearch(transcript);
       setIsListening(false);
+      applyTranscript(transcript);
     };
     recognition.onerror = (event: any) => {
       let msg = '';
@@ -204,8 +208,6 @@ export default function SearchPage() {
     if (queryParam) {
       setLocalQuery(queryParam);
       if (useStore.getState().searchQuery !== queryParam || !useStore.getState().searchResults.length) performSearch(queryParam);
-    } else {
-      performSearch('');
     }
   }, [searchParams, performSearch]);
 
@@ -219,6 +221,10 @@ export default function SearchPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    if (localQuery.trim() && (!searchFilters.educationLevel?.length || !searchFilters.contentType?.length)) {
+      toast.error(lang === 'es' ? 'Elige el nivel y el tipo de contenido antes de buscar.' : 'Choose a level and content type before searching.');
+      return;
+    }
     autoOpen.current = Boolean(localQuery.trim());
     setSearchParams(localQuery ? { q: localQuery } : {});
   };

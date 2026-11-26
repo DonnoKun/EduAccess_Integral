@@ -78,16 +78,24 @@ export default function LessonViewerPage() {
       let c = (await getCachedCourse(key, lang)) as any;
       if (!c) {
         c = await cachedAI(`${key}:${lang}`, lesson.title, lang, async () => {
-          const { data, error } = await supabase.functions.invoke('generate-course-content', {
-            body: { title: lesson.title, description: lesson.description || lesson.title, contentType: 'article', source: 'oer', language: lang, originalContent: orig },
-          });
-          if (error) {
-            const detail = error instanceof FunctionsHttpError ? await error.context.text() : error.message;
-            console.error('Lesson translation failed:', detail);
-            throw new Error(detail);
+          // Translation output is validated strictly and can be rejected once; retry automatically
+          // so the teacher or student never has to leave and reopen the lesson.
+          let lastError: Error = new Error('Translation unavailable');
+          for (let attempt = 0; attempt < 2 && !cancelled; attempt++) {
+            const { data, error } = await supabase.functions.invoke('generate-course-content', {
+              body: { title: lesson.title, description: lesson.description || lesson.title, contentType: 'article', source: 'oer', language: lang, originalContent: orig },
+            });
+            if (error) {
+              const detail = error instanceof FunctionsHttpError ? await error.context.text() : error.message;
+              console.error('Lesson translation failed:', detail);
+              lastError = new Error(detail);
+              if (/402|429|credits/i.test(detail)) break;
+              continue;
+            }
+            if (data?.success && data?.content) return { ...data.content, language: lang };
+            lastError = new Error(data?.error || 'Translation unavailable');
           }
-          if (!data?.success || !data?.content) throw new Error(data?.error || 'Translation unavailable');
-          return { ...data.content, language: lang };
+          throw lastError;
         }, value => Boolean(value?.introduction));
         await saveCourseToCache(key, lang, c);
       }
