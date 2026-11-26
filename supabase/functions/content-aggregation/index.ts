@@ -2,6 +2,7 @@
 import { aiEndpoint, jsonRes } from "../_shared/ai-endpoint.ts";
 import { resilientChat } from "../_shared/ai-gateway.ts";
 import { z } from "../_shared/validate.ts";
+import { safePublicFetch } from "../_shared/safe-fetch.ts";
 
 const Body = z.object({
   sourceType: z.enum(["url", "lms", "text"]),
@@ -16,7 +17,7 @@ Deno.serve(aiEndpoint(Body, async ({ data, cors }) => {
   let text = sourceType === "text" ? value : "";
   if (sourceType === "url") {
     try {
-      const r = await fetch(value, { signal: AbortSignal.timeout(8000) });
+      const r = await safePublicFetch(value);
       const html = (await r.text()).slice(0, 300000);
       text = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 20000);
     } catch { return jsonRes(cors, { success: false, error: "Source unreachable" }, 502); }
