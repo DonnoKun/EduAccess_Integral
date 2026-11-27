@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import AudioPlayer from '@/components/AudioPlayer';
-import LessonText from '@/components/LessonText';
+import LessonText, { InlineText } from '@/components/LessonText';
 import { stripMarkdown } from '@/lib/lessonMarkdown';
 import CourseImage from '@/components/CourseImage';
 import { safeSourceUrl, type LessonContent } from '@/lib/courses';
@@ -40,7 +40,7 @@ export default function LessonReader({ content, original = content, lang, storag
       <LessonText text={content.introduction} />
     </section>}
     {(content.sections || []).map((section, i) => <section key={i} className="space-y-4 border-t pt-6" aria-labelledby={`lesson-section-${i}`}>
-      <h2 id={`lesson-section-${i}`} className="font-bold break-words">{section.title}</h2>
+      <h2 id={`lesson-section-${i}`} className="font-bold break-words"><InlineText text={section.title} /></h2>
       {audio(sectionNarration({ ...section, image_alt: imageDescriptions[i] || section.image_alt }), `s${i}`)}
       <LessonText text={section.content} />
       {showImages && section.image_prompt && <CourseImage prompt={section.image_prompt} alt={section.image_alt || section.title} lang={lang}
@@ -53,20 +53,20 @@ export default function LessonReader({ content, original = content, lang, storag
       </div>}
       {!!section.keyPoints?.length && <div className="space-y-2">
         <h3 className="font-semibold">{lang === 'es' ? 'Puntos clave' : 'Key points'}</h3>
-        <ul className="list-disc space-y-2 pl-6">{section.keyPoints.map((point, k) => <li key={k} className="break-words">{stripMarkdown(point)}</li>)}</ul>
+        <ul className="list-disc space-y-2 pl-6">{section.keyPoints.map((point, k) => <li key={k} className="break-words"><InlineText text={point} /></li>)}</ul>
       </div>}
     </section>)}
     {!!content.examples?.length && <section className="space-y-4 border-t pt-6">
       <h2 className="font-bold">{t('contentViewer.examples', 'Ejemplos prácticos')}</h2>
       {audio(content.examples.map(e => `${e.title}. ${e.description}`).join('. '), 'examples')}
-      {content.examples.map((example, i) => <div key={i} className="space-y-2"><h3 className="font-semibold break-words">{example.title}</h3><LessonText text={example.description} /></div>)}
+      {content.examples.map((example, i) => <div key={i} className="space-y-2"><h3 className="font-semibold break-words"><InlineText text={example.title} /></h3><LessonText text={example.description} /></div>)}
     </section>}
     {!!content.exercises?.length && <section className="space-y-6 border-t pt-6">
       <h2 className="font-bold">{t('contentViewer.exercises', 'Ejercicios de práctica')}</h2>
       {audio(content.exercises.map((e, i) => `${i + 1}. ${e.question}. ${e.hint || ''}`).join('. '), 'exercises')}
       {content.exercises.map((exercise, i) => <div key={i} className="space-y-3">
-        <p className="font-medium break-words">{i + 1}. {exercise.question}</p>
-        {exercise.hint && <p className="text-muted-foreground break-words">{exercise.hint}</p>}
+        <p className="font-medium break-words">{i + 1}. <InlineText text={exercise.question} /></p>
+        {exercise.hint && <p className="text-muted-foreground break-words"><InlineText text={exercise.hint} /></p>}
         <Textarea value={answers[i] || ''} onChange={e => onAnswer(i, e.target.value)} aria-label={`${t('courses.yourAnswer')} ${i + 1}`} />
         <div className="flex flex-wrap gap-2 items-center">
           <Button variant="outline" disabled={!answers[i]?.trim()} onClick={() => onCheck(i)}>{t('courses.checkAnswer')}</Button>

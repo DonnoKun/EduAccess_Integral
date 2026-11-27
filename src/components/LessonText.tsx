@@ -1,11 +1,15 @@
 import { Fragment, type ReactNode } from 'react';
 
-function inline(text: string): ReactNode[] {
-  return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((part, i) =>
-    part.startsWith('**') && part.endsWith('**') && part.length > 4
-      ? <strong key={i}>{part.slice(2, -2)}</strong>
-      : <Fragment key={i}>{part.replace(/\*\*/g, '')}</Fragment>);
+export function inline(text: string): ReactNode[] {
+  return text.split(/(\*\*[^*\n]+\*\*|\*[^*\n]+\*)/g).filter(Boolean).map((part, i) => {
+    if (/^\*\*[^*]+\*\*$/.test(part)) return <strong key={i}>{part.slice(2, -2)}</strong>;
+    if (/^\*[^*]+\*$/.test(part)) return <em key={i}>{part.slice(1, -1)}</em>;
+    return <Fragment key={i}>{part.replace(/\*+/g, '')}</Fragment>;
+  });
 }
+
+/** Inline-only variant for titles, key points and questions. */
+export function InlineText({ text }: { text?: string }) { return <>{inline(text || '')}</>; }
 
 /** Renders the small markdown subset AI lessons use (headings, bullet lists, bold) without raw symbols. */
 export default function LessonText({ text, className = '' }: { text: string; className?: string }) {
