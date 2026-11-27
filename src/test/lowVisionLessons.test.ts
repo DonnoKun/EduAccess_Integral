@@ -12,6 +12,10 @@ describe('requested low-vision lesson rules', () => {
     const image = 'https://example.org/chart.png';
     expect(visionContent({ title: 'Misleading title' }, image)[1]).toEqual({ type: 'image_url', image_url: { url: image } });
     expect(visionContent({ title: 'No image' })).toHaveLength(1);
+    const dataUrl = 'data:image/png;base64,' + 'A'.repeat(5000);
+    const text = (visionContent({ title: 'T', imageUrl: dataUrl, other: dataUrl }, dataUrl)[0] as { text: string }).text;
+    expect(text).not.toContain('base64');
+    expect(text.length).toBeLessThan(50);
   });
   it('limits short alt text to 125 characters while leaving long descriptions independent', () => {
     expect(Array.from(shortAlt('a'.repeat(200)))).toHaveLength(125);

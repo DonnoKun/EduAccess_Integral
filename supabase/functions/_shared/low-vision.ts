@@ -3,7 +3,8 @@ export const LOW_VISION_AUDIENCE = 'students with low vision (mild and moderate 
 
 export function visionContent(metadata: unknown, imageUrl?: string) {
   const content: ({ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } })[] = [
-    { type: 'text', text: JSON.stringify(metadata) },
+    // Image bytes travel only as an image part; serialized into text they bill as ~1M input tokens.
+    { type: 'text', text: JSON.stringify(metadata, (key, value) => (key === 'imageUrl' || (typeof value === 'string' && value.startsWith('data:image/'))) ? undefined : value) },
   ];
   if (imageUrl) content.push({ type: 'image_url', image_url: { url: imageUrl } });
   return content;
