@@ -61,4 +61,11 @@ describe('advisory lesson quality', () => {
     expect(out.quality.confidence).toBe('medium');
     expect(out.quality.review_flags[0]).toEqual({ kind: 'factual', section_index: 1, message: 'Revisar' });
   });
+  it('accepts topic indices and accent/case variants instead of failing the review', () => {
+    const topics = ['Aerodinámica', 'Motores', 'Frenos', 'Neumáticos'];
+    const lesson = { introduction: 'x', sections: [] };
+    const q = validateReview({ confidence: 'medium', covered_topics: [0, 'MOTORES'], missing_topics: ['aerodinamica'].slice(1).concat(['Frenos']), superficial_topics: [3], review_flags: [] }, topics, lesson, 'es', true);
+    expect(q.covered_topics).toEqual(['Aerodinámica', 'Motores']);
+    expect(q.coverage).toBe(50);
+  });
 });

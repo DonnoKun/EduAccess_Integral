@@ -43,7 +43,14 @@ export function validateReview(value: unknown, topics: string[], lesson: ReviewL
   if (!value || typeof value !== 'object') throw new Error('Invalid review');
   const r = value as Record<string, unknown>;
   if (!['low', 'medium', 'high'].includes(String(r.confidence))) throw new Error('Invalid confidence');
-  const covered = strings(r.covered_topics), missing = strings(r.missing_topics), superficial = strings(r.superficial_topics);
+  // Accept topic indices (preferred) or topic text; resolve both to the stored control topic so wording/language drift cannot fail a review.
+  const norm = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  const resolve = (v: unknown): unknown => Array.isArray(v) ? v.map(x => {
+    if (typeof x === 'number' && Number.isInteger(x) && x >= 0 && x < topics.length) return topics[x];
+    if (typeof x === 'string' && !topics.includes(x)) return topics.find(t => norm(t) === norm(x)) ?? x;
+    return x;
+  }) : v;
+  const covered = strings(resolve(r.covered_topics)), missing = strings(resolve(r.missing_topics)), superficial = strings(resolve(r.superficial_topics));
   const assigned = [...covered, ...missing, ...superficial];
   if (assigned.length !== topics.length || new Set(assigned).size !== topics.length || assigned.some(t => !topics.includes(t))) throw new Error('Review must classify each control topic exactly once');
   if (!Array.isArray(r.review_flags) || r.review_flags.length > 60) throw new Error('Invalid flags');
