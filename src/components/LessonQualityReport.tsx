@@ -17,7 +17,8 @@ function Comparison({ before, after, es }: { before: NonNullable<LessonContent['
     { label: es ? 'Extensión' : 'Length', before: before.word_count, after: after.word_count, delta: signed(delta.wordsDelta) },
   ];
   return <div className="space-y-3">
-    <h3 className="font-semibold">{es ? 'Antes y después' : 'Before and after'}</h3>
+    <h3 className="font-semibold">{es ? 'Inicio y resultado final' : 'Start and final result'}</h3>
+    <p className="text-sm text-muted-foreground break-words">{es ? `Primera evaluación${before.reviewed_at ? ` (${new Date(before.reviewed_at).toLocaleString('es')})` : ''} comparada con la actual.` : `First assessment${before.reviewed_at ? ` (${new Date(before.reviewed_at).toLocaleString('en')})` : ''} compared with the current one.`}</p>
     <dl className="grid gap-3 sm:grid-cols-2">
       {rows.map(row => <div key={row.label} className="min-w-0 rounded-md border p-3">
         <dt className="font-medium break-words">{row.label}</dt>
@@ -40,7 +41,7 @@ export default function LessonQualityReport({ title, quality, history = [], audi
   const teacher = audience === 'teacher';
   const lessonTitle = title || (es ? 'Lección' : 'Lesson');
   const verdict = qualityVerdict(quality, language, audience);
-  const before = teacher ? history.at(-1) : undefined;
+  const before = teacher ? history[0] : undefined;
   const confidence = quality ? ({ low: es ? 'Baja' : 'Low', medium: es ? 'Media' : 'Medium', high: es ? 'Alta' : 'High' })[quality.confidence] : null;
   const reportInput = { title: lessonTitle, quality, history, language, audience } as const;
   const download = () => { void downloadQualityReport(reportInput); };

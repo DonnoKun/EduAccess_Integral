@@ -57,7 +57,7 @@ describe('reporte de cobertura', () => {
     const before = quality(50, 1);
     const after = quality(90);
     const html = buildQualityReportHtml({ title: '<script>alert(1)</script>', quality: after, history: [before], language: 'es', audience: 'teacher', generatedAt: new Date('2026-11-27T01:00:00Z') });
-    expect(html).toContain('Antes y después');
+    expect(html).toContain('Inicio y resultado final');
     expect(html).toContain('+40 puntos');
     expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
     expect(html).not.toContain('<script>alert(1)</script>');
@@ -66,7 +66,7 @@ describe('reporte de cobertura', () => {
 
   it('el reporte de estudiante no incluye el historial docente', () => {
     const html = buildQualityReportHtml({ title: 'Fotosíntesis', quality: quality(90), history: [quality(50)], language: 'es', audience: 'student' });
-    expect(html).not.toContain('Antes y después');
+    expect(html).not.toContain('Inicio y resultado final');
     expect(html).toContain('consulta a tu docente');
   });
 });
@@ -77,7 +77,18 @@ describe('reporte PDF', () => {
     const q = { coverage: 92, confidence: 'high', covered_topics: [], missing_topics: [], superficial_topics: [], control_topics: [], review_flags: [], length_ok: true, word_count: 3000, status: 'reviewed' } as never;
     const student = buildQualityReportBlocks({ title: 'X', quality: q, history: [q], language: 'es', audience: 'student' });
     const teacher = buildQualityReportBlocks({ title: 'X', quality: q, history: [q], language: 'es', audience: 'teacher' });
-    expect(student.some(b => b.text === 'Antes y después')).toBe(false);
-    expect(teacher.some(b => b.text === 'Antes y después')).toBe(true);
+    expect(student.some(b => b.text === 'Inicio y resultado final')).toBe(false);
+    expect(teacher.some(b => b.text === 'Inicio y resultado final')).toBe(true);
+  });
+});
+
+import { recordQualityReview as rqr } from '@/lib/lessonQualityReport';
+describe('historial de cobertura', () => {
+  it('conserva siempre la primera evaluación como inicio', () => {
+    const q = (coverage: number) => ({ coverage, confidence: 'high', covered_topics: [], missing_topics: [], superficial_topics: [], control_topics: [], review_flags: [], length_ok: true, word_count: 1, status: 'reviewed' }) as any;
+    let lesson: any = { quality: q(40) };
+    for (const c of [50, 60, 70, 80, 90, 95, 100, 100]) lesson = rqr(lesson, { ...lesson, quality: q(c) });
+    expect(lesson.quality_history[0].coverage).toBe(40);
+    expect(lesson.quality_history.length).toBe(6);
   });
 });

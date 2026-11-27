@@ -62,7 +62,9 @@ export function compareQuality(before: LessonQuality, after: LessonQuality) {
 
 /** Archive the prior assessment only after a replacement review succeeds. */
 export function recordQualityReview(previous: LessonContent, reviewed: LessonContent, reviewedAt = new Date().toISOString()): LessonContent {
-  const history = [...(previous.quality_history || []), ...(previous.quality ? [previous.quality] : [])].slice(-MAX_QUALITY_HISTORY);
+  const all = [...(previous.quality_history || []), ...(previous.quality ? [previous.quality] : [])];
+  // Always keep the very first assessment: the report compares where the lesson started vs. where it ended.
+  const history = all.length > MAX_QUALITY_HISTORY ? [all[0], ...all.slice(-(MAX_QUALITY_HISTORY - 1))] : all;
   return {
     ...reviewed,
     ...(reviewed.quality ? { quality: { ...reviewed.quality, reviewed_at: reviewed.quality.reviewed_at || reviewedAt } } : {}),
@@ -88,19 +90,19 @@ export function buildQualityReportHtml(input: QualityReportInput): string {
   const es = input.language === 'es';
   const teacher = input.audience === 'teacher';
   const quality = input.quality;
-  const before = teacher ? input.history?.at(-1) : undefined;
+  const before = teacher ? input.history?.[0] : undefined;
   const verdict = qualityVerdict(quality, es ? 'es' : 'en', input.audience);
   const comparison = before && quality ? compareQuality(before, quality) : null;
   const labels = es ? {
     report: 'Reporte de cobertura y revisión', generated: 'Reporte generado', reviewed: 'Última evaluación', noDate: 'Fecha no registrada',
     coverage: 'Cobertura', confidence: 'Confianza estimada', length: 'Extensión', words: 'palabras', target: 'Objetivo: 3000 palabras', met: 'Objetivo alcanzado', short: 'Por debajo del objetivo',
-    beforeAfter: 'Antes y después', before: 'Antes', after: 'Después', change: 'Cambio', observations: 'Observaciones', missing: 'Posibles faltantes', superficial: 'Temas superficiales', covered: 'Temas cubiertos', none: 'Ninguno señalado', flags: 'Observaciones detalladas', noFlags: 'Sin observaciones automáticas pendientes.',
+    beforeAfter: 'Inicio y resultado final', before: 'Inicio', after: 'Final', change: 'Cambio', observations: 'Observaciones', missing: 'Posibles faltantes', superficial: 'Temas superficiales', covered: 'Temas cubiertos', none: 'Ninguno señalado', flags: 'Observaciones detalladas', noFlags: 'Sin observaciones automáticas pendientes.',
     caution: teacher ? 'Señales orientativas de IA, no verificación factual. El 90% es el mínimo de cobertura; la aprobación final corresponde al docente y no garantiza ausencia de errores.' : 'Señales orientativas de IA, no verificación factual. Revisa las fuentes y consulta a tu docente si tienes dudas.',
     unavailable: 'Sin evaluación de cobertura', stale: 'El contenido cambió después de esta evaluación.', status: 'Estado',
   } : {
     report: 'Coverage and review report', generated: 'Report generated', reviewed: 'Latest assessment', noDate: 'Date not recorded',
     coverage: 'Coverage', confidence: 'Estimated confidence', length: 'Length', words: 'words', target: 'Target: 3000 words', met: 'Target reached', short: 'Below target',
-    beforeAfter: 'Before and after', before: 'Before', after: 'After', change: 'Change', observations: 'Observations', missing: 'Possible gaps', superficial: 'Superficial topics', covered: 'Covered topics', none: 'None flagged', flags: 'Detailed observations', noFlags: 'No pending automatic observations.',
+    beforeAfter: 'Start and final result', before: 'Start', after: 'Final', change: 'Change', observations: 'Observations', missing: 'Possible gaps', superficial: 'Superficial topics', covered: 'Covered topics', none: 'None flagged', flags: 'Detailed observations', noFlags: 'No pending automatic observations.',
     caution: teacher ? 'Advisory AI signals, not factual verification. 90% is the coverage minimum; final approval belongs to the teacher and this does not guarantee there are no errors.' : 'Advisory AI signals, not factual verification. Check the sources and ask your teacher if you have questions.',
     unavailable: 'Coverage not assessed', stale: 'The content changed after this assessment.', status: 'Status',
   };
@@ -137,7 +139,7 @@ export function buildQualityReportBlocks(input: QualityReportInput): PdfBlock[] 
   const es = input.language === 'es';
   const teacher = input.audience === 'teacher';
   const q = input.quality;
-  const before = teacher ? input.history?.at(-1) : undefined;
+  const before = teacher ? input.history?.[0] : undefined;
   const verdict = qualityVerdict(q, es ? 'es' : 'en', input.audience);
   const L = (a: string, b: string) => (es ? a : b);
   const blocks: PdfBlock[] = [
@@ -159,8 +161,8 @@ export function buildQualityReportBlocks(input: QualityReportInput): PdfBlock[] 
   if (q.reviewed_at) blocks.push({ kind: 'p', text: `${L('Última evaluación', 'Latest assessment')}: ${new Date(q.reviewed_at).toLocaleString(es ? 'es' : 'en')}` });
   if (before) {
     const d = compareQuality(before, q);
-    blocks.push({ kind: 'h2', text: L('Antes y después', 'Before and after') },
-      { kind: 'li', text: `${L('Cobertura', 'Coverage')}: ${L('Antes', 'Before')}: ${before.coverage}%; ${L('Después', 'After')}: ${q.coverage}% (${signed(d.coverageDelta)})` },
+    blocks.push({ kind: 'h2', text: L('Inicio y resultado final', 'Start and final result') },
+      { kind: 'li', text: `${L('Cobertura', 'Coverage')}: ${L('Inicio', 'Start')}: ${before.coverage}%; ${L('Final', 'Final')}: ${q.coverage}% (${signed(d.coverageDelta)})` },
       { kind: 'li', text: `${L('Observaciones', 'Observations')}: ${before.review_flags.length} -> ${q.review_flags.length} (${signed(d.flagsDelta)})` },
       { kind: 'li', text: `${L('Posibles faltantes', 'Possible gaps')}: ${before.missing_topics.length} -> ${q.missing_topics.length} (${signed(d.missingDelta)})` },
       { kind: 'li', text: `${L('Temas superficiales', 'Superficial topics')}: ${before.superficial_topics.length} -> ${q.superficial_topics.length} (${signed(d.superficialDelta)})` },
