@@ -41,3 +41,4 @@
 - [x] App parity: auto-updating installed app, synced reading guide (touch-follow), centered back-to-top, stacked Settings tabs, cleaner mobile header.
 - [x] Repair teacher generation timeouts: real educational anatomy lesson generated in 73s, saved with 4 sections/5 exercises and reopened with zero AI calls; preserve input and explain errors. 30 regression tests passed; v1.23.0.
 - [x] Enforce fail-closed educational validation before generation, remove search failure demo fallbacks and verify safe errors (v1.24.0): 27 regression tests; signed-in mobile search rejected gossip with only search-content called; live lesson/image endpoints rejected before generation.
+- [x] Show saved coverage/review signals to students in search and group lessons, read-only and without new AI calls, on desktop and mobile (v1.25.0); live student checks passed at 48px with no overflow or generation calls.

@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import LessonReader from '@/components/LessonReader';
+import LessonQualityPanel from '@/components/LessonQualityPanel';
 import LessonToolbar from '@/components/LessonToolbar';
 import { useCourseCache } from '@/hooks/useCourseCache';
 import CourseImage from '@/components/CourseImage';
@@ -281,6 +282,8 @@ export default function LessonViewerPage() {
         )}
 
         <LessonReader content={content} original={original} lang={readingLanguage} storageKey={`${currentUser?.id}:${lessonId}`} answers={answers} results={results} onAnswer={(i, value) => setAnswers(prev => ({ ...prev, [i]: value }))} onCheck={handleCheck} />
+
+        {isStudent && <LessonQualityPanel quality={content.quality || original.quality} audience="student" />}
 
         {isStudent && (
           <Button disabled={!progressId} onClick={handleComplete}>
