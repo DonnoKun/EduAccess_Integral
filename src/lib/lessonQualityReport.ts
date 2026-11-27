@@ -124,15 +124,68 @@ ${quality ? `<h2>${escapeHtml(labels.covered)}</h2>${listHtml(quality.covered_to
 </main></body></html>`;
 }
 
-export function downloadQualityReport(input: QualityReportInput) {
-  const blob = new Blob([buildQualityReportHtml(input)], { type: 'text/html;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
+type PdfBlock = { kind: 'h1' | 'h2' | 'p' | 'b' | 'li'; text: string };
+
+/** Structured, plain-text report blocks shared by the PDF export. */
+export function buildQualityReportBlocks(input: QualityReportInput): PdfBlock[] {
+  const es = input.language === 'es';
+  const teacher = input.audience === 'teacher';
+  const q = input.quality;
+  const before = teacher ? input.history?.at(-1) : undefined;
+  const verdict = qualityVerdict(q, es ? 'es' : 'en', input.audience);
+  const L = (a: string, b: string) => (es ? a : b);
+  const blocks: PdfBlock[] = [
+    { kind: 'h1', text: L('Reporte de cobertura y revisión', 'Coverage and review report') },
+    { kind: 'b', text: input.title },
+    { kind: 'p', text: `${L('Reporte generado', 'Report generated')}: ${(input.generatedAt || new Date()).toLocaleString(es ? 'es' : 'en')}` },
+    { kind: 'p', text: teacher ? L('Señales orientativas de IA, no verificación factual. El 90% es el mínimo de cobertura; la aprobación final corresponde al docente.', 'Advisory AI signals, not factual verification. 90% is the coverage minimum; final approval belongs to the teacher.') : L('Señales orientativas de IA, no verificación factual. Revisa las fuentes y consulta a tu docente si tienes dudas.', 'Advisory AI signals, not factual verification. Check the sources and ask your teacher if you have questions.') },
+    { kind: 'h2', text: L('Estado', 'Status') },
+    { kind: 'b', text: verdict.title },
+    { kind: 'p', text: verdict.description },
+  ];
+  if (!q) return blocks;
+  const conf = ({ low: L('Baja', 'Low'), medium: L('Media', 'Medium'), high: L('Alta', 'High') })[q.confidence];
+  blocks.push(
+    { kind: 'b', text: `${L('Cobertura', 'Coverage')}: ${q.coverage}%` },
+    { kind: 'p', text: `${L('Confianza estimada', 'Estimated confidence')}: ${conf}` },
+    { kind: 'p', text: `${L('Extensión', 'Length')}: ${q.word_count} ${L('palabras', 'words')}` },
+  );
+  if (q.reviewed_at) blocks.push({ kind: 'p', text: `${L('Última evaluación', 'Latest assessment')}: ${new Date(q.reviewed_at).toLocaleString(es ? 'es' : 'en')}` });
+  if (before) {
+    const d = compareQuality(before, q);
+    blocks.push({ kind: 'h2', text: L('Antes y después', 'Before and after') },
+      { kind: 'li', text: `${L('Cobertura', 'Coverage')}: ${before.coverage}% → ${q.coverage}% (${signed(d.coverageDelta)})` },
+      { kind: 'li', text: `${L('Observaciones', 'Observations')}: ${before.review_flags.length} → ${q.review_flags.length} (${signed(d.flagsDelta)})` },
+      { kind: 'li', text: `${L('Posibles faltantes', 'Possible gaps')}: ${before.missing_topics.length} → ${q.missing_topics.length} (${signed(d.missingDelta)})` },
+      { kind: 'li', text: `${L('Extensión', 'Length')}: ${before.word_count} → ${q.word_count} (${signed(d.wordsDelta)})` });
+  }
+  const list = (title: string, items: string[]) => { blocks.push({ kind: 'h2', text: title }); (items.length ? items : [L('Ninguno señalado', 'None flagged')]).forEach(t => blocks.push({ kind: 'li', text: t })); };
+  list(L('Temas cubiertos', 'Covered topics'), q.covered_topics);
+  list(L('Posibles faltantes', 'Possible gaps'), q.missing_topics);
+  list(L('Temas superficiales', 'Superficial topics'), q.superficial_topics);
+  list(L('Observaciones detalladas', 'Detailed observations'), q.review_flags.map(f => f.message));
+  return blocks;
+}
+
+export async function downloadQualityReport(input: QualityReportInput) {
+  const { jsPDF } = await import('jspdf');
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const margin = 48, width = doc.internal.pageSize.getWidth() - margin * 2, bottom = doc.internal.pageSize.getHeight() - margin;
+  let y = margin;
+  const sizes = { h1: 20, h2: 15, b: 12, p: 12, li: 12 } as const;
+  for (const block of buildQualityReportBlocks(input)) {
+    const size = sizes[block.kind];
+    doc.setFont('helvetica', block.kind === 'p' || block.kind === 'li' ? 'normal' : 'bold');
+    doc.setFontSize(size);
+    if (block.kind === 'h2') y += 10;
+    const lines = doc.splitTextToSize(block.kind === 'li' ? `• ${block.text}` : block.text, width) as string[];
+    for (const line of lines) {
+      if (y + size > bottom) { doc.addPage(); y = margin; }
+      doc.text(line, margin, y + size);
+      y += size * 1.45;
+    }
+    y += 4;
+  }
   const safeTitle = input.title.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'leccion';
-  anchor.href = url;
-  anchor.download = `reporte-cobertura-${safeTitle}.html`;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  doc.save(`reporte-cobertura-${safeTitle}.pdf`);
 }

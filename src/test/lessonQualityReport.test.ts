@@ -63,3 +63,14 @@ describe('reporte de cobertura', () => {
     expect(html).toContain('consulta a tu docente');
   });
 });
+
+describe('reporte PDF', () => {
+  it('el PDF del estudiante no incluye el antes y después docente', async () => {
+    const { buildQualityReportBlocks } = await import('@/lib/lessonQualityReport');
+    const q = { coverage: 92, confidence: 'high', covered_topics: [], missing_topics: [], superficial_topics: [], control_topics: [], review_flags: [], length_ok: true, word_count: 3000, status: 'reviewed' } as never;
+    const student = buildQualityReportBlocks({ title: 'X', quality: q, history: [q], language: 'es', audience: 'student' });
+    const teacher = buildQualityReportBlocks({ title: 'X', quality: q, history: [q], language: 'es', audience: 'teacher' });
+    expect(student.some(b => b.text === 'Antes y después')).toBe(false);
+    expect(teacher.some(b => b.text === 'Antes y después')).toBe(true);
+  });
+});

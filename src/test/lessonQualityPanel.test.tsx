@@ -35,7 +35,7 @@ describe('panel de cobertura para estudiantes', () => {
     expect(screen.queryByRole('button', { name: 'Regenerar sección' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Ver / descargar reporte' }));
     expect(screen.getByRole('dialog')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Descargar reporte HTML' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Descargar reporte PDF' })).toBeTruthy();
     expect(onReview).not.toHaveBeenCalled();
     expect(onEdit).not.toHaveBeenCalled();
     expect(onRegenerate).not.toHaveBeenCalled();

@@ -43,3 +43,4 @@
 - [x] Enforce fail-closed educational validation before generation, remove search failure demo fallbacks and verify safe errors (v1.24.0): 27 regression tests; signed-in mobile search rejected gossip with only search-content called; live lesson/image endpoints rejected before generation.
 - [x] Show saved coverage/review signals to students in search and group lessons, read-only and without new AI calls, on desktop and mobile (v1.25.0); live student checks passed at 48px with no overflow or generation calls.
 - [x] Add an in-lesson coverage report with accessible HTML download, persisted teacher before/after comparisons and a cautious 90% readiness reference for desktop/mobile and both roles; live teacher/student downloads and mobile layouts verified, 90 tests passed (v1.26.0).
+- [x] Student search lessons drop the 90% coverage panel (no teacher review); coverage reports download as real PDF on desktop and mobile (v1.27.0).

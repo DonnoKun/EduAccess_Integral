@@ -43,7 +43,7 @@ export default function LessonQualityReport({ title, quality, history = [], audi
   const before = teacher ? history.at(-1) : undefined;
   const confidence = quality ? ({ low: es ? 'Baja' : 'Low', medium: es ? 'Media' : 'Medium', high: es ? 'Alta' : 'High' })[quality.confidence] : null;
   const reportInput = { title: lessonTitle, quality, history, language, audience } as const;
-  const download = () => downloadQualityReport(reportInput);
+  const download = () => { void downloadQualityReport(reportInput); };
 
   return <div className="space-y-3 rounded-md border p-3">
     <div role="status" className="space-y-1">
@@ -56,14 +56,14 @@ export default function LessonQualityReport({ title, quality, history = [], audi
       <DialogContent className="max-h-[85dvh] max-w-3xl overflow-y-auto">
         <DialogHeader><DialogTitle>{es ? 'Reporte de cobertura y revisión' : 'Coverage and review report'}</DialogTitle><DialogDescription className="break-words">{lessonTitle}</DialogDescription></DialogHeader>
         <div className="space-y-5">
-          <p className="text-sm text-muted-foreground break-words">{es ? `Referencia mínima: ${QUALITY_COVERAGE_TARGET}%. Puedes descargar este reporte, abrirlo en el navegador e imprimirlo o guardarlo como PDF.` : `Minimum reference: ${QUALITY_COVERAGE_TARGET}%. You can download this report, open it in a browser and print it or save it as PDF.`}</p>
+          <p className="text-sm text-muted-foreground break-words">{es ? `Referencia mínima: ${QUALITY_COVERAGE_TARGET}%. Puedes descargar este reporte en PDF.` : `Minimum reference: ${QUALITY_COVERAGE_TARGET}%. You can download this report as a PDF.`}</p>
           <section className="space-y-2 rounded-md border p-3" aria-label={es ? 'Resultado actual' : 'Current result'}>
             <h3 className="font-semibold break-words">{verdict.title}</h3><p className="break-words">{verdict.description}</p>
             {quality && <><p><strong>{es ? 'Cobertura' : 'Coverage'}: {quality.coverage}%</strong></p><p>{es ? 'Confianza estimada' : 'Estimated confidence'}: {confidence}</p><p>{es ? 'Extensión' : 'Length'}: {quality.word_count} {es ? 'palabras' : 'words'} · {quality.length_ok ? (es ? 'objetivo alcanzado' : 'target reached') : (es ? 'por debajo del objetivo' : 'below target')}</p>{quality.reviewed_at && <p>{es ? 'Última evaluación' : 'Latest assessment'}: <time dateTime={quality.reviewed_at}>{new Date(quality.reviewed_at).toLocaleString(language)}</time></p>}</>}
           </section>
           {before && quality && <Comparison before={before} after={quality} es={es} />}
           {quality && <section className="space-y-3"><h3 className="font-semibold">{es ? 'Observaciones detalladas' : 'Detailed observations'}</h3>{quality.review_flags.length ? <ul className="space-y-2">{quality.review_flags.map((flag, index) => <li key={index} className="border-l-2 border-border pl-3 break-words">{flag.message}</li>)}</ul> : <p>{es ? 'Sin observaciones automáticas pendientes.' : 'No pending automatic observations.'}</p>}</section>}
-          <Button type="button" onClick={download} className="h-auto whitespace-normal"><Download aria-hidden="true" />{es ? 'Descargar reporte HTML' : 'Download HTML report'}</Button>
+          <Button type="button" onClick={download} className="h-auto whitespace-normal"><Download aria-hidden="true" />{es ? 'Descargar reporte PDF' : 'Download PDF report'}</Button>
         </div>
       </DialogContent>
     </Dialog>
