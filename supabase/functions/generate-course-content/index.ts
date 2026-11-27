@@ -52,7 +52,7 @@ serve(async (req) => {
     // Optional review/section operations retain the current lesson shape and draft workflow.
     const operation = (body as unknown as Record<string, unknown>).operation;
     if (operation !== undefined) {
-      if (!isAllowedOrigin(req)) return new Response(JSON.stringify({ success: false, error: 'Origin not allowed' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      if (!isAllowedOrigin(req)) { console.warn('Rejected review origin', req.headers.get('Origin')); return new Response(JSON.stringify({ success: false, error: 'Origin not allowed' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
       if (!(await checkRateLimit(auth.user.id))) return new Response(JSON.stringify({ success: false, error: 'Rate limit exceeded' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       const section = z.object({ title: z.string().max(600), content: z.string().max(80000), keyPoints: z.array(z.string().max(2000)).max(30).optional(), image_prompt: z.string().max(4000).optional(), image_alt: z.string().max(4000).optional() });
       const parsed = z.object({
@@ -98,7 +98,7 @@ serve(async (req) => {
     if (body.texts !== undefined) {
       const texts = body.texts;
       const lang = body.language;
-      if (!Array.isArray(texts) || texts.length < 1 || texts.length > 20 || !texts.every(t => typeof t === 'string' && t.length > 0 && t.length <= 600) || !['es', 'en'].includes(lang || '')) {
+      if (!Array.isArray(texts) || texts.length < 1 || texts.length > 20 || !texts.every(t => typeof t === 'string' && t.length > 0 && t.length <= 1200) || !['es', 'en'].includes(lang || '')) {
         return new Response(JSON.stringify({ success: false, error: 'Invalid translation request' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
       const target = lang === 'es' ? 'Spanish' : 'English';

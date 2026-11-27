@@ -1,8 +1,8 @@
 const ALLOWED = [
-  /^https:\/\/edu-access-integral\.vercel\.app$/,
+  /^https:\/\/edu-access-integral(-[a-z0-9-]+)?\.vercel\.app$/,
   /^https:\/\/learnnest-access-circles\.lovable\.app$/,
   /^https:\/\/[a-z0-9-]+\.lovable\.app$/,
-  /^https:\/\/[a-z0-9-]+\.lovableproject\.com$/,
+  /^https:\/\/[a-z0-9-]+\.(lovableproject|lovableproject-dev|gpt-eng|gptengineer)\.(com|run)$/,
   /^http:\/\/localhost(:\d+)?$/,
 ];
 const HEADERS = "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version";

@@ -4,13 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import LessonQualityReport from '@/components/LessonQualityReport';
 import type { LessonContent } from '@/lib/courses';
+import { useTranslatedTexts } from '@/hooks/useTranslatedTexts';
+import { localizeQuality, qualityStrings } from '@/lib/localizeQuality';
 
-export default function LessonQualityPanel({ quality, history = [], lessonTitle, busy = false, onReview, onEdit, onRegenerate, audience = 'teacher' }: {
+export default function LessonQualityPanel({ quality: storedQuality, history: storedHistory = [], lessonTitle, busy = false, onReview, onEdit, onRegenerate, audience = 'teacher' }: {
   quality: LessonContent['quality']; history?: LessonContent['quality_history']; lessonTitle?: string; busy?: boolean; onReview?: () => void;
   onEdit?: (sectionIndex?: number, exerciseIndex?: number) => void; onRegenerate?: (index: number) => void;
   audience?: 'teacher' | 'student';
 }) {
   const { i18n } = useTranslation();
+  // Reports keep their measured values; topic names and observations are shown in the interface language.
+  const translated = useTranslatedTexts(qualityStrings([storedQuality, storedHistory.at(-1)]), { uncertain: true });
+  const quality = localizeQuality(storedQuality, translated);
+  const history = storedHistory.map(h => localizeQuality(h, translated)!);
   const es = i18n.language.startsWith('es');
   const student = audience === 'student';
   const labels = es ? {
