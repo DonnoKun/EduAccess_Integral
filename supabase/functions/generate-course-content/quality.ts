@@ -1,6 +1,6 @@
 /** Advisory signals, never a factual certification. Stored inside lesson JSON. */
 export interface ReviewFlag {
-  kind: 'factual' | 'short_section' | 'exercise' | 'review_unavailable';
+  kind: 'factual' | 'short_section' | 'exercise' | 'coverage_gap' | 'review_unavailable';
   message: string;
   section_index?: number;
   exercise_index?: number;
@@ -55,11 +55,11 @@ export function validateReview(value: unknown, topics: string[], lesson: ReviewL
   if (assigned.length !== topics.length || new Set(assigned).size !== topics.length || assigned.some(t => !topics.includes(t))) throw new Error('Review must classify each control topic exactly once');
   if (!Array.isArray(r.review_flags) || r.review_flags.length > 60) throw new Error('Invalid flags');
   const flags: ReviewFlag[] = r.review_flags.map((f: Record<string, unknown>) => {
-    if (!f || !['factual', 'short_section', 'exercise'].includes(String(f.kind)) || typeof f.message !== 'string' || !f.message.trim() || f.message.length > 1200) throw new Error('Invalid flag');
+    if (!f || !['factual', 'short_section', 'exercise', 'coverage_gap'].includes(String(f.kind)) || typeof f.message !== 'string' || !f.message.trim() || f.message.length > 1200) throw new Error('Invalid flag');
     for (const [key, count] of [['section_index', lesson.sections?.length || 0], ['exercise_index', lesson.exercises?.length || 0]] as const) {
       if (f[key] !== undefined && (!Number.isInteger(f[key]) || Number(f[key]) < 0 || Number(f[key]) >= count)) throw new Error('Invalid flag target');
     }
-    if (f.kind === 'short_section' && f.section_index === undefined) throw new Error('Section flag needs a target');
+    if ((f.kind === 'short_section' || f.kind === 'coverage_gap') && f.section_index === undefined) throw new Error('Section flag needs a target');
     if (f.kind === 'exercise' && f.exercise_index === undefined) throw new Error('Exercise flag needs a target');
     return f as unknown as ReviewFlag;
   });

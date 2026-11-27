@@ -30,3 +30,4 @@
 - Every user-visible change bumps the app version (settings.about.version in es/en locales and package.json) in the same commit so About always shows the current release.
 - Only educational topics may produce search results or lessons; the cached shared topic guard must explicitly approve before inference, fail closed on invalid/unavailable verdicts without retries, and search failures must never substitute demo results that trigger generation. Keep approval parsing runtime-independent in topic-policy.ts so tests do not import Deno infrastructure.
 - Cache exact-revision translations and preview owner drafts without publishing, so reading/editing agree across reloads.
+- Quality reviews get a longer bounded timeout with no retries and must return actionable, located suggestions (coverage_gap flags target the section where missing content fits); short timeouts silently produced unavailable reports.

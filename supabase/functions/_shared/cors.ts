@@ -1,5 +1,5 @@
 const ALLOWED = [
-  /^https:\/\/edu-access-integral(-[a-z0-9-]+)?\.vercel\.app$/,
+  /^https:\/\/edu-?access-?integral(-[a-z0-9-]+)?\.vercel\.app$/,
   /^https:\/\/learnnest-access-circles\.lovable\.app$/,
   /^https:\/\/[a-z0-9-]+\.lovable\.app$/,
   /^https:\/\/[a-z0-9-]+\.(lovableproject|lovableproject-dev|gpt-eng|gptengineer)\.(com|run)$/,
