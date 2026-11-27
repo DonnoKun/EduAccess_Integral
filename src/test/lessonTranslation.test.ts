@@ -37,4 +37,9 @@ describe('faithful lesson translation', () => {
     const out = validateTranslation(src, { introduction: 'I', summary: 'S', quality: { coverage: 50, missing_topics: ['x'] } });
     expect((out.quality as { missing_topics: string[] }).missing_topics).toEqual(['a', 'b']);
   });
+  it('accepts a translation that only merges paragraphs of similar length', () => {
+    const src = { introduction: 'Primer párrafo largo aquí.\n\nSegundo párrafo largo aquí.', summary: 'S' };
+    const out = validateTranslation(src, { introduction: 'First long paragraph here. Second long paragraph here.', summary: 'S' });
+    expect(out.introduction).toBe('First long paragraph here. Second long paragraph here.');
+  });
 });

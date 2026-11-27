@@ -28,7 +28,11 @@ export function validateTranslation(original: Record<string, unknown>, translate
   const paragraphs = (text: string) => text.trim().split(/\n\s*\n/).length;
   for (const key of ['introduction', 'summary']) {
     if (typeof translated[key] !== 'string' || !(translated[key] as string).trim()) throw new Error('Incomplete translation');
-    if (typeof original[key] === 'string' && paragraphs(original[key] as string) !== paragraphs(translated[key] as string)) throw new Error('Translation changed paragraph structure');
+    // Models often merge or split paragraphs while translating; only reject a real expansion or loss of text.
+    if (typeof original[key] === 'string' && paragraphs(original[key] as string) !== paragraphs(translated[key] as string)) {
+      const ratio = (translated[key] as string).trim().length / Math.max(1, (original[key] as string).trim().length);
+      if (ratio < 0.6 || ratio > 1.8) throw new Error('Translation changed paragraph structure');
+    }
   }
   for (const key of ['sections', 'examples', 'exercises', 'sources']) {
     const before = original[key];
