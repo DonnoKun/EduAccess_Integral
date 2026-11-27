@@ -29,10 +29,16 @@ export async function assessSearchLesson(title: string, description: string, les
   if (lesson.quality) return lesson;
   const key = `search-assessment-v2:${await digest({ title, description, lesson, educationLevel, contentType })}:${language}`;
   return cachedAI(key, title, language, async () => {
-    const { data, error } = await supabase.functions.invoke('generate-course-content', {
-      body: { operation: 'review', title, description, lesson, language, directSearch: true, educationLevel, contentType },
-    });
-    if (error || !data?.success || !data.content?.quality) throw new Error('Assessment unavailable');
-    return data.content;
+    // One retry for transient failures (network, session refresh, 5xx); never for 400/402/429.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt) await new Promise(r => setTimeout(r, 1500));
+      const { data, error } = await supabase.functions.invoke('generate-course-content', {
+        body: { operation: 'review', title, description, lesson, language, directSearch: true, educationLevel, contentType },
+      });
+      if (!error && data?.success && data.content?.quality) return data.content;
+      const status = (error as { context?: Response } | null)?.context?.status;
+      if (status === 400 || status === 402 || status === 429) break;
+    }
+    throw new Error('Assessment unavailable');
   }, value => Boolean(value.quality));
 }
