@@ -2,10 +2,11 @@ import { useTranslation } from 'react-i18next';
 import { Loader2, Pencil, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import LessonQualityReport from '@/components/LessonQualityReport';
 import type { LessonContent } from '@/lib/courses';
 
-export default function LessonQualityPanel({ quality, busy = false, onReview, onEdit, onRegenerate, audience = 'teacher' }: {
-  quality: LessonContent['quality']; busy?: boolean; onReview?: () => void;
+export default function LessonQualityPanel({ quality, history = [], lessonTitle, busy = false, onReview, onEdit, onRegenerate, audience = 'teacher' }: {
+  quality: LessonContent['quality']; history?: LessonContent['quality_history']; lessonTitle?: string; busy?: boolean; onReview?: () => void;
   onEdit?: (sectionIndex?: number, exerciseIndex?: number) => void; onRegenerate?: (index: number) => void;
   audience?: 'teacher' | 'student';
 }) {
@@ -34,6 +35,7 @@ export default function LessonQualityPanel({ quality, busy = false, onReview, on
   return <section aria-label={labels.title} className="min-w-0 space-y-4 border-y py-5">
     <h2 className="font-semibold break-words">{labels.title}</h2>
     <p className="text-sm text-muted-foreground break-words">{labels.caution}</p>
+    <LessonQualityReport title={lessonTitle} quality={quality} history={history} audience={audience} />
     {!quality || quality.status === 'unavailable' ? <p role="status">{labels.unreviewed}</p> : <>
       {quality.status === 'stale' && <p role="status" className="font-medium">{labels.stale}</p>}
       <div className="grid gap-3 sm:grid-cols-2">

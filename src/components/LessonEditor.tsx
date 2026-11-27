@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { GroupLesson, LessonContent, LessonSection, LessonExample, LessonExercise, LessonSource } from '@/lib/courses';
 import LessonQualityPanel from '@/components/LessonQualityPanel';
+import { recordQualityReview } from '@/lib/lessonQualityReport';
 
 export interface LessonDraft { title: string; description: string; content: LessonContent }
 
@@ -71,7 +72,7 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
         title: draft.title, description: draft.description, language: c.language || i18n.language.split('-')[0], lesson: c, sectionIndex,
       } });
       if (error || !data?.success || !data.content?.quality) throw new Error('Review unavailable');
-      setDraft(prev => ({ ...prev, content: data.content }));
+      setDraft(prev => ({ ...prev, content: recordQualityReview(prev.content, data.content) }));
       toast.success(i18n.language.startsWith('es') ? 'Revisión actualizada. Guarda el borrador para conservarla.' : 'Review updated. Save the draft to keep it.');
     } catch {
       toast.error(i18n.language.startsWith('es') ? 'No se pudo completar la revisión. Tu contenido se conserva.' : 'Review could not finish. Your content is preserved.');
@@ -129,7 +130,7 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
     <DialogContent className="max-h-[85dvh] max-w-3xl overflow-y-auto">
       <DialogHeader><DialogTitle>{t('courses.editLesson')}</DialogTitle><DialogDescription>{t('courses.editNotice')}</DialogDescription></DialogHeader>
       <div className="space-y-4">
-        <LessonQualityPanel quality={c.quality} busy={saving || reviewing} onReview={() => assess()} onEdit={focusFlag} onRegenerate={assess} />
+        <LessonQualityPanel quality={c.quality} history={c.quality_history} lessonTitle={draft.title} busy={saving || reviewing} onReview={() => assess()} onEdit={focusFlag} onRegenerate={assess} />
         <fieldset disabled={reviewing || saving} className="min-w-0 space-y-4">
         <div className="space-y-1"><Label htmlFor="edit-title">{t('courses.lessonTitle')}</Label><Input id="edit-title" value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value, content: markStale(c) })} /></div>
         <div className="space-y-1"><Label htmlFor="edit-description">{t('courses.lessonDescription')}</Label><Textarea id="edit-description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value, content: markStale(c) })} /></div>

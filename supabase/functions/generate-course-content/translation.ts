@@ -1,7 +1,7 @@
 /** Schema mirrors the original tree, including paragraph and array lengths. */
 export function translationSchema(value: unknown, key = ''): Record<string, unknown> {
   if (typeof value === 'string') {
-    if (['image_prompt', 'url', 'language', 'confidence', 'status', 'kind'].includes(key)) return { type: 'string', enum: [value] };
+    if (['image_prompt', 'url', 'language', 'confidence', 'status', 'kind', 'reviewed_at'].includes(key)) return { type: 'string', enum: [value] };
     return { type: 'string' };
   }
   if (Array.isArray(value)) return { type: 'array', minItems: value.length, maxItems: value.length, items: value.length ? translationSchema(value[0]) : { type: 'string' } };

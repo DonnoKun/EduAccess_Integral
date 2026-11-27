@@ -61,6 +61,7 @@ export interface LessonSource {
 
 export interface LessonContent {
   quality?: LessonQuality;
+  quality_history?: LessonQuality[];
   language?: string;
   introduction?: string;
   sections?: LessonSection[];

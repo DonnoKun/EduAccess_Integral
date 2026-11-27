@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import LessonQualityPanel from '@/components/LessonQualityPanel';
 import type { LessonQuality } from '../../supabase/functions/generate-course-content/quality';
@@ -30,7 +30,12 @@ describe('panel de cobertura para estudiantes', () => {
     expect(screen.getByText('Fotosíntesis')).toBeTruthy();
     expect(screen.getByText('Respiración celular')).toBeTruthy();
     expect(screen.getByText(/Revisa las fuentes y consulta a tu docente/)).toBeTruthy();
-    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Evaluar cobertura' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Editar' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Regenerar sección' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver / descargar reporte' }));
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Descargar reporte HTML' })).toBeTruthy();
     expect(onReview).not.toHaveBeenCalled();
     expect(onEdit).not.toHaveBeenCalled();
     expect(onRegenerate).not.toHaveBeenCalled();

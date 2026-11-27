@@ -136,7 +136,7 @@ export default function ContentViewer() {
       {failed && <p role="alert">{lang === 'es' ? 'No se pudo preparar la lección. Se conserva en recientes para volver a abrirla.' : 'The lesson could not be prepared. It remains in recent lessons.'}</p>}
       {!loading && content && <>
         <LessonReader content={content} lang={lang} storageKey={`${currentUser?.id}:${current.id}`} answers={answers} results={results} onAnswer={(i, value) => setAnswers(prev => ({ ...prev, [i]: value }))} onCheck={check} />
-        <LessonQualityPanel quality={content.quality} audience="student" />
+        <LessonQualityPanel quality={content.quality} history={content.quality_history} lessonTitle={current.title} audience="student" />
         <Button disabled={completed} onClick={async () => { await saveContentToDB({ ...current, lessonContent: content }, 'completed'); toast.success(t('courses.lessonCompleted')); }}><CheckCircle2 className="mr-2 h-4 w-4" />{completed ? (lang === 'es' ? 'Completada' : 'Completed') : t('courses.markCompleted')}</Button>
       </>}
     </main>

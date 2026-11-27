@@ -45,6 +45,9 @@ describe('advisory lesson quality', () => {
     const schema = translationSchema({ quality: { confidence: 'medium', status: 'reviewed', coverage: 50, length_ok: false, review_flags: [{ kind: 'factual', section_index: 1, message: 'Revisar' }] } });
     const fields = (schema.properties as Record<string, { properties: Record<string, unknown> }>).quality.properties;
     expect(fields.confidence).toEqual({ type: 'string', enum: ['medium'] });
+    const historySchema = translationSchema({ quality_history: [{ reviewed_at: '2026-11-27T01:00:00.000Z' }] });
+    const history = (historySchema.properties as Record<string, unknown>).quality_history as { items: { properties: Record<string, unknown> } };
+    expect(history.items.properties.reviewed_at).toEqual({ type: 'string', enum: ['2026-11-27T01:00:00.000Z'] });
     expect(fields.coverage).toEqual({ type: 'number', enum: [50] });
     expect(fields.length_ok).toEqual({ type: 'boolean', enum: [false] });
   });

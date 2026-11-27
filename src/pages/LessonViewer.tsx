@@ -283,7 +283,7 @@ export default function LessonViewerPage() {
 
         <LessonReader content={content} original={original} lang={readingLanguage} storageKey={`${currentUser?.id}:${lessonId}`} answers={answers} results={results} onAnswer={(i, value) => setAnswers(prev => ({ ...prev, [i]: value }))} onCheck={handleCheck} />
 
-        {isStudent && <LessonQualityPanel quality={content.quality || original.quality} audience="student" />}
+        <LessonQualityPanel quality={content.quality || original.quality} history={content.quality_history || original.quality_history} lessonTitle={lesson.title} audience={isStudent ? 'student' : 'teacher'} />
 
         {isStudent && (
           <Button disabled={!progressId} onClick={handleComplete}>
