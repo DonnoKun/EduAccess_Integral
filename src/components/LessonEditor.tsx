@@ -100,7 +100,10 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
       const { data, error } = await supabase.functions.invoke('generate-course-content', { body });
       const status = (error as { context?: Response } | null)?.context?.status;
       if (!error && data?.success && data.content?.quality?.status === 'reviewed') {
-        return { ...value, content: recordQualityReview(value.content, data.content) };
+        const dismissed: string[] = (value.content.quality as { dismissed_flags?: string[] } | undefined)?.dismissed_flags || [];
+        const reviewed = recordQualityReview(value.content, data.content);
+        if (dismissed.length && reviewed.quality) reviewed.quality = { ...reviewed.quality, review_flags: reviewed.quality.review_flags.filter(f => !dismissed.includes(flagKey(f as Flag))), dismissed_flags: dismissed } as typeof reviewed.quality;
+        return { ...value, content: reviewed };
       }
       console.warn('[LessonEditor] review attempt failed', { attempt, status, message: error?.message, quality: data?.content?.quality?.status });
       if (status === 400 || status === 402 || status === 429) break;
@@ -118,6 +121,17 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
     } catch {
       toast.error(language === 'es' ? 'No se pudo actualizar y guardar el reporte. Se conservan tus cambios; puedes reintentar.' : 'Could not update and save the report. Your changes are preserved; you can retry.');
     } finally { setReviewing(false); }
+  };
+  // Teachers may accept an observation as-is; it is removed from the report and stays dismissed on later reviews.
+  type Flag = { kind?: string; section_index?: number; exercise_index?: number; message?: string };
+  const flagKey = (f: Flag) => `${f.kind}:${f.section_index ?? ''}:${f.exercise_index ?? ''}`;
+  const dismissFlag = async (index: number) => {
+    const q = draft.content.quality as (LessonContent['quality'] & { dismissed_flags?: string[] }) | undefined;
+    if (!q || reviewing || saving) return;
+    const flag = q.review_flags[index] as Flag;
+    const next = { ...draft, content: { ...draft.content, quality: { ...q, review_flags: q.review_flags.filter((_, i) => i !== index), dismissed_flags: [...new Set([...(q.dismissed_flags || []), flagKey(flag)])] } } } as LessonDraft;
+    try { await persist(next); toast.success(language === 'es' ? 'Observación descartada. Puedes publicar cuando quieras.' : 'Observation dismissed. You can publish whenever you want.'); }
+    catch { toast.error(language === 'es' ? 'No se pudo guardar. Intenta de nuevo.' : 'Could not save. Try again.'); }
   };
   const focusFlag = (sectionIndex?: number, exerciseIndex?: number) => {
     const field = document.getElementById(sectionIndex !== undefined ? `sec-${sectionIndex}-content` : `exr-${exerciseIndex}-question`);
@@ -179,7 +193,7 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
       <div className="space-y-4">
         {translating && <p role="status">{t('courses.translating')}</p>}
         {translationFailed && <div role="alert" className="space-y-2"><p>{language === 'es' ? 'No se pudo traducir. Puedes editar y guardar la lección en su idioma original; el reporte se actualizará en ese idioma.' : 'Translation was unavailable. You can edit and save the lesson in its original language; the report will update in that language.'}</p><Button variant="outline" onClick={() => setTranslationAttempt(n => n + 1)}>{language === 'es' ? 'Reintentar traducción' : 'Retry translation'}</Button></div>}
-        {!translating && <LessonQualityPanel quality={c.quality} history={c.quality_history} lessonTitle={draft.title} busy={saving || reviewing || translating} onReview={() => assess()} onEdit={focusFlag} onRegenerate={assess} />}
+        {!translating && <LessonQualityPanel quality={c.quality} history={c.quality_history} lessonTitle={draft.title} busy={saving || reviewing || translating} onReview={() => assess()} onEdit={focusFlag} onRegenerate={assess} onDismiss={dismissFlag} />}
         {!translating && <fieldset disabled={reviewing || saving || translating} className="min-w-0 space-y-4">
         <div className="space-y-1"><Label htmlFor="edit-title">{t('courses.lessonTitle')}</Label><Input id="edit-title" value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value, content: markStale(c) })} /></div>
         <div className="space-y-1"><Label htmlFor="edit-description">{t('courses.lessonDescription')}</Label><Textarea id="edit-description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value, content: markStale(c) })} /></div>

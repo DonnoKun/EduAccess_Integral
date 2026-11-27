@@ -284,7 +284,7 @@
     },
     "about": {
       "title": "About EduAccess",
-      "version": "Version 1.28.9 (Doctoral Thesis Prototype) · Updated Nov 2026",
+      "version": "Version 1.29.0 (Doctoral Thesis Prototype) · Updated Nov 2026",
       "description": "EduAccess Integral is a learning platform for students with low vision (mild to moderate visual impairment). It uses AI to create lessons from real sources, adapted to each student's level, content type and visual profile, with read-aloud, exercises, described images and groups where teachers publish lessons and track progress.",
       "research": "Research Project",
       "researchDesc": "This prototype is part of a doctoral thesis that evaluates a five-service architecture (content aggregation, visual profiling, accessibility remediation, AI orchestration and content delivery) and measures its resilience to AI failures. It builds on Michael (2024), Jeanneret & Baudet (2022), ISO/IEC 24751 and WCAG 2.1 AA.",
