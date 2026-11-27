@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { replaceSection, unavailableQuality, validateReview, wordCount } from '../../supabase/functions/generate-course-content/quality';
-import { translationSchema } from '../../supabase/functions/generate-course-content/translation';
+import { translationSchema, validateTranslation } from '../../supabase/functions/generate-course-content/translation';
 
 const topics = ['A', 'B', 'C', 'D'];
 const lesson = { introduction: 'Introducción', sections: [{ title: 'A', content: 'Breve' }, { title: 'B', content: 'Contenido' }], exercises: [{ question: 'Pregunta', answer_keywords: '', solution: '' }] };
@@ -53,14 +53,12 @@ describe('advisory lesson quality', () => {
     expect(q.confidence).toBe('low');
     expect(q.covered_topics).toEqual([]);
   });
-  it('preserves machine quality values and indices during translation', () => {
-    const schema = translationSchema({ quality: { confidence: 'medium', status: 'reviewed', coverage: 50, length_ok: false, review_flags: [{ kind: 'factual', section_index: 1, message: 'Revisar' }] } });
-    const fields = (schema.properties as Record<string, { properties: Record<string, unknown> }>).quality.properties;
-    expect(fields.confidence).toEqual({ type: 'string', enum: ['medium'] });
-    const historySchema = translationSchema({ quality_history: [{ reviewed_at: '2026-11-27T01:00:00.000Z' }] });
-    const history = (historySchema.properties as Record<string, unknown>).quality_history as { items: { properties: Record<string, unknown> } };
-    expect(history.items.properties.reviewed_at).toEqual({ type: 'string', enum: ['2026-11-27T01:00:00.000Z'] });
-    expect(fields.coverage).toEqual({ type: 'number', enum: [50] });
-    expect(fields.length_ok).toEqual({ type: 'boolean', enum: [false] });
+  it('uses a plain translation schema and restores machine quality values', () => {
+    const original = { introduction: 'A', summary: 'B', quality: { confidence: 'medium', status: 'reviewed', coverage: 50, review_flags: [{ kind: 'factual', section_index: 1, message: 'Check' }] } };
+    expect(JSON.stringify(translationSchema(original))).not.toMatch(/enum|anyOf/);
+    const out = validateTranslation(original, { introduction: 'A2', summary: 'B2', quality: { confidence: 'high', status: 'x', coverage: 99, review_flags: [{ kind: 'y', section_index: 9, message: 'Revisar' }] } }) as { quality: { coverage: number; confidence: string; review_flags: { kind: string; section_index: number; message: string }[] } };
+    expect(out.quality.coverage).toBe(50);
+    expect(out.quality.confidence).toBe('medium');
+    expect(out.quality.review_flags[0]).toEqual({ kind: 'factual', section_index: 1, message: 'Revisar' });
   });
 });

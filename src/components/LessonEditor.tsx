@@ -167,8 +167,8 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
       <div className="space-y-4">
         {translating && <p role="status">{t('courses.translating')}</p>}
         {translationFailed && <div role="alert" className="space-y-2"><p>{t('courses.translationFailed')}</p><Button variant="outline" onClick={() => setTranslationAttempt(n => n + 1)}>{language === 'es' ? 'Reintentar traducción' : 'Retry translation'}</Button></div>}
-        {!translating && !translationFailed && <LessonQualityPanel quality={c.quality} history={c.quality_history} lessonTitle={draft.title} busy={saving || reviewing || translating || translationFailed} onReview={() => assess()} onEdit={focusFlag} onRegenerate={assess} />}
-        {!translating && !translationFailed && <fieldset disabled={reviewing || saving || translating || translationFailed} className="min-w-0 space-y-4">
+        {!translating && <LessonQualityPanel quality={c.quality} history={c.quality_history} lessonTitle={draft.title} busy={saving || reviewing || translating || translationFailed} onReview={() => assess()} onEdit={focusFlag} onRegenerate={assess} />}
+        {!translating && <fieldset disabled={reviewing || saving || translating || translationFailed} className="min-w-0 space-y-4">
         <div className="space-y-1"><Label htmlFor="edit-title">{t('courses.lessonTitle')}</Label><Input id="edit-title" value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value, content: markStale(c) })} /></div>
         <div className="space-y-1"><Label htmlFor="edit-description">{t('courses.lessonDescription')}</Label><Textarea id="edit-description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value, content: markStale(c) })} /></div>
         <div className="space-y-1"><Label htmlFor="edit-intro">{t('courses.editFields.introduction', { defaultValue: 'Introduction' })}</Label><Textarea id="edit-intro" rows={6} value={c.introduction || ''} onChange={e => setC({ introduction: e.target.value })} /></div>
