@@ -13,7 +13,7 @@ import LessonQualityPanel from '@/components/LessonQualityPanel';
 import { recordQualityReview } from '@/lib/lessonQualityReport';
 
 import { translateLesson } from '@/lib/lessonAssessment';
-import type { LessonDraft } from '@/lib/lessonRevision';
+import { lessonLanguage, type LessonDraft } from '@/lib/lessonRevision';
 export type { LessonDraft } from '@/lib/lessonRevision';
 
 type Field<T> = { key: keyof T; label: string; long?: boolean };
@@ -63,6 +63,8 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
   const [translationFailed, setTranslationFailed] = useState(false);
   const [translationAttempt, setTranslationAttempt] = useState(0);
   const language = i18n.language.startsWith('en') ? 'en' : 'es';
+  // If translation fails, edit and review in the lesson's own language so text and label never disagree.
+  const contentLanguage: 'es' | 'en' = translationFailed ? (lessonLanguage(draft.content) === 'en' ? 'en' : 'es') : language;
   const draftRef = useRef(draft);
   draftRef.current = draft;
   useEffect(() => {
@@ -90,7 +92,7 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
   const reviewedDraft = async (value: LessonDraft, sectionIndex?: number): Promise<LessonDraft> => {
     const body = {
       operation: sectionIndex === undefined ? 'review' : 'regenerate_section',
-      title: value.title.trim() || lesson.title, description: value.description ?? '', language, lesson: value.content, sectionIndex,
+      title: value.title.trim() || lesson.title, description: value.description ?? '', language: contentLanguage, lesson: value.content, sectionIndex,
     };
     // One automatic retry for transient failures (network, expired session, 5xx); never for 402/429 or invalid input.
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -107,7 +109,7 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
   };
 
   const assess = async (sectionIndex?: number) => {
-    if (reviewing || saving || translating || translationFailed) return;
+    if (reviewing || saving || translating) return;
     setReviewing(true);
     try {
       const value = await reviewedDraft(draft, sectionIndex);
@@ -126,13 +128,13 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
   };
 
   const save = async () => {
-    if (saving || reviewing || translating || translationFailed) return;
+    if (saving || reviewing || translating) return;
     setSaving(true);
     const sections = (draft.content.sections || []).map(({ image_prompt, image_alt, ...s }) => ({
       ...s, keyPoints: (s.keyPoints || []).map(k => k.trim()).filter(Boolean),
       ...(image_prompt?.trim() ? { image_prompt: image_prompt.trim(), image_alt: image_alt?.trim() || image_prompt.trim() } : {}),
     }));
-    let clean: LessonDraft = { ...draft, content: { ...draft.content, language, sections } };
+    let clean: LessonDraft = { ...draft, content: { ...draft.content, language: contentLanguage, sections } };
     try {
       if (!clean.content.quality || clean.content.quality.status !== 'reviewed') {
         // Save edits even if advisory inference fails, without pretending the old report is current.
@@ -176,9 +178,9 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
       <DialogHeader><DialogTitle>{t('courses.editLesson')}</DialogTitle><DialogDescription>{t('courses.editNotice')}</DialogDescription></DialogHeader>
       <div className="space-y-4">
         {translating && <p role="status">{t('courses.translating')}</p>}
-        {translationFailed && <div role="alert" className="space-y-2"><p>{t('courses.translationFailed')}</p><Button variant="outline" onClick={() => setTranslationAttempt(n => n + 1)}>{language === 'es' ? 'Reintentar traducción' : 'Retry translation'}</Button></div>}
-        {!translating && <LessonQualityPanel quality={c.quality} history={c.quality_history} lessonTitle={draft.title} busy={saving || reviewing || translating || translationFailed} onReview={() => assess()} onEdit={focusFlag} onRegenerate={assess} />}
-        {!translating && <fieldset disabled={reviewing || saving || translating || translationFailed} className="min-w-0 space-y-4">
+        {translationFailed && <div role="alert" className="space-y-2"><p>{language === 'es' ? 'No se pudo traducir. Puedes editar y guardar la lección en su idioma original; el reporte se actualizará en ese idioma.' : 'Translation was unavailable. You can edit and save the lesson in its original language; the report will update in that language.'}</p><Button variant="outline" onClick={() => setTranslationAttempt(n => n + 1)}>{language === 'es' ? 'Reintentar traducción' : 'Retry translation'}</Button></div>}
+        {!translating && <LessonQualityPanel quality={c.quality} history={c.quality_history} lessonTitle={draft.title} busy={saving || reviewing || translating} onReview={() => assess()} onEdit={focusFlag} onRegenerate={assess} />}
+        {!translating && <fieldset disabled={reviewing || saving || translating} className="min-w-0 space-y-4">
         <div className="space-y-1"><Label htmlFor="edit-title">{t('courses.lessonTitle')}</Label><Input id="edit-title" value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value, content: markStale(c) })} /></div>
         <div className="space-y-1"><Label htmlFor="edit-description">{t('courses.lessonDescription')}</Label><Textarea id="edit-description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value, content: markStale(c) })} /></div>
         <div className="space-y-1"><Label htmlFor="edit-intro">{t('courses.editFields.introduction', { defaultValue: 'Introduction' })}</Label><Textarea id="edit-intro" rows={6} value={c.introduction || ''} onChange={e => setC({ introduction: e.target.value })} /></div>
@@ -199,7 +201,7 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
         </fieldset>}
       </div>
       <div className="sticky bottom-[var(--mobile-nav-h,0px)] transition-[bottom] duration-200 md:bottom-0 z-30 flex flex-wrap gap-2 border-t bg-background py-4">
-        <Button disabled={saving || reviewing || translating || translationFailed || !draft.title.trim()} onClick={save} className="h-auto whitespace-normal">{saving ? <Loader2 className="animate-spin" /> : <Save />}{!c.quality || c.quality.status !== 'reviewed' ? (language === 'es' ? 'Guardar y actualizar reporte' : 'Save and update report') : t('courses.saveDraft')}</Button>
+        <Button disabled={saving || reviewing || translating || !draft.title.trim()} onClick={save} className="h-auto whitespace-normal">{saving ? <Loader2 className="animate-spin" /> : <Save />}{!c.quality || c.quality.status !== 'reviewed' ? (language === 'es' ? 'Guardar y actualizar reporte' : 'Save and update report') : t('courses.saveDraft')}</Button>
         <Button variant="outline" disabled={saving || reviewing || translating} onClick={close}>{t('courses.cancel')}</Button>
       </div>
     </DialogContent>

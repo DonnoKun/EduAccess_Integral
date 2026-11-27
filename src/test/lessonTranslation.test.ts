@@ -27,4 +27,14 @@ describe('faithful lesson translation', () => {
   it('rejects expansions of a single-paragraph introduction', () => {
     expect(() => validateTranslation(original, { ...original, introduction: 'First.\n\nAdded paragraph.' })).toThrow('Translation changed paragraph structure');
   });
+  it('keeps a translation whose section returns a different number of key points', () => {
+    const src = { introduction: 'I', summary: 'S', sections: [{ title: 'T', content: 'C', keyPoints: ['a', 'b', 'c'] }] };
+    const out = validateTranslation(src, { introduction: 'I', summary: 'S', sections: [{ title: 'Tt', content: 'Cc', keyPoints: ['x', 'y'] }] });
+    expect((out.sections as { keyPoints: string[] }[])[0].keyPoints).toEqual(['x', 'y']);
+  });
+  it('keeps stored report values when the translated report list is reshaped', () => {
+    const src = { introduction: 'I', summary: 'S', quality: { coverage: 50, missing_topics: ['a', 'b'] } };
+    const out = validateTranslation(src, { introduction: 'I', summary: 'S', quality: { coverage: 50, missing_topics: ['x'] } });
+    expect((out.quality as { missing_topics: string[] }).missing_topics).toEqual(['a', 'b']);
+  });
 });

@@ -38,26 +38,34 @@ export function validateTranslation(original: Record<string, unknown>, translate
     after.forEach((item, index) => {
       const source = before[index];
       if (key === 'sections') {
-        if (!item.title || !item.content || (source.keyPoints || []).length !== (item.keyPoints || []).length) throw new Error('Translation changed section structure');
+        if (!item.title || !item.content) throw new Error('Translation changed section structure');
+        // Key point counts may differ slightly; keep translated points, or the originals if none came back.
+        const points = Array.isArray(item.keyPoints) ? item.keyPoints.filter((k: unknown) => typeof k === 'string' && k.trim()) : [];
+        item.keyPoints = points.length ? points : (source.keyPoints || []);
+        if (source.image_alt !== undefined && !item.image_alt) item.image_alt = source.image_alt;
         item.image_prompt = source.image_prompt;
       }
-      if (key === 'exercises' && (!item.question || !item.answer_keywords || !item.solution)) throw new Error('Incomplete exercise translation');
+      if (key === 'exercises') {
+        if (!item.question) throw new Error('Incomplete exercise translation');
+        for (const f of ['answer_keywords', 'solution']) if (!item[f] && source[f]) item[f] = source[f];
+      }
       if (key === 'sources') item.url = source.url;
     });
   }
   // Translate report prose, not its measured values, timestamps or indexed targets.
   const preserveReview = (source: unknown, target: unknown, key = ''): unknown => {
     if (Array.isArray(source)) {
-      if (!Array.isArray(target) || source.length !== target.length) throw new Error('Translation changed report structure');
+      // Keep the stored report values when the model reshapes a list.
+      if (!Array.isArray(target) || source.length !== target.length) return source;
       return source.map((value, i) => preserveReview(value, target[i]));
     }
     if (source && typeof source === 'object') {
-      if (!target || typeof target !== 'object') throw new Error('Missing translated report');
+      if (!target || typeof target !== 'object' || Array.isArray(target)) return source;
       const result = target as Record<string, unknown>;
       return Object.fromEntries(Object.entries(source).map(([name, value]) => [name, preserveReview(value, result[name], name)]));
     }
     if (typeof source !== 'string' || ['confidence', 'status', 'kind', 'reviewed_at'].includes(key)) return source;
-    if (typeof target !== 'string' || (source.trim() && !target.trim())) throw new Error('Incomplete report translation');
+    if (typeof target !== 'string' || (source.trim() && !target.trim())) return source;
     return target;
   };
   for (const key of ['quality', 'quality_history']) {
