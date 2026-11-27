@@ -384,7 +384,7 @@ CRITICAL: For each section, include image_prompt and image_alt describing an edu
     courseContent.language = language;
     if (body.directSearch && !body.originalContent && contentType === 'exercise' && (courseContent.sections?.length > 2 || courseContent.exercises?.length < 10 || courseContent.exercises?.length > 12)) throw new Error('Lesson did not match requested exercise format');
     if (body.originalContent) validateTranslation(body.originalContent, courseContent);
-    else courseContent.quality = topics.length ? await reviewQuality(auth.user.id, language, courseContent, topics, body.directSearch === true) : unavailableQuality(courseContent, language, [], body.directSearch === true);
+    else courseContent.quality = topics.length ? await reviewQuality(auth.user.id, language, courseContent, topics, body.directSearch === true, Math.max(10000, Math.min(60000, 130000 - (Date.now() - startTime)))) : unavailableQuality(courseContent, language, [], body.directSearch === true);
     const totalTime = Date.now() - startTime;
 
     console.log("✅ Course content generated in", totalTime, "ms");

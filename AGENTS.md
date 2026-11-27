@@ -25,9 +25,8 @@
 - Image descriptions use actual multimodal image input and versioned caches; refuse metadata-only descriptions rather than invent visual evidence.
 - Normalize the complete image-generation prompt to English through the cached resilient gateway after bitmap lookup, so automatic and manual callers share one boundary.
 - Teacher lesson reuse copies owned content into a new unpublished row; never reuse the original identifier or trigger inference.
-- Long lesson generation opts into a longer bounded gateway timeout with no retries and a compatible secondary tool request; default service and benchmark policies remain unchanged.
+- Long lesson generation and quality reviews opt into longer bounded gateway timeouts (reviews capped by time left) with no retries; default service and benchmark policies remain unchanged.
 - Lesson generation uses an SDK primary adapter with reasoning disabled and bounded advisory checks; timeout outcomes never trigger another inference automatically, avoiding duplicate charges.
 - Every user-visible change bumps the app version (settings.about.version in es/en locales and package.json) in the same commit so About always shows the current release.
 - Only educational topics may produce search results or lessons; the cached shared topic guard must explicitly approve before inference, fail closed on invalid/unavailable verdicts without retries, and search failures must never substitute demo results that trigger generation. Keep approval parsing runtime-independent in topic-policy.ts so tests do not import Deno infrastructure.
 - Cache exact-revision translations and preview owner drafts without publishing, so reading/editing agree across reloads.
-- Quality reviews get a longer bounded timeout with no retries and must return actionable, located suggestions (coverage_gap flags target the section where missing content fits); short timeouts silently produced unavailable reports.
