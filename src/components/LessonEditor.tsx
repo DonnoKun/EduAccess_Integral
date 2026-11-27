@@ -88,12 +88,22 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
   };
 
   const reviewedDraft = async (value: LessonDraft, sectionIndex?: number): Promise<LessonDraft> => {
-    const { data, error } = await supabase.functions.invoke('generate-course-content', { body: {
+    const body = {
       operation: sectionIndex === undefined ? 'review' : 'regenerate_section',
-      title: value.title, description: value.description, language, lesson: value.content, sectionIndex,
-    } });
-    if (error || !data?.success || data.content?.quality?.status !== 'reviewed') throw new Error('Review unavailable');
-    return { ...value, content: recordQualityReview(value.content, data.content) };
+      title: value.title.trim() || lesson.title, description: value.description ?? '', language, lesson: value.content, sectionIndex,
+    };
+    // One automatic retry for transient failures (network, expired session, 5xx); never for 402/429 or invalid input.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt) { await supabase.auth.refreshSession().catch(() => undefined); await new Promise(r => setTimeout(r, 1500)); }
+      const { data, error } = await supabase.functions.invoke('generate-course-content', { body });
+      const status = (error as { context?: Response } | null)?.context?.status;
+      if (!error && data?.success && data.content?.quality?.status === 'reviewed') {
+        return { ...value, content: recordQualityReview(value.content, data.content) };
+      }
+      console.warn('[LessonEditor] review attempt failed', { attempt, status, message: error?.message, quality: data?.content?.quality?.status });
+      if (status === 400 || status === 402 || status === 429) break;
+    }
+    throw new Error('Review unavailable');
   };
 
   const assess = async (sectionIndex?: number) => {
@@ -133,7 +143,7 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
       toast.success(language === 'es' ? 'Borrador y reporte guardados. Solo será visible al publicarlo.' : 'Draft and report saved. It becomes visible only when published.');
       onClose();
     } catch {
-      toast.error(language === 'es' ? 'No se pudo completar la actualización del reporte. El editor sigue abierto para reintentar; no se ha publicado.' : 'The report update could not finish. The editor remains open for retry; nothing was published.');
+      toast.error(language === 'es' ? 'Tus cambios se guardaron, pero el reporte no se pudo actualizar esta vez. Pulsa Guardar de nuevo para reintentar; no se ha publicado.' : 'Your changes were saved, but the report could not be updated this time. Press Save again to retry; nothing was published.');
     } finally { setSaving(false); }
   };
 
