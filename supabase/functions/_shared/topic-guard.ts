@@ -25,6 +25,7 @@ export async function checkEducationalTopic(topic: string, focus: string, langua
   const key = { language, input };
   const hash = await hashRequest(name, key);
   const { data: cached } = await admin().from('ai_cache').select('response').eq('request_hash', hash).maybeSingle();
+  // An invalid cached verdict fails closed now, but is discarded so the next user attempt can be classified afresh.
   return educationalApproval(async () => cached?.response, async () => {
     const result = await resilientChat(name, {
       temperature: 0.1,
@@ -38,6 +39,9 @@ export async function checkEducationalTopic(topic: string, focus: string, langua
     // Never spend on lesson generation without an explicit, valid approval.
     if (result.path === 'failed') throw new TopicValidationUnavailable();
     return result.data;
+  }).catch(async (error) => {
+    await admin().from('ai_cache').delete().eq('request_hash', hash);
+    throw error;
   });
 }
 
