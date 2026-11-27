@@ -89,10 +89,10 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
     onSaved(value);
   };
 
-  const reviewedDraft = async (value: LessonDraft, sectionIndex?: number): Promise<LessonDraft> => {
+  const reviewedDraft = async (value: LessonDraft, sectionIndex?: number, exerciseIndex?: number): Promise<LessonDraft> => {
     const body = {
-      operation: sectionIndex === undefined ? 'review' : 'regenerate_section',
-      title: value.title.trim() || lesson.title, description: value.description ?? '', language: contentLanguage, lesson: value.content, sectionIndex,
+      operation: exerciseIndex !== undefined ? 'regenerate_exercise' : sectionIndex === undefined ? 'review' : 'regenerate_section',
+      title: value.title.trim() || lesson.title, description: value.description ?? '', language: contentLanguage, lesson: value.content, sectionIndex, exerciseIndex,
     };
     // One automatic retry for transient failures (network, expired session, 5xx); never for 402/429 or invalid input.
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -111,11 +111,11 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
     throw new Error('Review unavailable');
   };
 
-  const assess = async (sectionIndex?: number) => {
+  const assess = async (sectionIndex?: number, exerciseIndex?: number) => {
     if (reviewing || saving || translating) return;
     setReviewing(true);
     try {
-      const value = await reviewedDraft(draft, sectionIndex);
+      const value = await reviewedDraft(draft, sectionIndex, exerciseIndex);
       await persist(value);
       toast.success(language === 'es' ? 'Reporte actualizado y borrador guardado. No se ha publicado.' : 'Report updated and draft saved. It has not been published.');
     } catch {
@@ -193,7 +193,7 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
       <div className="space-y-4">
         {translating && <p role="status">{t('courses.translating')}</p>}
         {translationFailed && <div role="alert" className="space-y-2"><p>{language === 'es' ? 'No se pudo traducir. Puedes editar y guardar la lección en su idioma original; el reporte se actualizará en ese idioma.' : 'Translation was unavailable. You can edit and save the lesson in its original language; the report will update in that language.'}</p><Button variant="outline" onClick={() => setTranslationAttempt(n => n + 1)}>{language === 'es' ? 'Reintentar traducción' : 'Retry translation'}</Button></div>}
-        {!translating && <LessonQualityPanel quality={c.quality} history={c.quality_history} lessonTitle={draft.title} busy={saving || reviewing || translating} onReview={() => assess()} onEdit={focusFlag} onRegenerate={assess} onDismiss={dismissFlag} />}
+        {!translating && <LessonQualityPanel quality={c.quality} history={c.quality_history} lessonTitle={draft.title} busy={saving || reviewing || translating} onReview={() => assess()} onEdit={focusFlag} onRegenerate={i => assess(i)} onFixExercise={i => assess(undefined, i)} onDismiss={dismissFlag} />}
         {!translating && <fieldset disabled={reviewing || saving || translating} className="min-w-0 space-y-4">
         <div className="space-y-1"><Label htmlFor="edit-title">{t('courses.lessonTitle')}</Label><Input id="edit-title" value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value, content: markStale(c) })} /></div>
         <div className="space-y-1"><Label htmlFor="edit-description">{t('courses.lessonDescription')}</Label><Textarea id="edit-description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value, content: markStale(c) })} /></div>

@@ -7,9 +7,9 @@ import type { LessonContent } from '@/lib/courses';
 import { useTranslatedTexts } from '@/hooks/useTranslatedTexts';
 import { localizeQuality, qualityStrings } from '@/lib/localizeQuality';
 
-export default function LessonQualityPanel({ quality: storedQuality, history: storedHistory = [], lessonTitle, busy = false, onReview, onEdit, onRegenerate, onDismiss, audience = 'teacher' }: {
+export default function LessonQualityPanel({ quality: storedQuality, history: storedHistory = [], lessonTitle, busy = false, onReview, onEdit, onRegenerate, onFixExercise, onDismiss, audience = 'teacher' }: {
   quality: LessonContent['quality']; history?: LessonContent['quality_history']; lessonTitle?: string; busy?: boolean; onReview?: () => void;
-  onEdit?: (sectionIndex?: number, exerciseIndex?: number) => void; onRegenerate?: (index: number) => void; onDismiss?: (flagIndex: number) => void;
+  onEdit?: (sectionIndex?: number, exerciseIndex?: number) => void; onRegenerate?: (index: number) => void; onDismiss?: (flagIndex: number) => void; onFixExercise?: (index: number) => void;
   audience?: 'teacher' | 'student';
 }) {
   const { i18n } = useTranslation();
@@ -22,7 +22,7 @@ export default function LessonQualityPanel({ quality: storedQuality, history: st
   const labels = es ? {
     title: 'Cobertura y revisión', coverage: 'Cobertura', confidence: 'Confianza estimada',
     low: 'Baja', medium: 'Media', high: 'Alta', covered: 'Temas cubiertos', missing: 'Posibles faltantes', superficial: 'Temas superficiales',
-    flags: student ? 'Aspectos señalados para revisar' : 'Revisar antes de publicar', review: 'Actualizar y guardar reporte', edit: 'Editar', regenerate: 'Regenerar sección', dismiss: 'Dejarlo así',
+    flags: student ? 'Aspectos señalados para revisar' : 'Revisar antes de publicar', review: 'Actualizar y guardar reporte', edit: 'Editar', regenerate: 'Regenerar sección', dismiss: 'Dejarlo así', fix: 'Corregir con IA',
     unreviewed: 'Sin evaluación de cobertura', stale: 'El contenido cambió después de la evaluación. Las señales anteriores requieren una nueva revisión.',
     caution: student
       ? 'Señales orientativas de IA, no una verificación de los hechos. Revisa las fuentes y consulta a tu docente si tienes dudas.'
@@ -31,7 +31,7 @@ export default function LessonQualityPanel({ quality: storedQuality, history: st
   } : {
     title: 'Coverage and review', coverage: 'Coverage', confidence: 'Estimated confidence',
     low: 'Low', medium: 'Medium', high: 'High', covered: 'Covered topics', missing: 'Possible gaps', superficial: 'Superficial topics',
-    flags: student ? 'Points to review' : 'Review before publishing', review: 'Update and save report', edit: 'Edit', regenerate: 'Regenerate section', dismiss: 'Keep as is',
+    flags: student ? 'Points to review' : 'Review before publishing', review: 'Update and save report', edit: 'Edit', regenerate: 'Regenerate section', dismiss: 'Keep as is', fix: 'Fix with AI',
     unreviewed: 'Coverage not assessed', stale: 'Content changed after assessment. Previous signals need a new review.',
     caution: student
       ? 'Advisory AI signals, not factual verification. Check the sources and ask your teacher if you have questions.'
@@ -61,6 +61,7 @@ export default function LessonQualityPanel({ quality: storedQuality, history: st
         {!student && <div className="flex flex-wrap gap-2">
           {(flag.section_index !== undefined || flag.exercise_index !== undefined) && onEdit && <Button type="button" variant="outline" disabled={busy} onClick={() => onEdit(flag.section_index, flag.exercise_index)}><Pencil aria-hidden="true" />{labels.edit}</Button>}
           {flag.section_index !== undefined && onRegenerate && <Button type="button" variant="outline" disabled={busy} onClick={() => { if (flag.section_index !== undefined) onRegenerate(flag.section_index); }}><RefreshCw aria-hidden="true" />{labels.regenerate}</Button>}
+          {flag.exercise_index !== undefined && onFixExercise && <Button type="button" variant="outline" disabled={busy} onClick={() => { if (flag.exercise_index !== undefined) onFixExercise(flag.exercise_index); }}><RefreshCw aria-hidden="true" />{labels.fix}</Button>}
           {onDismiss && <Button type="button" variant="outline" disabled={busy} onClick={() => onDismiss(i)}><Check aria-hidden="true" />{labels.dismiss}</Button>}
         </div>}
       </li>)}</ul>
