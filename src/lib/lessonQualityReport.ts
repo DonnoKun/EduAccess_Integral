@@ -4,7 +4,7 @@ import type { LessonQuality } from '../../supabase/functions/generate-course-con
 export const QUALITY_COVERAGE_TARGET = 90;
 export const MAX_QUALITY_HISTORY = 6;
 
-export type QualityVerdictKind = 'unavailable' | 'stale' | 'below' | 'pending' | 'ready';
+export type QualityVerdictKind = 'unavailable' | 'stale' | 'below' | 'pending' | 'ready' | 'informational';
 export interface QualityVerdict { kind: QualityVerdictKind; title: string; description: string }
 
 /** The 90% mark is an advisory gate, never a factual certification. */
@@ -20,6 +20,11 @@ export function qualityVerdict(quality: LessonQuality | undefined, language: str
     kind: 'stale',
     title: es ? 'Revisión desactualizada' : 'Review is out of date',
     description: es ? 'El contenido cambió después de la última evaluación. Vuelve a evaluar antes de usar este resultado.' : 'The content changed after the last assessment. Assess it again before using this result.',
+  };
+  if (quality.automatic) return {
+    kind: 'informational',
+    title: es ? 'Reporte automático de la lección' : 'Automatic lesson report',
+    description: es ? 'La cobertura se registra como información, sin exigir un porcentaje mínimo. Esta lección no tiene revisión docente y las señales automáticas no garantizan ausencia de errores.' : 'Coverage is recorded for information, without a minimum percentage requirement. This lesson has no teacher review and automatic signals do not guarantee correctness.',
   };
   if (quality.coverage < QUALITY_COVERAGE_TARGET) return {
     kind: 'below',
@@ -105,6 +110,7 @@ export function buildQualityReportHtml(input: QualityReportInput): string {
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? labels.noDate : date.toLocaleString(es ? 'es' : 'en');
   };
+  if (quality?.automatic) labels.target = es ? 'Extensión según el nivel y el formato; sin mínimo de cobertura.' : 'Length follows level and format; no minimum coverage.';
   const status = !quality ? labels.unavailable : quality.status === 'stale' ? labels.stale : verdict.title;
   const rows = comparison && before && quality ? [
     [labels.coverage, `${before.coverage}%`, `${quality.coverage}%`, `${signed(comparison.coverageDelta)} ${es ? 'puntos' : 'points'}`],
@@ -146,7 +152,7 @@ export function buildQualityReportBlocks(input: QualityReportInput): PdfBlock[] 
   if (!q) return blocks;
   const conf = ({ low: L('Baja', 'Low'), medium: L('Media', 'Medium'), high: L('Alta', 'High') })[q.confidence];
   blocks.push(
-    { kind: 'b', text: `${L('Cobertura', 'Coverage')}: ${q.coverage}%` },
+    { kind: 'b', text: `${L('Cobertura', 'Coverage')}: ${q.status === 'unavailable' ? L('No evaluada', 'Not assessed') : `${q.coverage}%`}` },
     { kind: 'p', text: `${L('Confianza estimada', 'Estimated confidence')}: ${conf}` },
     { kind: 'p', text: `${L('Extensión', 'Length')}: ${q.word_count} ${L('palabras', 'words')}` },
   );
@@ -154,10 +160,11 @@ export function buildQualityReportBlocks(input: QualityReportInput): PdfBlock[] 
   if (before) {
     const d = compareQuality(before, q);
     blocks.push({ kind: 'h2', text: L('Antes y después', 'Before and after') },
-      { kind: 'li', text: `${L('Cobertura', 'Coverage')}: ${before.coverage}% → ${q.coverage}% (${signed(d.coverageDelta)})` },
-      { kind: 'li', text: `${L('Observaciones', 'Observations')}: ${before.review_flags.length} → ${q.review_flags.length} (${signed(d.flagsDelta)})` },
-      { kind: 'li', text: `${L('Posibles faltantes', 'Possible gaps')}: ${before.missing_topics.length} → ${q.missing_topics.length} (${signed(d.missingDelta)})` },
-      { kind: 'li', text: `${L('Extensión', 'Length')}: ${before.word_count} → ${q.word_count} (${signed(d.wordsDelta)})` });
+      { kind: 'li', text: `${L('Cobertura', 'Coverage')}: ${L('Antes', 'Before')}: ${before.coverage}%; ${L('Después', 'After')}: ${q.coverage}% (${signed(d.coverageDelta)})` },
+      { kind: 'li', text: `${L('Observaciones', 'Observations')}: ${before.review_flags.length} -> ${q.review_flags.length} (${signed(d.flagsDelta)})` },
+      { kind: 'li', text: `${L('Posibles faltantes', 'Possible gaps')}: ${before.missing_topics.length} -> ${q.missing_topics.length} (${signed(d.missingDelta)})` },
+      { kind: 'li', text: `${L('Temas superficiales', 'Superficial topics')}: ${before.superficial_topics.length} -> ${q.superficial_topics.length} (${signed(d.superficialDelta)})` },
+      { kind: 'li', text: `${L('Extensión', 'Length')}: ${before.word_count} -> ${q.word_count} (${signed(d.wordsDelta)})` });
   }
   const list = (title: string, items: string[]) => { blocks.push({ kind: 'h2', text: title }); (items.length ? items : [L('Ninguno señalado', 'None flagged')]).forEach(t => blocks.push({ kind: 'li', text: t })); };
   list(L('Temas cubiertos', 'Covered topics'), q.covered_topics);

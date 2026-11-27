@@ -198,6 +198,7 @@ export default function GroupDetailPage() {
 
   const togglePublish = async (lesson: GroupLesson, publishChanges = false) => {
     const nextStatus = publishChanges || lesson.status !== 'published' ? 'published' : 'draft';
+    if (nextStatus === 'published' && !window.confirm(lang === 'es' ? '¿Publicar esta versión para los estudiantes? Confirma que completaste tu revisión docente; la cobertura automática no garantiza ausencia de errores.' : 'Publish this version for students? Confirm you completed your teacher review; automatic coverage does not guarantee correctness.')) return;
     const draft = nextStatus === 'published' ? drafts[lesson.id] : undefined;
     setPublishing(lesson.id);
     const { data: updated, error } = await supabase
@@ -352,7 +353,7 @@ export default function GroupDetailPage() {
                   onClick={() => navigate(`/courses/${groupId}/lessons/${lesson.id}`)}
                 >
                   <BookOpen className="mr-2 h-4 w-4" aria-hidden="true" />
-                  {t('courses.openLesson')}
+                  {isTeacher && (drafts[lesson.id] || lesson.status === 'draft') ? (lang === 'es' ? 'Vista previa del borrador' : 'Preview draft') : t('courses.openLesson')}
                 </Button>
                 {isTeacher && (
                   <>

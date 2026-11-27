@@ -6,6 +6,13 @@ const topics = ['A', 'B', 'C', 'D'];
 const lesson = { introduction: 'Introducción', sections: [{ title: 'A', content: 'Breve' }, { title: 'B', content: 'Contenido' }], exercises: [{ question: 'Pregunta', answer_keywords: '', solution: '' }] };
 const review = { confidence: 'medium', covered_topics: ['A', 'B'], missing_topics: ['C'], superficial_topics: ['D'], review_flags: [] };
 describe('advisory lesson quality', () => {
+  it('registra la cobertura de búsquedas sin imponer la extensión del capítulo docente', () => {
+    const q = validateReview(review, topics, { introduction: 'Texto breve', sections: [{ title: 'Tema', content: 'Explicación breve' }] }, 'es', true);
+    expect(q.coverage).toBe(50);
+    expect(q.automatic).toBe(true);
+    expect(q.review_flags.filter(f => f.kind === 'short_section')).toHaveLength(0);
+    expect(q.word_count).toBe(5);
+  });
   it('computes 0–100 coverage from fully covered control topics only', () => {
     expect(validateReview(review, topics, lesson, 'es').coverage).toBe(50);
   });
@@ -26,6 +33,11 @@ describe('advisory lesson quality', () => {
   });
   it('rejects invalid section pointers instead of offering unrelated regeneration', () => {
     expect(() => validateReview({ ...review, review_flags: [{ kind: 'factual', message: 'Verify', section_index: 2 }] }, topics, lesson, 'es')).toThrow();
+  });
+  it('los avisos de ejercicios deben apuntar al ejercicio, no a una sección', () => {
+    expect(() => validateReview({ ...review, review_flags: [{ kind: 'exercise', message: 'Revisar respuesta', section_index: 0 }] }, topics, lesson, 'es')).toThrow('Exercise flag needs a target');
+    const q = validateReview({ ...review, review_flags: [{ kind: 'exercise', message: 'Revisar respuesta', exercise_index: 0 }] }, topics, lesson, 'es');
+    expect(q.review_flags.find(f => f.kind === 'exercise')?.exercise_index).toBe(0);
   });
   it('replaces only the selected section, preserving exercises and other sections', () => {
     const section = { title: 'New', content: 'Revised' };

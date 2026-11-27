@@ -4,7 +4,10 @@ export function translationSchema(value: unknown, key = ''): Record<string, unkn
     if (['image_prompt', 'url', 'language', 'confidence', 'status', 'kind', 'reviewed_at'].includes(key)) return { type: 'string', enum: [value] };
     return { type: 'string' };
   }
-  if (Array.isArray(value)) return { type: 'array', minItems: value.length, maxItems: value.length, items: value.length ? translationSchema(value[0]) : { type: 'string' } };
+  if (Array.isArray(value)) {
+    const variants = [...new Map(value.map(item => { const schema = translationSchema(item); return [JSON.stringify(schema), schema]; })).values()];
+    return { type: 'array', minItems: value.length, maxItems: value.length, items: variants.length > 1 ? { anyOf: variants } : variants[0] || { type: 'string' } };
+  }
   if (value && typeof value === 'object') {
     const fields = Object.entries(value);
     return { type: 'object', properties: Object.fromEntries(fields.map(([k, v]) => [k, translationSchema(v, k)])), required: fields.map(([k]) => k), additionalProperties: false };
@@ -32,6 +35,24 @@ export function validateTranslation(original: Record<string, unknown>, translate
       if (key === 'exercises' && (!item.question || !item.answer_keywords || !item.solution)) throw new Error('Incomplete exercise translation');
       if (key === 'sources') item.url = source.url;
     });
+  }
+  // Translate report prose, not its measured values, timestamps or indexed targets.
+  const preserveReview = (source: unknown, target: unknown, key = ''): unknown => {
+    if (Array.isArray(source)) {
+      if (!Array.isArray(target) || source.length !== target.length) throw new Error('Translation changed report structure');
+      return source.map((value, i) => preserveReview(value, target[i]));
+    }
+    if (source && typeof source === 'object') {
+      if (!target || typeof target !== 'object') throw new Error('Missing translated report');
+      const result = target as Record<string, unknown>;
+      return Object.fromEntries(Object.entries(source).map(([name, value]) => [name, preserveReview(value, result[name], name)]));
+    }
+    if (typeof source !== 'string' || ['confidence', 'status', 'kind', 'reviewed_at'].includes(key)) return source;
+    if (typeof target !== 'string' || (source.trim() && !target.trim())) throw new Error('Incomplete report translation');
+    return target;
+  };
+  for (const key of ['quality', 'quality_history']) {
+    if (original[key] !== undefined) translated[key] = preserveReview(original[key], translated[key]);
   }
   return translated;
 }

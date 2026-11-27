@@ -60,6 +60,8 @@ export interface LessonSource {
 }
 
 export interface LessonContent {
+  lesson_title?: string;
+  lesson_description?: string;
   quality?: LessonQuality;
   quality_history?: LessonQuality[];
   language?: string;

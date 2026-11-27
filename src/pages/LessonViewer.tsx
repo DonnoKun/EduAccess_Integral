@@ -25,7 +25,8 @@ import { cachedAI } from '@/lib/aiCache';
 import { lessonPercentage } from '@/lib/lessonProgress';
 import { useStore } from '@/store/useStore';
 import { configureSpeech } from '@/lib/speech';
-import { FunctionsHttpError } from '@supabase/supabase-js';
+import { translateLesson } from '@/lib/lessonAssessment';
+import { ownerLessonPreview, type LessonDraft } from '@/lib/lessonRevision';
 
 export default function LessonViewerPage() {
   const { groupId, lessonId } = useParams<{ groupId: string; lessonId: string }>();
@@ -46,6 +47,8 @@ export default function LessonViewerPage() {
   const completedRef = useRef(false);
   const startedAt = useRef(Date.now());
 
+  const [ownerPreview, setOwnerPreview] = useState(false);
+  const [translatedTitle, setTranslatedTitle] = useState('');
   const [translated, setTranslated] = useState<LessonContent | null>(null);
   const [translating, setTranslating] = useState(false);
   const [translationFailed, setTranslationFailed] = useState(false);
@@ -63,49 +66,15 @@ export default function LessonViewerPage() {
     setTranslated(null);
     setTranslationFailed(false);
     setTranslating(false);
-    const orig = (lesson.content as any) || {};
-    const sample = `${orig.introduction || ''} ${orig.summary || ''}`.toLowerCase();
-    const esHits = (sample.match(/\b(el|la|los|las|de|que|y|en|una|es)\b/g) || []).length;
-    const enHits = (sample.match(/\b(the|and|of|to|is|in|a|that|with)\b/g) || []).length;
-    const sourceLang = orig.language || (esHits >= enHits ? 'es' : 'en');
-    if (sourceLang === lang) { setTranslated(null); return; }
+    setTranslatedTitle('');
     let cancelled = false;
-    (async () => {
-      setTranslating(true);
-      try {
-      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(orig)));
-      const hash = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
-      const key = `lesson-translation-v3:${lesson.id}:${hash}`;
-      let c = (await getCachedCourse(key, lang)) as any;
-      if (!c) {
-        c = await cachedAI(`${key}:${lang}`, lesson.title, lang, async () => {
-          // Translation output is validated strictly and can be rejected once; retry automatically
-          // so the teacher or student never has to leave and reopen the lesson.
-          let lastError: Error = new Error('Translation unavailable');
-          for (let attempt = 0; attempt < 2 && !cancelled; attempt++) {
-            const { data, error } = await supabase.functions.invoke('generate-course-content', {
-              body: { title: lesson.title, description: lesson.description || lesson.title, contentType: 'article', source: 'oer', language: lang, originalContent: orig },
-            });
-            if (error) {
-              const detail = error instanceof FunctionsHttpError ? await error.context.text() : error.message;
-              console.error('Lesson translation failed:', detail);
-              lastError = new Error(detail);
-              if (/402|429|credits/i.test(detail)) break;
-              continue;
-            }
-            if (data?.success && data?.content) return { ...data.content, language: lang };
-            lastError = new Error(data?.error || 'Translation unavailable');
-          }
-          throw lastError;
-        }, value => Boolean(value?.introduction));
-        await saveCourseToCache(key, lang, c);
-      }
-      if (!cancelled) { setTranslated(c || null); setTranslationFailed(!c); }
-      } catch (error) { if (!cancelled) { setTranslationFailed(true); setTranslationReason(error instanceof Error ? error.message : ''); } }
-      finally { if (!cancelled) setTranslating(false); }
-    })();
+    setTranslating(true);
+    translateLesson({ title: lesson.title, description: lesson.description || '', content: original }, lang === 'en' ? 'en' : 'es')
+      .then(value => { if (!cancelled) { setTranslated(value.content); setTranslatedTitle(value.title); } })
+      .catch(error => { if (!cancelled) { setTranslationFailed(true); setTranslationReason(error instanceof Error ? error.message : ''); } })
+      .finally(() => { if (!cancelled) setTranslating(false); });
     return () => { cancelled = true; };
-  }, [lesson, lang, getCachedCourse, saveCourseToCache, translationAttempt]);
+  }, [lesson, lang, translationAttempt]);
   const exercises = content.exercises || [];
 
   const correctCount = useMemo(
@@ -138,7 +107,14 @@ export default function LessonViewerPage() {
       completedRef.current = false;
       startedAt.current = Date.now();
       const { data } = await supabase.from('group_lessons').select('*').eq('id', lessonId).maybeSingle();
-      setLesson((data as unknown as GroupLesson) || null);
+      const loaded = (data as unknown as GroupLesson) || null;
+      setOwnerPreview(false);
+      if (loaded && !isStudent) {
+        const { data: row } = await supabase.from('lesson_drafts').select('payload').eq('lesson_id', lessonId).maybeSingle();
+        const draft = row?.payload as unknown as LessonDraft | null;
+        setLesson(ownerLessonPreview(loaded, draft));
+        setOwnerPreview(Boolean(draft) || loaded.status === 'draft');
+      } else setLesson(loaded);
 
       if (currentUser?.id && isStudent) {
         const { data: p } = await supabase
@@ -252,7 +228,7 @@ export default function LessonViewerPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <LessonToolbar title={lesson.title} onBack={() => navigate(`/courses/${groupId}`)} />
+      <LessonToolbar title={translatedTitle || lesson.title} onBack={() => navigate(`/courses/${groupId}`)} />
 
       <main className="container mx-auto max-w-3xl space-y-6 px-4 py-6" aria-busy={translating}>
         {isStudent && <p className="text-muted-foreground">{t('courses.pinnedVersion')}</p>}
@@ -272,7 +248,8 @@ export default function LessonViewerPage() {
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> {t('courses.translating')}
           </p>
         )}
-        {!translating && <>
+        {ownerPreview && <p role="status" className="border-l-2 border-border pl-3 break-words">{lang === 'es' ? 'Vista previa privada del borrador. Guardar, abrir o recargar no publica los cambios; los estudiantes solo ven la versión publicada.' : 'Private draft preview. Saving, opening or reloading does not publish changes; students only see the published version.'}</p>}
+        {!translating && !translationFailed && <>
         {isStudent && (
           <div className="space-y-2">
             <p className="text-muted-foreground">{t('courses.yourProgress')}: {percentage}%</p>
@@ -283,7 +260,7 @@ export default function LessonViewerPage() {
 
         <LessonReader content={content} original={original} lang={readingLanguage} storageKey={`${currentUser?.id}:${lessonId}`} answers={answers} results={results} onAnswer={(i, value) => setAnswers(prev => ({ ...prev, [i]: value }))} onCheck={handleCheck} />
 
-        <LessonQualityPanel quality={content.quality || original.quality} history={content.quality_history || original.quality_history} lessonTitle={lesson.title} audience={isStudent ? 'student' : 'teacher'} />
+        <LessonQualityPanel quality={content.quality || original.quality} history={content.quality_history || original.quality_history} lessonTitle={translatedTitle || lesson.title} audience={isStudent ? 'student' : 'teacher'} />
 
         {isStudent && (
           <Button disabled={!progressId} onClick={handleComplete}>

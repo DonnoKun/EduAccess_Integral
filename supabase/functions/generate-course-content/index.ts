@@ -58,6 +58,7 @@ serve(async (req) => {
       const parsed = z.object({
         operation: z.enum(['review', 'regenerate_section']), title: z.string().min(1).max(600), description: z.string().max(4000).default(''), language: z.enum(['es', 'en']),
         sectionIndex: z.number().int().min(0).optional(),
+        directSearch: z.boolean().optional(), educationLevel: z.string().max(40).optional(), contentType: z.string().max(40).optional(),
         lesson: z.object({ introduction: z.string().max(80000).optional(), summary: z.string().max(80000).optional(), sections: z.array(section).max(30).optional(), examples: z.array(z.object({ title: z.string(), description: z.string() })).max(30).optional(), exercises: z.array(z.object({ question: z.string(), answer_keywords: z.string().optional(), solution: z.string().optional() }).passthrough()).max(30).optional() }).passthrough(),
       }).safeParse(body);
       if (!parsed.success) return new Response(JSON.stringify({ success: false, error: 'Invalid review request' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -84,8 +85,8 @@ serve(async (req) => {
         void _prompt; void _alt;
         lesson = replaceSection(lesson, index, { ...textSection, ...(current.image_prompt !== undefined ? { image_prompt: current.image_prompt, image_alt: current.image_alt } : {}) });
       }
-      if (!topics.length) { try { topics = await controlTopics(auth.user.id, input.language, input.title, input.description); } catch { /* Preserve material if advisory inference is unavailable. */ } }
-      const quality = await reviewQuality(auth.user.id, input.language, lesson, topics);
+      if (!topics.length) { try { topics = await controlTopics(auth.user.id, input.language, input.title, `${input.description}${input.directSearch ? `\nLevel: ${input.educationLevel || 'unspecified'}; format: ${input.contentType || 'article'}` : ''}`, input.directSearch === true); } catch { /* Preserve material if advisory inference is unavailable. */ } }
+      const quality = await reviewQuality(auth.user.id, input.language, lesson, topics, input.directSearch === true);
       return new Response(JSON.stringify({ success: true, content: { ...lesson, quality } }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -131,8 +132,8 @@ serve(async (req) => {
 
     const langName = language === "es" ? "Spanish" : "English";
     let topics: string[] = [];
-    if (!body.originalContent && !body.directSearch) {
-      try { topics = await controlTopics(auth.user.id, language, title, description || ''); } catch { /* Generation still works without the advisory outline. */ }
+    if (!body.originalContent) {
+      try { topics = await controlTopics(auth.user.id, language, title, `${description || ''}${body.directSearch ? `\nLevel: ${educationLevel}; format: ${contentType}` : ''}`, body.directSearch === true); } catch { /* Generation still works without the advisory outline. */ }
     }
 
     const qualityRule = `Proofread EVERY field before returning it. Use correct ${langName} spelling, grammar and punctuation. Spanish must retain Unicode accents and ñ ("desempeña", never "desempena"; "función", never "funcion"). English must use correct spelling, agreement and natural terminology. Do not remove diacritics. Preserve mathematical notation and numerical answers exactly.`;
@@ -379,7 +380,7 @@ CRITICAL: For each section, include image_prompt and image_alt describing an edu
     courseContent.language = language;
     if (body.directSearch && !body.originalContent && contentType === 'exercise' && (courseContent.sections?.length > 2 || courseContent.exercises?.length < 10 || courseContent.exercises?.length > 12)) throw new Error('Lesson did not match requested exercise format');
     if (body.originalContent) validateTranslation(body.originalContent, courseContent);
-    else if (!body.directSearch) courseContent.quality = topics.length ? await reviewQuality(auth.user.id, language, courseContent, topics) : unavailableQuality(courseContent, language);
+    else courseContent.quality = topics.length ? await reviewQuality(auth.user.id, language, courseContent, topics, body.directSearch === true) : unavailableQuality(courseContent, language, [], body.directSearch === true);
     const totalTime = Date.now() - startTime;
 
     console.log("✅ Course content generated in", totalTime, "ms");

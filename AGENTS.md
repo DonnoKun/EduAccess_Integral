@@ -20,7 +20,7 @@
 - Concurrency sweeps use immutable parents, stored-phase/call completion checks and idempotent metric writes; explicitly authorized incomplete-cell restarts clean only that exact cell under a lease, while completed cells are never replayed to avoid rebilling.
 - Content-quality signals are additive lesson JSON, backed by cached control topics and advisory review; mark edited signals stale and regenerate only the selected draft section so publication and student snapshots remain isolated.
 - Search and group lesson pages share LessonReader and LessonToolbar; loaders and progress persistence remain separate to preserve pinned student snapshots.
-- Search lesson cache identity includes resource, format, level and language; direct searches generate only the selected version and omit advisory inference intended for teacher review.
+- Search lesson cache identity includes resource, format, level and language; direct searches generate only the selected version and persist informational coverage without publication gates.
 - Opened search lessons use existing user_library rows with content_data pin/open metadata; retain saved/completed status so analytics and existing policies stay compatible.
 - Image descriptions use actual multimodal image input and versioned caches; refuse metadata-only descriptions rather than invent visual evidence.
 - Normalize the complete image-generation prompt to English through the cached resilient gateway after bitmap lookup, so automatic and manual callers share one boundary.
@@ -29,3 +29,4 @@
 - Lesson generation uses an SDK primary adapter with reasoning disabled and bounded advisory checks; timeout outcomes never trigger another inference automatically, avoiding duplicate charges.
 - Every user-visible change bumps the app version (settings.about.version in es/en locales and package.json) in the same commit so About always shows the current release.
 - Only educational topics may produce search results or lessons; the cached shared topic guard must explicitly approve before inference, fail closed on invalid/unavailable verdicts without retries, and search failures must never substitute demo results that trigger generation. Keep approval parsing runtime-independent in topic-policy.ts so tests do not import Deno infrastructure.
+- Cache exact-revision translations and preview owner drafts without publishing, so reading/editing agree across reloads.

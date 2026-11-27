@@ -17,6 +17,13 @@ const quality = (coverage: number, flags = 0): LessonQuality => ({
 });
 
 describe('reporte de cobertura', () => {
+  it('conserva reportes de búsqueda de estudiante con cualquier porcentaje, sin imponer 90%', () => {
+    for (const coverage of [0, 50, 89, 90, 100]) {
+      const q = { ...quality(coverage, 1), automatic: true };
+      expect(qualityVerdict(q, 'es', 'student').kind).toBe('informational');
+      expect(qualityVerdict(q, 'en', 'student').kind).toBe('informational');
+    }
+  });
   it('usa 90% como mínimo y exige revisión docente aun sin observaciones', () => {
     expect(qualityVerdict(quality(89), 'es').kind).toBe('below');
     const verdict = qualityVerdict(quality(90), 'es');

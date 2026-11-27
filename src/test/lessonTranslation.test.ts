@@ -2,6 +2,18 @@ import { describe, it, expect } from 'vitest';
 import { validateTranslation, translationSchema } from '../../supabase/functions/generate-course-content/translation';
 
 describe('faithful lesson translation', () => {
+  it('admite historiales con distintos porcentajes y cantidades de puntos clave', () => {
+    const schema = translationSchema({ quality_history: [{ coverage: 50 }, { coverage: 90 }], sections: [{ keyPoints: ['A'] }, { keyPoints: ['B', 'C'] }] });
+    const properties = schema.properties as Record<string, { items: { anyOf: unknown[] } }>;
+    expect(properties.quality_history.items.anyOf).toHaveLength(2);
+    expect(properties.sections.items.anyOf).toHaveLength(2);
+  });
+  it('traduce las observaciones y conserva la medición y la fecha de cada revisión', () => {
+    const before = { introduction: 'Intro', summary: 'Summary', quality: { coverage: 50, reviewed_at: '2026-11-27T01:00:00Z', review_flags: [{ kind: 'exercise', exercise_index: 0, message: 'Check expected answer' }] }, quality_history: [{ coverage: 25 }, { coverage: 40 }] };
+    const result = validateTranslation(before, { ...before, quality: { coverage: 99, reviewed_at: 'wrong', review_flags: [{ kind: 'factual', exercise_index: 3, message: 'Revisar respuesta esperada' }] }, quality_history: [{ coverage: 99 }, { coverage: 99 }] });
+    expect(result.quality).toEqual({ ...before.quality, review_flags: [{ ...before.quality.review_flags[0], message: 'Revisar respuesta esperada' }] });
+    expect(result.quality_history).toEqual(before.quality_history);
+  });
   it('requires exactly the original number of examples rather than generating more', () => {
     const schema = translationSchema({ examples: [{ title: 'One', description: 'Text' }] });
     const properties = schema.properties as Record<string, Record<string, unknown>>;

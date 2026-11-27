@@ -16,7 +16,7 @@ export default function LessonQualityPanel({ quality, history = [], lessonTitle,
   const labels = es ? {
     title: 'Cobertura y revisión', coverage: 'Cobertura', confidence: 'Confianza estimada',
     low: 'Baja', medium: 'Media', high: 'Alta', covered: 'Temas cubiertos', missing: 'Posibles faltantes', superficial: 'Temas superficiales',
-    flags: student ? 'Aspectos señalados para revisar' : 'Revisar antes de publicar', review: 'Evaluar cobertura', edit: 'Editar', regenerate: 'Regenerar sección',
+    flags: student ? 'Aspectos señalados para revisar' : 'Revisar antes de publicar', review: 'Actualizar y guardar reporte', edit: 'Editar', regenerate: 'Regenerar sección',
     unreviewed: 'Sin evaluación de cobertura', stale: 'El contenido cambió después de la evaluación. Las señales anteriores requieren una nueva revisión.',
     caution: student
       ? 'Señales orientativas de IA, no una verificación de los hechos. Revisa las fuentes y consulta a tu docente si tienes dudas.'
@@ -25,7 +25,7 @@ export default function LessonQualityPanel({ quality, history = [], lessonTitle,
   } : {
     title: 'Coverage and review', coverage: 'Coverage', confidence: 'Estimated confidence',
     low: 'Low', medium: 'Medium', high: 'High', covered: 'Covered topics', missing: 'Possible gaps', superficial: 'Superficial topics',
-    flags: student ? 'Points to review' : 'Review before publishing', review: 'Assess coverage', edit: 'Edit', regenerate: 'Regenerate section',
+    flags: student ? 'Points to review' : 'Review before publishing', review: 'Update and save report', edit: 'Edit', regenerate: 'Regenerate section',
     unreviewed: 'Coverage not assessed', stale: 'Content changed after assessment. Previous signals need a new review.',
     caution: student
       ? 'Advisory AI signals, not factual verification. Check the sources and ask your teacher if you have questions.'
@@ -47,7 +47,7 @@ export default function LessonQualityPanel({ quality, history = [], lessonTitle,
         {group.topics.length ? <ul className="list-disc space-y-1 pl-6">{group.topics.map(topic => <li key={topic} className="break-words">{topic}</li>)}</ul> : <p className="text-sm text-muted-foreground">{labels.none}</p>}
       </div>)}
     </>}
-    {quality && <p className="break-words">{labels.length}: {quality.word_count} · {quality.length_ok ? labels.met : labels.short}. <span className="text-muted-foreground">{labels.target}</span></p>}
+    {quality && <p className="break-words">{labels.length}: {quality.word_count}{!quality.automatic && <> · {quality.length_ok ? labels.met : labels.short}. <span className="text-muted-foreground">{labels.target}</span></>}</p>}
     {Boolean(quality?.review_flags.length) && <div className="space-y-3">
       <h3 className="font-semibold break-words">{labels.flags}</h3>
       <ul className="space-y-3">{quality?.review_flags.map((flag, i) => <li key={i} className="space-y-2 border-l-2 border-border pl-3">

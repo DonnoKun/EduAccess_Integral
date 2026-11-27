@@ -30,7 +30,7 @@ describe('panel de cobertura para estudiantes', () => {
     expect(screen.getByText('Fotosíntesis')).toBeTruthy();
     expect(screen.getByText('Respiración celular')).toBeTruthy();
     expect(screen.getByText(/Revisa las fuentes y consulta a tu docente/)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Evaluar cobertura' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Actualizar y guardar reporte' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Editar' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Regenerar sección' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Ver / descargar reporte' }));
@@ -42,9 +42,15 @@ describe('panel de cobertura para estudiantes', () => {
   });
 
   it('mantiene las acciones de revisión para el docente', () => {
-    render(<LessonQualityPanel quality={quality} onReview={vi.fn()} onEdit={vi.fn()} onRegenerate={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Evaluar cobertura' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Editar' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Regenerar sección' })).toBeTruthy();
+    const onReview = vi.fn();
+    const onEdit = vi.fn();
+    const onRegenerate = vi.fn();
+    render(<LessonQualityPanel quality={quality} onReview={onReview} onEdit={onEdit} onRegenerate={onRegenerate} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Actualizar y guardar reporte' }));
+    expect(onReview).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    expect(onEdit).toHaveBeenCalledWith(0, undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Regenerar sección' }));
+    expect(onRegenerate).toHaveBeenCalledWith(0);
   });
 });

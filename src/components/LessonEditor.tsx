@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Save, Loader2, Plus, Trash2, ArrowUp, ArrowDown, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,9 @@ import type { GroupLesson, LessonContent, LessonSection, LessonExample, LessonEx
 import LessonQualityPanel from '@/components/LessonQualityPanel';
 import { recordQualityReview } from '@/lib/lessonQualityReport';
 
-export interface LessonDraft { title: string; description: string; content: LessonContent }
+import { translateLesson } from '@/lib/lessonAssessment';
+import type { LessonDraft } from '@/lib/lessonRevision';
+export type { LessonDraft } from '@/lib/lessonRevision';
 
 type Field<T> = { key: keyof T; label: string; long?: boolean };
 
@@ -57,25 +59,52 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
   const [draft, setDraft] = useState(initial);
   const [saving, setSaving] = useState(false);
   const [reviewing, setReviewing] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [translationFailed, setTranslationFailed] = useState(false);
+  const [translationAttempt, setTranslationAttempt] = useState(0);
+  const language = i18n.language.startsWith('en') ? 'en' : 'es';
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  useEffect(() => {
+    let cancelled = false;
+    setTranslating(true); setTranslationFailed(false);
+    translateLesson(draftRef.current, language).then(value => {
+      if (!cancelled) setDraft(value);
+    }).catch(() => { if (!cancelled) setTranslationFailed(true); })
+      .finally(() => { if (!cancelled) setTranslating(false); });
+    return () => { cancelled = true; };
+  }, [language, translationAttempt]);
   const c = draft.content;
   const markStale = (content: LessonContent): LessonContent => ({ ...content, ...(content.quality ? { quality: { ...content.quality, status: 'stale' as const } } : {}) });
   const setC = (patch: Partial<LessonContent>) => setDraft(prev => ({ ...prev, content: markStale({ ...prev.content, ...patch }) }));
   const dirty = JSON.stringify(initial) !== JSON.stringify(draft);
-  const close = () => { if (!saving && !reviewing && (!dirty || window.confirm(t('courses.discardChanges')))) onClose(); };
+  const close = () => { if (!saving && !reviewing && !translating && (!dirty || window.confirm(t('courses.discardChanges')))) onClose(); };
+
+  const persist = async (value: LessonDraft) => {
+    const { error } = await supabase.from('lesson_drafts').upsert({ lesson_id: lesson.id, payload: JSON.parse(JSON.stringify(value)), updated_at: new Date().toISOString() });
+    if (error) throw error;
+    setDraft(value);
+    onSaved(value);
+  };
+
+  const reviewedDraft = async (value: LessonDraft, sectionIndex?: number): Promise<LessonDraft> => {
+    const { data, error } = await supabase.functions.invoke('generate-course-content', { body: {
+      operation: sectionIndex === undefined ? 'review' : 'regenerate_section',
+      title: value.title, description: value.description, language, lesson: value.content, sectionIndex,
+    } });
+    if (error || !data?.success || data.content?.quality?.status !== 'reviewed') throw new Error('Review unavailable');
+    return { ...value, content: recordQualityReview(value.content, data.content) };
+  };
 
   const assess = async (sectionIndex?: number) => {
-    if (reviewing || saving) return;
+    if (reviewing || saving || translating || translationFailed) return;
     setReviewing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-course-content', { body: {
-        operation: sectionIndex === undefined ? 'review' : 'regenerate_section',
-        title: draft.title, description: draft.description, language: c.language || i18n.language.split('-')[0], lesson: c, sectionIndex,
-      } });
-      if (error || !data?.success || !data.content?.quality) throw new Error('Review unavailable');
-      setDraft(prev => ({ ...prev, content: recordQualityReview(prev.content, data.content) }));
-      toast.success(i18n.language.startsWith('es') ? 'Revisión actualizada. Guarda el borrador para conservarla.' : 'Review updated. Save the draft to keep it.');
+      const value = await reviewedDraft(draft, sectionIndex);
+      await persist(value);
+      toast.success(language === 'es' ? 'Reporte actualizado y borrador guardado. No se ha publicado.' : 'Report updated and draft saved. It has not been published.');
     } catch {
-      toast.error(i18n.language.startsWith('es') ? 'No se pudo completar la revisión. Tu contenido se conserva.' : 'Review could not finish. Your content is preserved.');
+      toast.error(language === 'es' ? 'No se pudo actualizar y guardar el reporte. Se conservan tus cambios; puedes reintentar.' : 'Could not update and save the report. Your changes are preserved; you can retry.');
     } finally { setReviewing(false); }
   };
   const focusFlag = (sectionIndex?: number, exerciseIndex?: number) => {
@@ -87,19 +116,25 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
   };
 
   const save = async () => {
+    if (saving || reviewing || translating || translationFailed) return;
     setSaving(true);
-    // Drop empty key points and blank image requests so no image is generated for nothing.
     const sections = (draft.content.sections || []).map(({ image_prompt, image_alt, ...s }) => ({
       ...s, keyPoints: (s.keyPoints || []).map(k => k.trim()).filter(Boolean),
       ...(image_prompt?.trim() ? { image_prompt: image_prompt.trim(), image_alt: image_alt?.trim() || image_prompt.trim() } : {}),
     }));
-    const clean = { ...draft, content: { ...draft.content, sections } };
-    const { error } = await supabase.from('lesson_drafts').upsert({ lesson_id: lesson.id, payload: JSON.parse(JSON.stringify(clean)), updated_at: new Date().toISOString() });
-    setSaving(false);
-    if (error) { toast.error(t('courses.editError')); return; }
-    onSaved(clean);
-    toast.success(t('courses.draftSaved'));
-    onClose();
+    let clean: LessonDraft = { ...draft, content: { ...draft.content, language, sections } };
+    try {
+      if (!clean.content.quality || clean.content.quality.status !== 'reviewed') {
+        // Save edits even if advisory inference fails, without pretending the old report is current.
+        await persist(clean);
+        clean = await reviewedDraft(clean);
+      }
+      await persist(clean);
+      toast.success(language === 'es' ? 'Borrador y reporte guardados. Solo será visible al publicarlo.' : 'Draft and report saved. It becomes visible only when published.');
+      onClose();
+    } catch {
+      toast.error(language === 'es' ? 'No se pudo completar la actualización del reporte. El editor sigue abierto para reintentar; no se ha publicado.' : 'The report update could not finish. The editor remains open for retry; nothing was published.');
+    } finally { setSaving(false); }
   };
 
   const imageEditor = (s: LessonSection, set: (s: LessonSection) => void, i: number) => {
@@ -130,8 +165,10 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
     <DialogContent className="max-h-[85dvh] max-w-3xl overflow-y-auto">
       <DialogHeader><DialogTitle>{t('courses.editLesson')}</DialogTitle><DialogDescription>{t('courses.editNotice')}</DialogDescription></DialogHeader>
       <div className="space-y-4">
-        <LessonQualityPanel quality={c.quality} history={c.quality_history} lessonTitle={draft.title} busy={saving || reviewing} onReview={() => assess()} onEdit={focusFlag} onRegenerate={assess} />
-        <fieldset disabled={reviewing || saving} className="min-w-0 space-y-4">
+        {translating && <p role="status">{t('courses.translating')}</p>}
+        {translationFailed && <div role="alert" className="space-y-2"><p>{t('courses.translationFailed')}</p><Button variant="outline" onClick={() => setTranslationAttempt(n => n + 1)}>{language === 'es' ? 'Reintentar traducción' : 'Retry translation'}</Button></div>}
+        {!translating && !translationFailed && <LessonQualityPanel quality={c.quality} history={c.quality_history} lessonTitle={draft.title} busy={saving || reviewing || translating || translationFailed} onReview={() => assess()} onEdit={focusFlag} onRegenerate={assess} />}
+        {!translating && !translationFailed && <fieldset disabled={reviewing || saving || translating || translationFailed} className="min-w-0 space-y-4">
         <div className="space-y-1"><Label htmlFor="edit-title">{t('courses.lessonTitle')}</Label><Input id="edit-title" value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value, content: markStale(c) })} /></div>
         <div className="space-y-1"><Label htmlFor="edit-description">{t('courses.lessonDescription')}</Label><Textarea id="edit-description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value, content: markStale(c) })} /></div>
         <div className="space-y-1"><Label htmlFor="edit-intro">{t('courses.editFields.introduction', { defaultValue: 'Introduction' })}</Label><Textarea id="edit-intro" rows={6} value={c.introduction || ''} onChange={e => setC({ introduction: e.target.value })} /></div>
@@ -149,11 +186,11 @@ export default function LessonEditor({ lesson, initial, onClose, onSaved }: { le
         <ListEditor<LessonSource> idPrefix="src" title={t('courses.edit.sources')} items={c.sources || []} onChange={sources => setC({ sources })}
           blank={() => ({ name: '', url: 'https://' })}
           fields={[{ key: 'name', label: t('courses.edit.title') }, { key: 'url', label: 'URL' }, { key: 'description', label: t('courses.edit.content') }]} />
-        </fieldset>
+        </fieldset>}
       </div>
       <div className="sticky bottom-[var(--mobile-nav-h,0px)] transition-[bottom] duration-200 md:bottom-0 z-30 flex flex-wrap gap-2 border-t bg-background py-4">
-        <Button disabled={saving || reviewing || !draft.title.trim()} onClick={save} className="h-auto whitespace-normal">{saving ? <Loader2 className="animate-spin" /> : <Save />}{t('courses.saveDraft')}</Button>
-        <Button variant="outline" disabled={saving || reviewing} onClick={close}>{t('courses.cancel')}</Button>
+        <Button disabled={saving || reviewing || translating || translationFailed || !draft.title.trim()} onClick={save} className="h-auto whitespace-normal">{saving ? <Loader2 className="animate-spin" /> : <Save />}{!c.quality || c.quality.status !== 'reviewed' ? (language === 'es' ? 'Guardar y actualizar reporte' : 'Save and update report') : t('courses.saveDraft')}</Button>
+        <Button variant="outline" disabled={saving || reviewing || translating} onClick={close}>{t('courses.cancel')}</Button>
       </div>
     </DialogContent>
   </Dialog>;

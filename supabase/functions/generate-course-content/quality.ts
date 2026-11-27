@@ -17,6 +17,7 @@ export interface LessonQuality {
   word_count: number;
   status: 'reviewed' | 'unavailable' | 'stale';
   reviewed_at?: string;
+  automatic?: boolean;
 }
 export interface ReviewLesson {
   introduction?: string; summary?: string;
@@ -38,7 +39,7 @@ export function wordCount(lesson: ReviewLesson): number {
     ...(lesson.exercises || []).flatMap(e => [e.question, e.solution]),
   ].filter(Boolean).join(' '));
 }
-export function validateReview(value: unknown, topics: string[], lesson: ReviewLesson, language: string): LessonQuality {
+export function validateReview(value: unknown, topics: string[], lesson: ReviewLesson, language: string, automatic = false): LessonQuality {
   if (!value || typeof value !== 'object') throw new Error('Invalid review');
   const r = value as Record<string, unknown>;
   if (!['low', 'medium', 'high'].includes(String(r.confidence))) throw new Error('Invalid confidence');
@@ -56,17 +57,17 @@ export function validateReview(value: unknown, topics: string[], lesson: ReviewL
     return f as unknown as ReviewFlag;
   });
   const es = language === 'es';
-  (lesson.sections || []).forEach((s, i) => {
+  (automatic ? [] : lesson.sections || []).forEach((s, i) => {
     if (words(s.content) < 250 && !flags.some(f => f.kind === 'short_section' && f.section_index === i)) flags.push({ kind: 'short_section', section_index: i, message: es ? 'Sección breve: revisar profundidad (objetivo: 250 palabras como mínimo).' : 'Short section: review depth (target: at least 250 words).' });
   });
   (lesson.exercises || []).forEach((e, i) => {
     if ((!e.solution?.trim() || !e.answer_keywords?.trim() || words(e.answer_keywords) > 15) && !flags.some(f => f.kind === 'exercise' && f.exercise_index === i)) flags.push({ kind: 'exercise', exercise_index: i, message: es ? 'Revisar respuesta corta y solución verificable del ejercicio.' : 'Review the exercise’s short answer and verifiable solution.' });
   });
   const count = wordCount(lesson);
-  return { coverage: topics.length ? Math.round(100 * covered.length / topics.length) : 0, confidence: r.confidence as LessonQuality['confidence'], covered_topics: covered, missing_topics: missing, superficial_topics: superficial, control_topics: topics, review_flags: flags, length_ok: count >= 3000, word_count: count, status: 'reviewed', reviewed_at: new Date().toISOString() };
+  return { coverage: topics.length ? Math.round(100 * covered.length / topics.length) : 0, confidence: r.confidence as LessonQuality['confidence'], covered_topics: covered, missing_topics: missing, superficial_topics: superficial, control_topics: topics, review_flags: flags, length_ok: automatic || count >= 3000, word_count: count, status: 'reviewed', reviewed_at: new Date().toISOString(), automatic };
 }
-export function unavailableQuality(lesson: ReviewLesson, language: string, topics: string[] = []): LessonQuality {
-  return { coverage: 0, confidence: 'low', covered_topics: [], missing_topics: [], superficial_topics: [], control_topics: topics, review_flags: [{ kind: 'review_unavailable', message: language === 'es' ? 'Revisión automática no disponible. La cobertura no se ha evaluado; revisar manualmente antes de publicar.' : 'Automatic review unavailable. Coverage has not been assessed; review manually before publishing.' }], length_ok: wordCount(lesson) >= 3000, word_count: wordCount(lesson), status: 'unavailable', reviewed_at: new Date().toISOString() };
+export function unavailableQuality(lesson: ReviewLesson, language: string, topics: string[] = [], automatic = false): LessonQuality {
+  return { coverage: 0, confidence: 'low', covered_topics: [], missing_topics: [], superficial_topics: [], control_topics: topics, review_flags: [{ kind: 'review_unavailable', message: language === 'es' ? 'La evaluación automática no estuvo disponible. Este reporte conserva la fecha y la extensión, pero no inventa un porcentaje de cobertura; consulta las fuentes.' : 'Automatic assessment was unavailable. This report preserves its date and length but does not invent a coverage percentage; check the sources.' }], length_ok: automatic || wordCount(lesson) >= 3000, word_count: wordCount(lesson), status: 'unavailable', reviewed_at: new Date().toISOString(), automatic };
 }
 export function replaceSection<T extends ReviewLesson>(lesson: T, index: number, section: NonNullable<ReviewLesson['sections']>[number]): T {
   if (!lesson.sections || !Number.isInteger(index) || index < 0 || index >= lesson.sections.length) throw new Error('Invalid section index');

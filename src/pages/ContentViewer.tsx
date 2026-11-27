@@ -6,6 +6,9 @@ import { Bookmark, BookmarkCheck, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import LessonReader from '@/components/LessonReader';
 import LessonToolbar from '@/components/LessonToolbar';
+import LessonQualityPanel from '@/components/LessonQualityPanel';
+import { assessSearchLesson, translateLesson } from '@/lib/lessonAssessment';
+import { unavailableQuality } from '../../supabase/functions/generate-course-content/quality';
 import GenerationSteps from '@/components/GenerationSteps';
 import { useStore } from '@/store/useStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -59,35 +62,37 @@ export default function ContentViewer() {
       const { data: progress } = await supabase.from('user_library').select('content_data').eq('user_id', currentUser.id).eq('content_data->>id', current.id).maybeSingle();
       const stored = progress?.content_data as unknown as { lessonContent?: LessonContent; exerciseAnswers?: Record<number, string>; exerciseResults?: Record<number, 'correct' | 'partial' | 'incorrect'> } | null;
       if (!cancelled) { setAnswers(stored?.exerciseAnswers || {}); setResults(stored?.exerciseResults || {}); }
-      if (ready) { if (!progress) await saveContentToDB(current, 'recent'); return; }
-      await saveContentToDB(current, 'recent');
+      const savedLesson = stored?.lessonContent || current.lessonContent;
+      if (savedLesson?.language === lang && savedLesson.quality) {
+        if (!cancelled) { setContent(savedLesson); setLoading(false); }
+        if (!progress) await saveContentToDB({ ...current, lessonContent: savedLesson }, 'recent');
+        return;
+      }
+      await saveContentToDB({ ...current, ...(savedLesson ? { lessonContent: savedLesson } : {}) }, 'recent');
       try {
         const key = searchLessonIdentity(current);
-        let lesson: LessonContent | null = (stored?.lessonContent?.language === lang ? stored.lessonContent : null) || await getCachedCourse(key, lang);
+        let lesson: LessonContent | null = (savedLesson?.language === lang ? savedLesson : null) || await getCachedCourse(key, lang);
         if (!lesson) {
-          const original = current.lessonContent || await getCachedCourse(key, lang === 'es' ? 'en' : 'es');
-          const data = await cachedAI(aiCacheKey('search-lesson-v4', key, lang), current.title, lang, async () => {
-            // Translations are strictly validated and may be rejected once; retry one time automatically.
-            // New generations are never replayed, so a failed lesson is not billed twice.
-            const attempts = original ? 2 : 1;
-            let lastError = 'Lesson unavailable';
-            for (let attempt = 0; attempt < attempts && !cancelled; attempt++) {
+          const original = savedLesson || await getCachedCourse(key, lang === 'es' ? 'en' : 'es');
+          const data = original ? (await translateLesson({ title: current.title, description: current.description || '', content: original }, lang)).content : await cachedAI(aiCacheKey('search-lesson-v4', key, lang), current.title, lang, async () => {
               const { data, error } = await supabase.functions.invoke('generate-course-content', { body: {
                 title: current.title, description: current.description, contentType: current.contentType === 'video' ? 'article' : current.contentType,
                 educationLevel: current.educationLevel, source: current.source, sourceUrl: current.url, language: lang, directSearch: true,
-                ...(original ? { originalContent: original } : {}),
               } });
               if (!error && data?.success && data.content) return data.content;
-              lastError = data?.error || error?.message || lastError;
-              if (/402|429|credits/i.test(lastError)) break;
-            }
-            throw new Error(lastError);
+              throw new Error(data?.error || error?.message || 'Lesson unavailable');
           }, value => Boolean(value?.introduction));
           lesson = { ...data, language: lang };
           if (lesson) await saveCourseToCache(key, lang, lesson as Parameters<typeof saveCourseToCache>[2]);
         }
         if (cancelled || !lesson) return;
+        if (!lesson.quality) {
+          try { lesson = await assessSearchLesson(current.title, current.description || '', lesson, lang, current.educationLevel, current.contentType); }
+          catch { lesson = { ...lesson, quality: unavailableQuality(lesson, lang, [], true) }; }
+        }
+        if (cancelled) return;
         setContent(lesson);
+        await saveCourseToCache(key, lang, lesson as Parameters<typeof saveCourseToCache>[2]);
         await saveContentToDB({ ...current, lessonContent: lesson }, 'recent');
       } catch {
         if (!cancelled) { setFailed(true); setContent(null); }
@@ -128,14 +133,15 @@ export default function ContentViewer() {
   if (!current) return <main className="container mx-auto px-4 py-6"><p>{lang === 'es' ? 'Lección no encontrada.' : 'Lesson not found.'}</p><Button onClick={() => navigate('/search')}>{t('navigation.search')}</Button></main>;
   return <div className="min-h-screen bg-background">
     <a href="#lesson-main" className="skip-link">{t('common.skipToMain')}</a>
-    <LessonToolbar title={current.title} onBack={back} actions={<Button variant={saved ? 'default' : 'outline'} size="icon" onClick={togglePin} aria-label={lang === 'es' ? 'Guardar lección' : 'Save lesson'} aria-pressed={saved}>{saved ? <BookmarkCheck /> : <Bookmark />}</Button>} />
+    <LessonToolbar title={content?.lesson_title || current.title} onBack={back} actions={<Button variant={saved ? 'default' : 'outline'} size="icon" onClick={togglePin} aria-label={lang === 'es' ? 'Guardar lección' : 'Save lesson'} aria-pressed={saved}>{saved ? <BookmarkCheck /> : <Bookmark />}</Button>} />
     <main id="lesson-main" className="container mx-auto max-w-3xl space-y-6 px-4 py-6" aria-busy={loading}>
       {(current.educationLevel || current.contentType) && <p className="text-muted-foreground break-words">{[current.educationLevel && `${t('search.filters.level')}: ${t(`search.educationLevels.${current.educationLevel}`)}`, current.contentType && `${t('search.filters.contentType')}: ${t(`search.contentTypes.${current.contentType}`, current.contentType)}`].filter(Boolean).join(' · ')}</p>}
       {loading && <GenerationSteps lang={lang} />}
       {failed && <p role="alert">{lang === 'es' ? 'No se pudo preparar la lección. Se conserva en recientes para volver a abrirla.' : 'The lesson could not be prepared. It remains in recent lessons.'}</p>}
       {!loading && content && <>
+        <p className="rounded-md border p-3 text-sm text-muted-foreground break-words">{lang === 'es' ? 'Esta lección se generó automáticamente para tu búsqueda. Su reporte es una evaluación automática orientativa, no una revisión docente ni garantía de ausencia de errores; consulta las fuentes y a tu docente si tienes dudas.' : 'This lesson was generated automatically for your search. Its report is an advisory automatic assessment, not a teacher review or a guarantee of correctness; check the sources and ask your teacher if you have questions.'}</p>
         <LessonReader content={content} lang={lang} storageKey={`${currentUser?.id}:${current.id}`} answers={answers} results={results} onAnswer={(i, value) => setAnswers(prev => ({ ...prev, [i]: value }))} onCheck={check} />
-        <p className="rounded-md border p-3 text-sm text-muted-foreground break-words">{lang === 'es' ? 'Esta lección se generó automáticamente para tu búsqueda. No pasa por evaluación de cobertura ni revisión docente; consulta las fuentes y a tu docente si tienes dudas.' : 'This lesson was generated automatically for your search. It has no coverage assessment or teacher review; check the sources and ask your teacher if you have questions.'}</p>
+        {content.quality ? <LessonQualityPanel quality={content.quality} lessonTitle={content.lesson_title || current.title} audience="student" /> : <p role="status">{lang === 'es' ? 'Preparando y guardando el reporte de esta lección…' : 'Preparing and saving this lesson’s report…'}</p>}
         <Button disabled={completed} onClick={async () => { await saveContentToDB({ ...current, lessonContent: content }, 'completed'); toast.success(t('courses.lessonCompleted')); }}><CheckCircle2 className="mr-2 h-4 w-4" />{completed ? (lang === 'es' ? 'Completada' : 'Completed') : t('courses.markCompleted')}</Button>
       </>}
     </main>
