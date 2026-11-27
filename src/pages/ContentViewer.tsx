@@ -74,7 +74,7 @@ export default function ContentViewer() {
         let lesson: LessonContent | null = (savedLesson?.language === lang ? savedLesson : null) || await getCachedCourse(key, lang);
         if (!lesson) {
           const original = savedLesson || await getCachedCourse(key, lang === 'es' ? 'en' : 'es');
-          const data = original ? (await translateLesson({ title: current.title, description: current.description || '', content: original }, lang)).content : await cachedAI(aiCacheKey('search-lesson-v4', key, lang), current.title, lang, async () => {
+          const data = original ? await translateLesson({ title: current.title, description: current.description || '', content: original }, lang).then(v => v.content).catch(() => null) : await cachedAI(aiCacheKey('search-lesson-v4', key, lang), current.title, lang, async () => {
               const { data, error } = await supabase.functions.invoke('generate-course-content', { body: {
                 title: current.title, description: current.description, contentType: current.contentType === 'video' ? 'article' : current.contentType,
                 educationLevel: current.educationLevel, source: current.source, sourceUrl: current.url, language: lang, directSearch: true,
@@ -82,6 +82,8 @@ export default function ContentViewer() {
               if (!error && data?.success && data.content) return data.content;
               throw new Error(data?.error || error?.message || 'Lesson unavailable');
           }, value => Boolean(value?.introduction));
+          // Translation failure keeps the saved original readable instead of failing the lesson.
+          if (!data && original) { setContent(original); return; }
           lesson = { ...data, language: lang };
           if (lesson) await saveCourseToCache(key, lang, lesson as Parameters<typeof saveCourseToCache>[2]);
         }

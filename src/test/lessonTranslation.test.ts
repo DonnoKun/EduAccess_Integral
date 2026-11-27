@@ -2,11 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { validateTranslation, translationSchema } from '../../supabase/functions/generate-course-content/translation';
 
 describe('faithful lesson translation', () => {
-  it('admite historiales con distintos porcentajes y cantidades de puntos clave', () => {
+  it('admite historiales con distintos porcentajes y cantidades de puntos clave con un esquema simple', () => {
     const schema = translationSchema({ quality_history: [{ coverage: 50 }, { coverage: 90 }], sections: [{ keyPoints: ['A'] }, { keyPoints: ['B', 'C'] }] });
-    const properties = schema.properties as Record<string, { items: { anyOf: unknown[] } }>;
-    expect(properties.quality_history.items.anyOf).toHaveLength(2);
-    expect(properties.sections.items.anyOf).toHaveLength(2);
+    expect(JSON.stringify(schema)).not.toMatch(/anyOf|enum|minItems/);
   });
   it('traduce las observaciones y conserva la medición y la fecha de cada revisión', () => {
     const before = { introduction: 'Intro', summary: 'Summary', quality: { coverage: 50, reviewed_at: '2026-11-27T01:00:00Z', review_flags: [{ kind: 'exercise', exercise_index: 0, message: 'Check expected answer' }] }, quality_history: [{ coverage: 25 }, { coverage: 40 }] };
@@ -14,11 +12,8 @@ describe('faithful lesson translation', () => {
     expect(result.quality).toEqual({ ...before.quality, review_flags: [{ ...before.quality.review_flags[0], message: 'Revisar respuesta esperada' }] });
     expect(result.quality_history).toEqual(before.quality_history);
   });
-  it('requires exactly the original number of examples rather than generating more', () => {
-    const schema = translationSchema({ examples: [{ title: 'One', description: 'Text' }] });
-    const properties = schema.properties as Record<string, Record<string, unknown>>;
-    expect(properties.examples.minItems).toBe(1);
-    expect(properties.examples.maxItems).toBe(1);
+  it('rejects translations that add examples', () => {
+    expect(() => validateTranslation({ introduction: 'I', summary: 'S', examples: [{ title: 'One' }] }, { introduction: 'I', summary: 'S', examples: [{ title: 'Uno' }, { title: 'Dos' }] })).toThrow('Translation changed examples');
   });
   const original = { introduction: 'Intro', summary: 'Summary', sections: [{ title: 'Role', content: 'Text', image_prompt: 'A diagram', keyPoints: ['one'] }], exercises: [{ question: '2/3 + 1/5?', answer_keywords: '13/15', solution: '13/15' }], sources: [{ name: 'Source', url: 'https://example.org/article' }] };
   it('preserves illustration prompts and source URLs without regenerating material', () => {
